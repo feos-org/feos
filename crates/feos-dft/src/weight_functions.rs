@@ -16,7 +16,7 @@ pub struct WeightFunction<T> {
     pub shape: WeightFunctionShape,
 }
 
-impl<T: DualNum<f64> + Copy> WeightFunction<T> {
+impl<T: DualNum<Primitive = f64> + Copy> WeightFunction<T> {
     /// Create a new weight function without prefactor
     pub fn new_unscaled(kernel_radius: DVector<T>, shape: WeightFunctionShape) -> Self {
         Self {
@@ -40,7 +40,7 @@ impl<T: DualNum<f64> + Copy> WeightFunction<T> {
 
     /// Calculates the value of the scalar weight function depending on its shape
     /// `k_abs` describes the absolute value of the Fourier variable
-    pub(crate) fn fft_scalar_weight_functions<D: Dimension, T2: DualNum<f64>>(
+    pub(crate) fn fft_scalar_weight_functions<D: Dimension, T2: DualNum<Primitive = f64>>(
         &self,
         k_abs: &Array<T2, D>,
         lanczos: &Option<Array<T2, D>>,
@@ -90,7 +90,7 @@ impl<T: DualNum<f64> + Copy> WeightFunction<T> {
     /// Calculates the value of the vector weight function depending on its shape
     /// `k_abs` describes the absolute value of the Fourier variable
     /// `k` describes the (potentially multi-dimensional) Fourier variable
-    pub(crate) fn fft_vector_weight_functions<D: Dimension, T2: DualNum<f64>>(
+    pub(crate) fn fft_vector_weight_functions<D: Dimension, T2: DualNum<Primitive = f64>>(
         &self,
         k_abs: &Array<T2, D>,
         k: &Array<T2, D::Larger>,
@@ -277,7 +277,7 @@ impl<T> WeightFunctionInfo<T> {
     }
 }
 
-impl<T: DualNum<f64> + Copy> WeightFunctionInfo<T> {
+impl<T: DualNum<Primitive = f64> + Copy> WeightFunctionInfo<T> {
     /// calculates the matrix of weight constants for this set of weighted densities
     pub fn weight_constants(&self, k: T, dimensions: usize) -> Array2<T> {
         let segments = self.component_index.len();

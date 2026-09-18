@@ -17,7 +17,7 @@ const TOL_PX: f64 = 1e-11;
 type PXVars<N> = <N as DimAdd<U3>>::Output;
 type TPVars<N> = <N as DimAdd<U2>>::Output;
 
-impl<E: Total<N, D>, N: Gradients + DimAdd<U2> + DimAdd<U3>, D: DualNum<f64> + Copy>
+impl<E: Total<N, D>, N: Gradients + DimAdd<U2> + DimAdd<U3>, D: DualNum<Primitive = f64> + Copy>
     PhaseEquilibrium<E, 2, N, D>
 where
     DefaultAllocator: Allocator<N>
@@ -213,7 +213,7 @@ where
     }
 }
 
-fn unpack_variables<D: DualNum<f64> + Copy, N: Dim + DimAdd<U3>>(
+fn unpack_variables<D: DualNum<Primitive = f64> + Copy, N: Dim + DimAdd<U3>>(
     molefracs: &OVector<D, N>,
     variables: &OVector<D, PXVars<N>>,
 ) -> (D, D, D, D, OVector<D, N>, OVector<D, N>)
@@ -229,7 +229,7 @@ where
     (t, beta, rho_l, rho_v, x, y)
 }
 
-fn unpack_tp_variables<D: DualNum<f64> + Copy, N: Dim + DimAdd<U2>>(
+fn unpack_tp_variables<D: DualNum<Primitive = f64> + Copy, N: Dim + DimAdd<U2>>(
     molefracs: &OVector<D, N>,
     variables: &OVector<D, TPVars<N>>,
 ) -> (D, D, D, OVector<D, N>, OVector<D, N>)
@@ -247,7 +247,7 @@ where
 
 trait PXFlash: Sized + Copy {
     // potential function for which the flash solution is a saddle point.
-    fn state_function<E: Total<N, D>, N: Dim + DimAdd<U3>, D: DualNum<f64> + Copy>(
+    fn state_function<E: Total<N, D>, N: Dim + DimAdd<U3>, D: DualNum<Primitive = f64> + Copy>(
         eos: &E,
         variables: OVector<D, PXVars<N>>,
         args: &(D, D, OVector<D, N>),
@@ -255,14 +255,14 @@ trait PXFlash: Sized + Copy {
     where
         DefaultAllocator: Allocator<N> + Allocator<PXVars<N>>;
 
-    fn evaluate_property<E: Total<N, D>, N: Gradients, D: DualNum<f64> + Copy>(
+    fn evaluate_property<E: Total<N, D>, N: Gradients, D: DualNum<Primitive = f64> + Copy>(
         vle: &PhaseEquilibrium<E, 2, N, D>,
     ) -> Quantity<D, Self>
     where
         DefaultAllocator: Allocator<N>;
 
     // the potential function for a tp-flash specification (Q = A + V*p_spec)
-    fn tp_state_function<E: Total<N, D>, N: Dim + DimAdd<U2>, D: DualNum<f64> + Copy>(
+    fn tp_state_function<E: Total<N, D>, N: Dim + DimAdd<U2>, D: DualNum<Primitive = f64> + Copy>(
         eos: &E,
         variables: OVector<D, TPVars<N>>,
         &(t, p, ref z): &(D, D, OVector<D, N>),
@@ -284,7 +284,7 @@ trait PXFlash: Sized + Copy {
     // Because the ps and ph flashes are saddle points rather then extrema,
     // the value of the potential can not be used as convergence criterion.
     #[expect(clippy::type_complexity)]
-    fn newton_step<E: Total<N, D>, N: Dim + DimAdd<U3>, D: DualNum<f64> + Copy>(
+    fn newton_step<E: Total<N, D>, N: Dim + DimAdd<U3>, D: DualNum<Primitive = f64> + Copy>(
         eos: &E,
         variables: &OVector<D, PXVars<N>>,
         specifications: &(D, D, OVector<D, N>),
@@ -327,7 +327,7 @@ trait PXFlash: Sized + Copy {
         let rho_i_l = rho_l * x;
         let (hs, dhs) = first_derivative(
             partial(
-                |t: Dual<_, _>, args: &(_, OVector<_, _>)| {
+                |t: Dual<_>, args: &(_, OVector<_, _>)| {
                     let &(p, ref z) = args;
                     let args = (t, p, z.clone_owned());
 
@@ -403,7 +403,7 @@ trait PXFlash: Sized + Copy {
 
 impl PXFlash for SIUnit<-2, 2, 1, 0, 0, -1, 0> {
     // the potential function for a ph-flash specification (Q = (A + V*p_spec - H_spec) / T)
-    fn state_function<E: Total<N, D>, N: Dim + DimAdd<U3>, D: DualNum<f64> + Copy>(
+    fn state_function<E: Total<N, D>, N: Dim + DimAdd<U3>, D: DualNum<Primitive = f64> + Copy>(
         eos: &E,
         variables: OVector<D, PXVars<N>>,
         &(p, h, ref z): &(D, D, OVector<D, N>),
@@ -421,7 +421,7 @@ impl PXFlash for SIUnit<-2, 2, 1, 0, 0, -1, 0> {
         potential(y, rho_v, t) * beta + potential(x, rho_l, t) * (-beta + 1.0)
     }
 
-    fn evaluate_property<E: Total<N, D>, N: Gradients, D: DualNum<f64> + Copy>(
+    fn evaluate_property<E: Total<N, D>, N: Gradients, D: DualNum<Primitive = f64> + Copy>(
         vle: &PhaseEquilibrium<E, 2, N, D>,
     ) -> Quantity<D, Self>
     where
@@ -433,7 +433,7 @@ impl PXFlash for SIUnit<-2, 2, 1, 0, 0, -1, 0> {
 
 impl PXFlash for SIUnit<-2, 2, 1, 0, -1, -1, 0> {
     // the potential function for a ps-flash specification (Q = A + T*S_spec + V*p_spec)
-    fn state_function<E: Total<N, D>, N: Dim + DimAdd<U3>, D: DualNum<f64> + Copy>(
+    fn state_function<E: Total<N, D>, N: Dim + DimAdd<U3>, D: DualNum<Primitive = f64> + Copy>(
         eos: &E,
         variables: OVector<D, PXVars<N>>,
         &(p, s, ref z): &(D, D, OVector<D, N>),
@@ -454,7 +454,7 @@ impl PXFlash for SIUnit<-2, 2, 1, 0, -1, -1, 0> {
         potential(y, rho_v, t) * beta + potential(x, rho_l, t) * (-beta + 1.0)
     }
 
-    fn evaluate_property<E: Total<N, D>, N: Gradients, D: DualNum<f64> + Copy>(
+    fn evaluate_property<E: Total<N, D>, N: Gradients, D: DualNum<Primitive = f64> + Copy>(
         vle: &PhaseEquilibrium<E, 2, N, D>,
     ) -> Quantity<D, Self>
     where

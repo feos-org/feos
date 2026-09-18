@@ -44,7 +44,7 @@ impl<R: Residual + Subset> State<R> {
     }
 }
 
-impl<E: Residual<N, D>, N: Gradients, D: DualNum<f64> + Copy> State<E, N, D>
+impl<E: Residual<N, D>, N: Gradients, D: DualNum<Primitive = f64> + Copy> State<E, N, D>
 where
     DefaultAllocator: Allocator<N> + Allocator<N, N> + Allocator<U1, N>,
 {
@@ -91,7 +91,7 @@ where
                 initial_density,
                 options,
             )?;
-            let trho = implicit_derivative_vec::<_, _, _, _, U3>(
+            let trho = implicit_derivative_vec::<_, _, _, U3>(
                 |x, &p| {
                     let t = x[0];
                     let rho = [x[1], x[2]];
@@ -184,7 +184,7 @@ where
 
     for i in 1..=max_iter {
         // calculate residuals and derivatives w.r.t. temperature and density
-        let (res, jac) = jacobian::<_, _, _, U2, U2, _>(
+        let (res, jac) = jacobian::<_, _, U2, U2, _>(
             |x: SVector<DualSVec64<2>, 2>| {
                 SVector::from(criticality_conditions(
                     &eos.lift(),
@@ -269,7 +269,7 @@ where
 
     for i in 1..=max_iter {
         // calculate residuals and derivatives w.r.t. partial densities
-        let (res, jac) = jacobian::<_, _, _, U2, U2, _>(
+        let (res, jac) = jacobian::<_, _, U2, U2, _>(
             |rho: SVector<DualSVec64<2>, 2>| {
                 let density = rho.sum();
                 let x = rho / density;
@@ -360,7 +360,7 @@ where
             let p = DualSVec::from_re(p);
             criticality_conditions_p(&eos.lift(), p, t, partial_density)
         };
-        let (res, jac) = jacobian::<_, _, _, U3, U3, _>(res, &SVector::from([t, rho[0], rho[1]]));
+        let (res, jac) = jacobian::<_, _, U3, U3, _>(res, &SVector::from([t, rho[0], rho[1]]));
 
         // calculate Newton step
         let delta = jac.lu().solve(&res);
@@ -507,7 +507,7 @@ where
     }
 }
 
-fn criticality_conditions<E: Residual<N, D>, N: Gradients, D: DualNum<f64> + Copy>(
+fn criticality_conditions<E: Residual<N, D>, N: Gradients, D: DualNum<Primitive = f64> + Copy>(
     eos: &E,
     temperature: D,
     density: D,
@@ -548,7 +548,7 @@ where
     [l, c2]
 }
 
-fn criticality_conditions_p<E: Residual<N, D>, N: Gradients, D: DualNum<f64> + Copy>(
+fn criticality_conditions_p<E: Residual<N, D>, N: Gradients, D: DualNum<Primitive = f64> + Copy>(
     eos: &E,
     pressure: D,
     temperature: D,
@@ -575,7 +575,7 @@ where
     SVector::from([c1, c2, -p_calc + pressure])
 }
 
-fn stability_condition<E: Residual<N, D>, N: Gradients, D: DualNum<f64> + Copy>(
+fn stability_condition<E: Residual<N, D>, N: Gradients, D: DualNum<Primitive = f64> + Copy>(
     eos: &E,
     temperature: D,
     density: D,
@@ -598,7 +598,7 @@ where
     l
 }
 
-fn dmu_dn<E: Residual<N, D>, N: Gradients, D: DualNum<f64> + Copy>(
+fn dmu_dn<E: Residual<N, D>, N: Gradients, D: DualNum<Primitive = f64> + Copy>(
     eos: &E,
     temperature: D,
     molar_volume: D,

@@ -1,6 +1,7 @@
 use super::bubble_dew::TemperatureOrPressure;
 use super::{PhaseDiagram, PhaseEquilibrium};
 use crate::errors::{FeosError, FeosResult};
+use crate::phase_equilibria::bubble_dew::TemperatureOrPressureSpecification;
 use crate::state::{Contributions, DensityInitialization::Vapor, State};
 use crate::{ReferenceSystem, Residual, SolverOptions, Subset};
 use nalgebra::{DVector, dvector, matrix, stack, vector};
@@ -503,31 +504,27 @@ impl<E: Residual> PhaseEquilibrium<E, 3> {
         options: SolverOptions,
         bubble_dew_options: (SolverOptions, SolverOptions),
     ) -> FeosResult<Self> {
-        let (temperature, pressure, iterate_p) =
-            temperature_or_pressure.temperature_pressure(tp_init);
-        if iterate_p {
-            PhaseEquilibrium::heteroazeotrope_t(
-                eos,
-                temperature.ok_or(FeosError::Error(
-                    "Temperature information is expected for heteroazeotrope calculation."
-                        .to_string(),
-                ))?,
-                x_init,
-                pressure,
-                options,
-                bubble_dew_options,
-            )
-        } else {
-            PhaseEquilibrium::heteroazeotrope_p(
-                eos,
-                pressure.ok_or(FeosError::Error(
-                    "Pressure information is expected for heteroazeotrope calculation.".to_string(),
-                ))?,
-                x_init,
-                temperature,
-                options,
-                bubble_dew_options,
-            )
+        match temperature_or_pressure.specification(tp_init) {
+            TemperatureOrPressureSpecification::Temperature(temperature, pressure) => {
+                PhaseEquilibrium::heteroazeotrope_t(
+                    eos,
+                    temperature,
+                    x_init,
+                    pressure,
+                    options,
+                    bubble_dew_options,
+                )
+            }
+            TemperatureOrPressureSpecification::Pressure(pressure, temperature) => {
+                PhaseEquilibrium::heteroazeotrope_p(
+                    eos,
+                    pressure,
+                    x_init,
+                    temperature,
+                    options,
+                    bubble_dew_options,
+                )
+            }
         }
     }
 
@@ -826,12 +823,14 @@ impl<E: Residual + Subset> PhaseEquilibrium<E, 2> {
         let x0 = -ln_alpha1 / (ln_alpha2 - ln_alpha1);
 
         // solve for the azeotropic composition and return the corresponding VLE state
-        let (temperature, pressure, iterate_t) = temperature_or_pressure.temperature_pressure(None);
-        (if iterate_t {
-            Self::iterate_azeotrope_t(eos, temperature.unwrap(), x0, 10, 1e-10)
-        } else {
-            let t_init = vle1.liquid().temperature.min(vle2.liquid().temperature);
-            Self::iterate_azeotrope_p(eos, pressure.unwrap(), x0, t_init, 10, 1e-10)
+        (match temperature_or_pressure.specification(None) {
+            TemperatureOrPressureSpecification::Temperature(temperature, _) => {
+                Self::iterate_azeotrope_t(eos, temperature, x0, 10, 1e-10)
+            }
+            TemperatureOrPressureSpecification::Pressure(pressure, _) => {
+                let t_init = vle1.liquid().temperature.min(vle2.liquid().temperature);
+                Self::iterate_azeotrope_p(eos, pressure, x0, t_init, 10, 1e-10)
+            }
         })
         .map(Some)
     }
@@ -849,7 +848,7 @@ impl<E: Residual + Subset> PhaseEquilibrium<E, 2> {
                     PhaseEquilibrium::bubble_point(
                         &eos.lift(),
                         t,
-                        &dvector![x, -x + 1.0],
+                        dvector![x, -x + 1.0],
                         None,
                         None,
                         Default::default(),
@@ -884,7 +883,7 @@ impl<E: Residual + Subset> PhaseEquilibrium<E, 2> {
                     PhaseEquilibrium::bubble_point(
                         &eos.lift(),
                         p,
-                        &dvector![x, -x + 1.0],
+                        dvector![x, -x + 1.0],
                         Some(t_init),
                         None,
                         Default::default(),

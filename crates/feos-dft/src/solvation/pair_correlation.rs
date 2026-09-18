@@ -1,6 +1,5 @@
 //! Functionalities for the calculation of pair correlation functions.
 use crate::functional::HelmholtzEnergyFunctional;
-use crate::profile::MAX_POTENTIAL;
 use crate::solver::DFTSolver;
 use crate::{Axis, DFTProfile, Grid};
 use feos_core::{Contributions, FeosResult, ReferenceSystem, State};
@@ -12,11 +11,11 @@ use std::ops::Deref;
 /// models.
 pub trait PairPotential {
     /// Return the pair potential of particle i with all other particles.
-    fn pair_potential(&self, i: usize, r: &Array1<f64>, temperature: f64) -> Array2<f64>;
+    fn pair_potential(&self, i: usize, r: &Array1<f64>, temperature: f64) -> Energy<Array2<f64>>;
 }
 
 impl<C: Deref<Target = T>, T: PairPotential> PairPotential for C {
-    fn pair_potential(&self, i: usize, r: &Array1<f64>, temperature: f64) -> Array2<f64> {
+    fn pair_potential(&self, i: usize, r: &Array1<f64>, temperature: f64) -> Energy<Array2<f64>> {
         T::pair_potential(self, i, r, temperature)
     }
 }
@@ -38,16 +37,11 @@ impl<F: HelmholtzEnergyFunctional + PairPotential> PairCorrelation<F> {
 
         // calculate external potential
         let t = bulk.temperature.to_reduced();
-        let mut external_potential = dft.pair_potential(test_particle, &axis.grid, t) / t;
-        external_potential.map_inplace(|x| {
-            if *x > MAX_POTENTIAL {
-                *x = MAX_POTENTIAL
-            }
-        });
+        let external_potential = dft.pair_potential(test_particle, &axis.grid, t);
         let grid = Grid::Spherical(axis);
 
         Self {
-            profile: DFTProfile::new(grid, bulk, Some(external_potential), None, Some(1)),
+            profile: DFTProfile::new(grid, bulk, Some(&external_potential), None),
             pair_correlation_function: None,
             self_solvation_free_energy: None,
             structure_factor: None,

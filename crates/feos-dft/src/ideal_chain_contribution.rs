@@ -18,7 +18,7 @@ impl IdealChainContribution {
         }
     }
 
-    pub fn bulk_helmholtz_energy_density<D: DualNum<f64> + Copy>(
+    pub fn bulk_helmholtz_energy_density<D: DualNum<Primitive = f64> + Copy>(
         &self,
         partial_density: &DVector<D>,
     ) -> D {
@@ -43,7 +43,7 @@ impl IdealChainContribution {
     where
         D: Dimension,
         D::Larger: Dimension<Smaller = D>,
-        N: DualNum<f64>,
+        N: DualNum<Primitive = f64>,
     {
         let mut phi = Array::zeros(density.raw_dim().remove_axis(Axis(0)));
         for (i, rhoi) in density.outer_iter().enumerate() {

@@ -20,7 +20,7 @@ impl<D, const N: usize> PcSaftBinary<D, N> {
 }
 
 impl ParametersAD<U2> for PcSaftBinary<f64, 4> {
-    fn build<D: DualNum<f64, Inner = f64> + Copy>(
+    fn build<D: DualNum<Primitive = f64, Inner = f64> + Copy>(
         mut f: impl FnMut(&'static str, bool) -> D,
     ) -> PcSaftBinary<D, 4> {
         PcSaftBinary::new(
@@ -44,7 +44,7 @@ impl ParametersAD<U2> for PcSaftBinary<f64, 4> {
 }
 
 impl ParametersAD<U2> for PcSaftBinary<f64, 8> {
-    fn build<D: DualNum<f64, Inner = f64> + Copy>(
+    fn build<D: DualNum<Primitive = f64, Inner = f64> + Copy>(
         mut f: impl FnMut(&'static str, bool) -> D,
     ) -> PcSaftBinary<D, 8> {
         PcSaftBinary::new(
@@ -75,7 +75,7 @@ impl ParametersAD<U2> for PcSaftBinary<f64, 8> {
     }
 }
 
-fn hard_sphere<D: DualNum<f64> + Copy>(
+fn hard_sphere<D: DualNum<Primitive = f64> + Copy>(
     [m1, m2]: [D; 2],
     [x1, x2]: [D; 2],
     [d1, d2]: [D; 2],
@@ -109,7 +109,7 @@ fn hard_sphere<D: DualNum<f64> + Copy>(
     (hs, etas, zeta2, zeta3, frac_1mz3)
 }
 
-fn hard_chain<D: DualNum<f64> + Copy>(
+fn hard_chain<D: DualNum<Primitive = f64> + Copy>(
     [m1, m2]: [D; 2],
     [d1, d2]: [D; 2],
     [rho1, rho2]: [D; 2],
@@ -123,7 +123,7 @@ fn hard_chain<D: DualNum<f64> + Copy>(
 }
 
 #[expect(clippy::too_many_arguments)]
-fn dispersion<D: DualNum<f64> + Copy>(
+fn dispersion<D: DualNum<Primitive = f64> + Copy>(
     [m1, m2]: [D; 2],
     [sigma1, sigma2]: [D; 2],
     [epsilon_k1, epsilon_k2]: [D; 2],
@@ -174,7 +174,7 @@ fn dispersion<D: DualNum<f64> + Copy>(
 }
 
 #[expect(clippy::too_many_arguments)]
-fn dipoles<D: DualNum<f64> + Copy>(
+fn dipoles<D: DualNum<Primitive = f64> + Copy>(
     [m1, m2]: [D; 2],
     [sigma1, sigma2]: [D; 2],
     [sigma11_3, sigma12_3, sigma22_3]: [D; 3],
@@ -241,7 +241,7 @@ fn dipoles<D: DualNum<f64> + Copy>(
     polar
 }
 
-fn association<D: DualNum<f64> + Copy>(
+fn association<D: DualNum<Primitive = f64> + Copy>(
     assoc_params: [[D; 4]; 2],
     [sigma11_3, _, sigma22_3]: [D; 3],
     t_inv: D,
@@ -328,7 +328,7 @@ fn association<D: DualNum<f64> + Copy>(
 }
 
 #[expect(clippy::too_many_arguments)]
-fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
+fn helmholtz_energy_density<D: DualNum<Primitive = f64> + Copy>(
     temperature: D,
     rho: [D; 2],
     m: [D; 2],
@@ -373,20 +373,20 @@ fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
     }
 }
 
-impl<D: DualNum<f64> + Copy> Residual<U2, D> for PcSaftBinary<D, 4> {
+impl<D: DualNum<Primitive = f64> + Copy> Residual<U2, D> for PcSaftBinary<D, 4> {
     fn components(&self) -> usize {
         2
     }
 
     type Real = PcSaftBinary<f64, 4>;
-    type Lifted<D2: DualNum<f64, Inner = D> + Copy> = PcSaftBinary<D2, 4>;
+    type Lifted<D2: DualNum<Primitive = f64, Inner = D> + Copy> = PcSaftBinary<D2, 4>;
     fn re(&self) -> Self::Real {
         PcSaftBinary((
             self.0.0.each_ref().map(|x| x.each_ref().map(D::re)),
             self.0.1.re(),
         ))
     }
-    fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
+    fn lift<D2: DualNum<Primitive = f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
         PcSaftBinary((
             self.0
                 .0
@@ -430,20 +430,20 @@ impl<D: DualNum<f64> + Copy> Residual<U2, D> for PcSaftBinary<D, 4> {
     }
 }
 
-impl<D: DualNum<f64> + Copy> Residual<U2, D> for PcSaftBinary<D, 8> {
+impl<D: DualNum<Primitive = f64> + Copy> Residual<U2, D> for PcSaftBinary<D, 8> {
     fn components(&self) -> usize {
         2
     }
 
     type Real = PcSaftBinary<f64, 8>;
-    type Lifted<D2: DualNum<f64, Inner = D> + Copy> = PcSaftBinary<D2, 8>;
+    type Lifted<D2: DualNum<Primitive = f64, Inner = D> + Copy> = PcSaftBinary<D2, 8>;
     fn re(&self) -> Self::Real {
         PcSaftBinary((
             self.0.0.each_ref().map(|x| x.each_ref().map(D::re)),
             self.0.1.re(),
         ))
     }
-    fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
+    fn lift<D2: DualNum<Primitive = f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
         PcSaftBinary((
             self.0
                 .0

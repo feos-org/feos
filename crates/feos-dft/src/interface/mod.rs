@@ -2,12 +2,11 @@
 use crate::functional::HelmholtzEnergyFunctional;
 use crate::geometry::{Axis, Grid};
 use crate::pdgt::PdgtFunctionalProperties;
-use crate::profile::{DFTProfile, DFTSpecifications};
+use crate::profile::DFTProfile;
 use crate::solver::DFTSolver;
 use feos_core::{Contributions, FeosError, FeosResult, PhaseEquilibrium, ReferenceSystem};
 use ndarray::{Array1, Array2, Axis as Axis_nd, Ix1, s};
 use quantity::{Area, Density, Length, Moles, SurfaceTension, Temperature};
-use std::sync::Arc;
 
 mod surface_tension_diagram;
 pub use surface_tension_diagram::SurfaceTensionDiagram;
@@ -59,7 +58,7 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
         let grid = Grid::Cartesian1(Axis::new_cartesian(n_grid, l_grid, None));
 
         Self {
-            profile: DFTProfile::new(grid, vle.vapor(), None, None, None),
+            profile: DFTProfile::new(grid, vle.vapor(), None, None),
             vle: vle.clone(),
             surface_tension: None,
             equimolar_radius: None,
@@ -95,9 +94,7 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
 
         // specify specification
         if fix_equimolar_surface {
-            profile.profile.specification = Arc::new(DFTSpecifications::total_moles_from_profile(
-                &profile.profile,
-            ));
+            profile.profile.fix_total_moles();
         }
 
         profile
@@ -145,9 +142,7 @@ impl<F: HelmholtzEnergyFunctional> PlanarInterface<F> {
 
         // specify specification
         if fix_equimolar_surface {
-            profile.profile.specification = Arc::new(DFTSpecifications::total_moles_from_profile(
-                &profile.profile,
-            ));
+            profile.profile.fix_total_moles();
         }
 
         Ok(profile)

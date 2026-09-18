@@ -22,7 +22,7 @@ impl<'a> AttractiveFunctional<'a> {
     }
 }
 
-fn att_weight_functions<N: DualNum<f64> + Copy>(
+fn att_weight_functions<N: DualNum<Primitive = f64> + Copy>(
     p: &SaftVRQMiePars,
     psi: f64,
     temperature: N,
@@ -39,18 +39,18 @@ impl<'a> FunctionalContribution for AttractiveFunctional<'a> {
         "Attractive functional"
     }
 
-    fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
+    fn weight_functions<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
         att_weight_functions(self.parameters, PSI_DFT, temperature)
     }
 
-    fn weight_functions_pdgt<N: DualNum<f64> + Copy>(
+    fn weight_functions_pdgt<N: DualNum<Primitive = f64> + Copy>(
         &self,
         temperature: N,
     ) -> WeightFunctionInfo<N> {
         att_weight_functions(self.parameters, PSI_PDGT, temperature)
     }
 
-    fn helmholtz_energy_density<N: DualNum<f64> + Copy>(
+    fn helmholtz_energy_density<N: DualNum<Primitive = f64> + Copy>(
         &self,
         temperature: N,
         density: ArrayView2<N>,

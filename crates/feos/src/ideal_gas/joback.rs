@@ -97,8 +97,11 @@ impl Joback {
     }
 }
 
-impl<D: DualNum<f64> + Copy> Joback<D> {
-    fn ln_lambda3<D2: DualNum<f64> + Copy + Mul<D, Output = D2>>(&self, temperature: D2) -> D2 {
+impl<D: DualNum<Primitive = f64> + Copy> Joback<D> {
+    fn ln_lambda3<D2: DualNum<Primitive = f64> + Copy + Mul<D, Output = D2>>(
+        &self,
+        temperature: D2,
+    ) -> D2 {
         let [a, b, c, d, e] = self.0;
         let t = temperature;
         let t2 = t * t;
@@ -119,7 +122,7 @@ impl<D: DualNum<f64> + Copy> Joback<D> {
 }
 
 impl IdealGas for Joback {
-    fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> D {
+    fn ln_lambda3<D: DualNum<Primitive = f64> + Copy>(&self, temperature: D) -> D {
         self.ln_lambda3(temperature)
     }
 
@@ -128,13 +131,13 @@ impl IdealGas for Joback {
     }
 }
 
-impl<D: DualNum<f64> + Copy> IdealGasAD<D> for Joback<D> {
+impl<D: DualNum<Primitive = f64> + Copy> IdealGasAD<D> for Joback<D> {
     type Real = Joback;
-    type Lifted<D2: DualNum<f64, Inner = D> + Copy> = Joback<D2>;
+    type Lifted<D2: DualNum<Primitive = f64, Inner = D> + Copy> = Joback<D2>;
     fn re(&self) -> Self::Real {
         Joback(self.0.each_ref().map(D::re))
     }
-    fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
+    fn lift<D2: DualNum<Primitive = f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
         Joback(self.0.each_ref().map(D2::from_inner))
     }
 
@@ -170,7 +173,7 @@ const GROUPS: [&str; 22] = [
     "CH_pent", "CH_arom", "C_arom", "CH=O", ">C=O", "OCH3", "OCH2", "HCOO", "COO", "OH", "NH2",
 ];
 
-impl<D: DualNum<f64> + Copy> Joback<D> {
+impl<D: DualNum<Primitive = f64> + Copy> Joback<D> {
     pub fn from_groups(group_counts: [D; 22]) -> Self {
         let a: D = A.into_iter().zip(group_counts).map(|(a, g)| g * a).sum();
         let b: D = B.into_iter().zip(group_counts).map(|(b, g)| g * b).sum();
@@ -361,20 +364,20 @@ pub mod test_ad {
     #[derive(Clone, Copy)]
     struct NoResidual;
 
-    impl<D: DualNum<f64> + Copy> Residual<U1, D> for NoResidual {
+    impl<D: DualNum<Primitive = f64> + Copy> Residual<U1, D> for NoResidual {
         fn components(&self) -> usize {
             1
         }
 
         type Real = Self;
 
-        type Lifted<D2: DualNum<f64, Inner = D> + Copy> = Self;
+        type Lifted<D2: DualNum<Primitive = f64, Inner = D> + Copy> = Self;
 
         fn re(&self) -> Self::Real {
             *self
         }
 
-        fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
+        fn lift<D2: DualNum<Primitive = f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
             *self
         }
 

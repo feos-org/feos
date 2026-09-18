@@ -55,7 +55,7 @@ impl Dippr {
         }
     }
 
-    fn c_p_integral<D: DualNum<f64> + Copy>(&self, t: D) -> D {
+    fn c_p_integral<D: DualNum<Primitive = f64> + Copy>(&self, t: D) -> D {
         match self {
             Self::DIPPR100(coefs) => coefs
                 .iter()
@@ -79,7 +79,7 @@ impl Dippr {
         }
     }
 
-    fn c_p_t_integral<D: DualNum<f64> + Copy>(&self, t: D) -> D {
+    fn c_p_t_integral<D: DualNum<Primitive = f64> + Copy>(&self, t: D) -> D {
         match self {
             Self::DIPPR100(coefs) => {
                 coefs
@@ -140,7 +140,7 @@ const RGAS: f64 = 8.31446261815324 * 1000.0;
 const T0: f64 = 298.15;
 
 impl IdealGas for Dippr {
-    fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> D {
+    fn ln_lambda3<D: DualNum<Primitive = f64> + Copy>(&self, temperature: D) -> D {
         let t = temperature;
         let h = self.c_p_integral(t) - self.c_p_integral(T0);
         let s = self.c_p_t_integral(t) - self.c_p_t_integral(T0);
@@ -152,16 +152,16 @@ impl IdealGas for Dippr {
     }
 }
 
-impl<D: DualNum<f64> + Copy> IdealGasAD<D> for Dippr {
+impl<D: DualNum<Primitive = f64> + Copy> IdealGasAD<D> for Dippr {
     type Real = Self;
 
-    type Lifted<D2: DualNum<f64, Inner = D> + Copy> = Self;
+    type Lifted<D2: DualNum<Primitive = f64, Inner = D> + Copy> = Self;
 
     fn re(&self) -> Self::Real {
         self.clone()
     }
 
-    fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
+    fn lift<D2: DualNum<Primitive = f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
         self.clone()
     }
 

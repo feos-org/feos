@@ -1,11 +1,9 @@
-#[cfg(feature = "rayon")]
-use super::profile::impl_3d_profile;
-use super::profile::{impl_1d_profile, impl_profile};
+use super::profile::impl_profile;
 use super::{PyDFTSolver, PyDFTSolverLog};
 use crate::residual::ResidualModel;
 use crate::state::{PyContributions, PyState};
 use crate::{error::PyFeosError, ideal_gas::IdealGasModel};
-use feos_core::{EquationOfState, ReferenceSystem};
+use feos_core::EquationOfState;
 use feos_dft::solvation::PairCorrelation;
 #[cfg(feature = "rayon")]
 use feos_dft::solvation::SolvationProfile;
@@ -48,17 +46,16 @@ pub struct PySolvationProfile(
 );
 
 #[cfg(feature = "rayon")]
-impl_3d_profile!(PySolvationProfile, get_x, get_y, get_z);
+impl_profile!(PySolvationProfile);
 
 #[cfg(feature = "rayon")]
 #[pymethods]
 impl PySolvationProfile {
     #[new]
     #[pyo3(
-        text_signature = "(bulk, n_grid, coordinates, sigma, epsilon_k, system_size=None, cutoff_radius=None, potential_cutoff=None)"
+        text_signature = "(bulk, n_grid, coordinates, sigma, epsilon_k, system_size=None, cutoff_radius=None)"
     )]
-    #[pyo3(signature = (bulk, n_grid, coordinates, sigma, epsilon_k, system_size=None, cutoff_radius=None, potential_cutoff=None))]
-    #[expect(clippy::too_many_arguments)]
+    #[pyo3(signature = (bulk, n_grid, coordinates, sigma, epsilon_k, system_size=None, cutoff_radius=None))]
     fn new<'py>(
         bulk: &PyState,
         n_grid: [usize; 3],
@@ -67,7 +64,6 @@ impl PySolvationProfile {
         epsilon_k: &Bound<'py, PyArray1<f64>>,
         system_size: Option<[Length; 3]>,
         cutoff_radius: Option<Length>,
-        potential_cutoff: Option<f64>,
     ) -> PyResult<Self> {
         Ok(Self(
             SolvationProfile::new(
@@ -78,7 +74,6 @@ impl PySolvationProfile {
                 epsilon_k.to_owned_array(),
                 system_size,
                 cutoff_radius,
-                potential_cutoff,
             )
             .map_err(PyFeosError::from)?,
         ))
@@ -117,7 +112,7 @@ pub struct PyPairCorrelation(
     PairCorrelation<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>,
 );
 
-impl_1d_profile!(PyPairCorrelation, [get_r]);
+impl_profile!(PyPairCorrelation);
 
 #[pymethods]
 impl PyPairCorrelation {

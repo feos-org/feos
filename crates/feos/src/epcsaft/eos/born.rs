@@ -8,7 +8,7 @@ use num_dual::DualNum;
 pub struct Born;
 
 impl Born {
-    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<Primitive = f64> + Copy>(
         &self,
         parameters: &ElectrolytePcSaftPars,
         state: &StateHD<D>,

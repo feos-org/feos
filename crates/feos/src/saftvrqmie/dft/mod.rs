@@ -3,7 +3,7 @@ use crate::hard_sphere::{FMTContribution, FMTVersion, HardSphereProperties, Mono
 use crate::saftvrqmie::eos::SaftVRQMieOptions;
 use crate::saftvrqmie::parameters::{SaftVRQMieParameters, SaftVRQMiePars};
 use dispersion::AttractiveFunctional;
-use feos_core::FeosResult;
+use feos_core::{FeosResult, ReferenceSystem};
 use feos_derive::FunctionalContribution;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
@@ -12,6 +12,7 @@ use nalgebra::DVector;
 use ndarray::{Array, Array1, Array2};
 use non_additive_hs::NonAddHardSphereFunctional;
 use num_dual::DualNum;
+use quantity::Energy;
 
 mod dispersion;
 mod non_additive_hs;
@@ -59,11 +60,11 @@ impl HelmholtzEnergyFunctionalDyn for SaftVRQMie {
 }
 
 impl HardSphereProperties for SaftVRQMiePars {
-    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<'_, N> {
+    fn monomer_shape<N: DualNum<Primitive = f64>>(&self, _: N) -> MonomerShape<'_, N> {
         MonomerShape::Spherical(self.m.len())
     }
 
-    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {
+    fn hs_diameter<D: DualNum<Primitive = f64> + Copy>(&self, temperature: D) -> DVector<D> {
         self.hs_diameter(temperature)
     }
 }
@@ -79,10 +80,11 @@ impl FluidParameters for SaftVRQMie {
 }
 
 impl PairPotential for SaftVRQMie {
-    fn pair_potential(&self, i: usize, r: &Array1<f64>, temperature: f64) -> Array2<f64> {
-        Array::from_shape_fn((self.params.m.len(), r.len()), |(j, k)| {
-            self.params.qmie_potential_ij(i, j, r[k], temperature)[0]
-        })
+    fn pair_potential(&self, i: usize, r: &Array1<f64>, temperature: f64) -> Energy<Array2<f64>> {
+        Energy::from_reduced(Array::from_shape_fn(
+            (self.params.m.len(), r.len()),
+            |(j, k)| self.params.qmie_potential_ij(i, j, r[k], temperature)[0],
+        ))
     }
 }
 

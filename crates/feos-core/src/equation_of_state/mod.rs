@@ -53,11 +53,11 @@ impl<I, R: ResidualDyn> ResidualDyn for EquationOfState<Vec<I>, R> {
         self.residual.components()
     }
 
-    fn compute_max_density<D: DualNum<f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
+    fn compute_max_density<D: DualNum<Primitive = f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
         self.residual.compute_max_density(molefracs)
     }
 
-    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
+    fn reduced_helmholtz_energy_density_contributions<D: DualNum<Primitive = f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(&'static str, D)> {
@@ -79,7 +79,7 @@ impl<I: Clone, R: Subset> Subset for EquationOfState<Vec<I>, R> {
     }
 }
 
-impl<I: Clone, R: Residual<Const<N>, D>, D: DualNum<f64> + Copy, const N: usize>
+impl<I: Clone, R: Residual<Const<N>, D>, D: DualNum<Primitive = f64> + Copy, const N: usize>
     Residual<Const<N>, D> for EquationOfState<[I; N], R>
 {
     fn components(&self) -> usize {
@@ -87,11 +87,12 @@ impl<I: Clone, R: Residual<Const<N>, D>, D: DualNum<f64> + Copy, const N: usize>
     }
 
     type Real = EquationOfState<[I; N], R::Real>;
-    type Lifted<D2: DualNum<f64, Inner = D> + Copy> = EquationOfState<[I; N], R::Lifted<D2>>;
+    type Lifted<D2: DualNum<Primitive = f64, Inner = D> + Copy> =
+        EquationOfState<[I; N], R::Lifted<D2>>;
     fn re(&self) -> Self::Real {
         EquationOfState::new(self.ideal_gas.clone(), self.residual.re())
     }
-    fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
+    fn lift<D2: DualNum<Primitive = f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
         EquationOfState::new(self.ideal_gas.clone(), self.residual.lift())
     }
 
@@ -118,7 +119,7 @@ pub trait IdealGas {
     /// Implementation of an ideal gas model in terms of the
     /// logarithm of the cubic thermal de Broglie wavelength
     /// in units ln(A³) for each component in the system.
-    fn ln_lambda3<D: DualNum<f64> + Copy>(&self, temperature: D) -> D;
+    fn ln_lambda3<D: DualNum<Primitive = f64> + Copy>(&self, temperature: D) -> D;
 
     /// The name of the ideal gas model.
     fn ideal_gas_model(&self) -> &'static str;
@@ -128,9 +129,9 @@ pub trait IdealGas {
 /// respect to parameters.
 pub trait IdealGasAD<D = f64>: Clone {
     type Real: IdealGasAD;
-    type Lifted<D2: DualNum<f64, Inner = D> + Copy>: IdealGasAD<D2>;
+    type Lifted<D2: DualNum<Primitive = f64, Inner = D> + Copy>: IdealGasAD<D2>;
     fn re(&self) -> Self::Real;
-    fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2>;
+    fn lift<D2: DualNum<Primitive = f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2>;
 
     /// Implementation of an ideal gas model in terms of the
     /// logarithm of the cubic thermal de Broglie wavelength
@@ -142,14 +143,14 @@ pub trait IdealGasAD<D = f64>: Clone {
 }
 
 /// A total Helmholtz energy model consisting of a [Residual] model and an [IdealGas] part.
-pub trait Total<N: Dim = Dyn, D: DualNum<f64> + Copy = f64>: Residual<N, D>
+pub trait Total<N: Dim = Dyn, D: DualNum<Primitive = f64> + Copy = f64>: Residual<N, D>
 where
     DefaultAllocator: Allocator<N>,
 {
     type RealTotal: Total<N, f64>;
-    type LiftedTotal<D2: DualNum<f64, Inner = D> + Copy>: Total<N, D2>;
+    type LiftedTotal<D2: DualNum<Primitive = f64, Inner = D> + Copy>: Total<N, D2>;
     fn re_total(&self) -> Self::RealTotal;
-    fn lift_total<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::LiftedTotal<D2>;
+    fn lift_total<D2: DualNum<Primitive = f64, Inner = D> + Copy>(&self) -> Self::LiftedTotal<D2>;
 
     fn ideal_gas_model(&self) -> &'static str;
 
@@ -199,15 +200,15 @@ impl<
     I: IdealGas + 'static,
     C: Deref<Target = EquationOfState<Vec<I>, R>> + Clone,
     R: ResidualDyn + 'static,
-    D: DualNum<f64> + Copy,
+    D: DualNum<Primitive = f64> + Copy,
 > Total<Dyn, D> for C
 {
     type RealTotal = Self;
-    type LiftedTotal<D2: DualNum<f64, Inner = D> + Copy> = Self;
+    type LiftedTotal<D2: DualNum<Primitive = f64, Inner = D> + Copy> = Self;
     fn re_total(&self) -> Self::RealTotal {
         self.clone()
     }
-    fn lift_total<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::LiftedTotal<D2> {
+    fn lift_total<D2: DualNum<Primitive = f64, Inner = D> + Copy>(&self) -> Self::LiftedTotal<D2> {
         self.clone()
     }
 
@@ -225,11 +226,11 @@ impl<
     }
 }
 
-impl<I: IdealGasAD<D>, R: Residual<Const<N>, D>, D: DualNum<f64> + Copy, const N: usize>
+impl<I: IdealGasAD<D>, R: Residual<Const<N>, D>, D: DualNum<Primitive = f64> + Copy, const N: usize>
     Total<Const<N>, D> for EquationOfState<[I; N], R>
 {
     type RealTotal = EquationOfState<[I::Real; N], R::Real>;
-    type LiftedTotal<D2: DualNum<f64, Inner = D> + Copy> =
+    type LiftedTotal<D2: DualNum<Primitive = f64, Inner = D> + Copy> =
         EquationOfState<[I::Lifted<D2>; N], R::Lifted<D2>>;
     fn re_total(&self) -> Self::RealTotal {
         EquationOfState::new(
@@ -237,7 +238,7 @@ impl<I: IdealGasAD<D>, R: Residual<Const<N>, D>, D: DualNum<f64> + Copy, const N
             self.residual.re(),
         )
     }
-    fn lift_total<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::LiftedTotal<D2> {
+    fn lift_total<D2: DualNum<Primitive = f64, Inner = D> + Copy>(&self) -> Self::LiftedTotal<D2> {
         EquationOfState::new(
             self.ideal_gas.each_ref().map(|i| i.lift()),
             self.residual.lift(),

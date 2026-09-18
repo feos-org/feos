@@ -86,7 +86,7 @@ pub enum IdealGasFunction {
 }
 
 impl IdealGasFunction {
-    pub fn evaluate<D: DualNum<f64> + Copy>(&self, delta: D, tau: D) -> D {
+    pub fn evaluate<D: DualNum<Primitive = f64> + Copy>(&self, delta: D, tau: D) -> D {
         match *self {
             IdealGasFunction::IdealGasHelmholtzLead { a1, a2 } => delta.ln() + a1 + tau * a2,
             IdealGasFunction::IdealGasHelmholtzLogTau { a } => tau.ln() * a,

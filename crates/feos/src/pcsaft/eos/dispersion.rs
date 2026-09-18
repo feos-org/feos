@@ -62,7 +62,7 @@ pub const B2: [f64; 7] = [
 pub struct Dispersion;
 
 impl Dispersion {
-    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<Primitive = f64> + Copy>(
         &self,
         parameters: &PcSaftPars,
         state: &StateHD<D>,

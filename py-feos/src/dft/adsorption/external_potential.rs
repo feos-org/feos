@@ -1,12 +1,7 @@
 use feos_dft::adsorption::ExternalPotential;
-// Only the rayon-gated `FreeEnergyAveraged` constructor uses these.
-#[cfg(feature = "rayon")]
-use ndarray::Array2;
 use numpy::PyArray1;
 use numpy::prelude::*;
 use pyo3::prelude::*;
-#[cfg(feature = "rayon")]
-use quantity::Length;
 
 /// A collection of external potentials.
 #[pyclass(name = "ExternalPotential", from_py_object)]
@@ -203,58 +198,6 @@ impl PyExternalPotential {
             epsilon1_k_ss,
             epsilon2_k_ss,
             rho_s,
-        })
-    }
-
-    /// Free-energy averaged potential
-    ///
-    /// for details see: `J. Eller, J. Gross (2021) <https://pubs.acs.org/doi/abs/10.1021/acs.langmuir.0c03287>`_
-    ///
-    /// Parameters
-    /// ----------
-    /// coordinates: SIArray2
-    ///     The positions of all interaction sites in the solid.
-    /// sigma_ss : numpy.ndarray[float]
-    ///     The size parameters of all interaction sites.
-    /// epsilon_k_ss : numpy.ndarray[float]
-    ///     The energy parameter of all interaction sites.
-    /// pore_center : [SINumber; 3]
-    ///     The cartesian coordinates of the center of the pore
-    /// system_size : [SINumber; 3]
-    ///     The size of the unit cell.
-    /// n_grid : [int; 2]
-    ///     The number of grid points in each direction.
-    /// cutoff_radius : float, optional
-    ///     The cutoff used in the calculation of fluid/wall interactions.
-    /// Returns
-    /// -------
-    /// ExternalPotential
-    ///
-    // The free-energy-averaged potential is rayon-gated in feos-dft (3D FFT),
-    // so it is absent from the threadless wasm/emscripten build.
-    #[cfg(feature = "rayon")]
-    #[staticmethod]
-    #[pyo3(
-        text_signature = "(coordinates, sigma_ss, epsilon_k_ss, pore_center, system_size, n_grid, cutoff_radius=None)",
-        signature = (coordinates, sigma_ss, epsilon_k_ss, pore_center, system_size, n_grid, cutoff_radius=None)
-    )]
-    pub fn FreeEnergyAveraged(
-        coordinates: Length<Array2<f64>>,
-        sigma_ss: &Bound<'_, PyArray1<f64>>,
-        epsilon_k_ss: &Bound<'_, PyArray1<f64>>,
-        pore_center: [f64; 3],
-        system_size: [Length; 3],
-        n_grid: [usize; 2],
-        cutoff_radius: Option<f64>,
-    ) -> Self {
-        Self(ExternalPotential::FreeEnergyAveraged {
-            coordinates,
-            sigma_ss: sigma_ss.to_owned_array(),
-            epsilon_k_ss: epsilon_k_ss.to_owned_array(),
-            pore_center,
-            system_size,
-            n_grid,
-            cutoff_radius,
         })
     }
 }

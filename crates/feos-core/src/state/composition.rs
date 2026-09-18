@@ -21,7 +21,7 @@ use quantity::Moles;
 /// |N|`&OVector<f64,N-1>`|-|`Dyn` only|
 /// |N|`Moles<OVector<f64,N>>`|✅|
 /// |N|`&Moles<OVector<f64,N>>`|✅|
-pub trait Composition<D: DualNum<f64> + Copy, N: Dim>
+pub trait Composition<D: DualNum<Primitive = f64> + Copy, N: Dim>
 where
     DefaultAllocator: Allocator<N>,
 {
@@ -34,7 +34,7 @@ where
 }
 
 // trivial implementations
-impl<D: DualNum<f64> + Copy, N: Dim> Composition<D, N> for (OVector<D, N>, Moles<D>)
+impl<D: DualNum<Primitive = f64> + Copy, N: Dim> Composition<D, N> for (OVector<D, N>, Moles<D>)
 where
     DefaultAllocator: Allocator<N>,
 {
@@ -46,7 +46,8 @@ where
     }
 }
 
-impl<D: DualNum<f64> + Copy, N: Dim> Composition<D, N> for (OVector<D, N>, Option<Moles<D>>)
+impl<D: DualNum<Primitive = f64> + Copy, N: Dim> Composition<D, N>
+    for (OVector<D, N>, Option<Moles<D>>)
 where
     DefaultAllocator: Allocator<N>,
 {
@@ -59,7 +60,7 @@ where
 }
 
 // a pure component needs no specification
-impl<D: DualNum<f64> + Copy> Composition<D, U1> for () {
+impl<D: DualNum<Primitive = f64> + Copy> Composition<D, U1> for () {
     fn into_molefracs<E: Residual<U1, D>>(
         self,
         _: &E,
@@ -67,7 +68,7 @@ impl<D: DualNum<f64> + Copy> Composition<D, U1> for () {
         Ok(((vector![D::one()]), None))
     }
 }
-impl<D: DualNum<f64> + Copy> Composition<D, Dyn> for () {
+impl<D: DualNum<Primitive = f64> + Copy> Composition<D, Dyn> for () {
     fn into_molefracs<E: Residual<Dyn, D>>(
         self,
         eos: &E,
@@ -84,7 +85,7 @@ impl<D: DualNum<f64> + Copy> Composition<D, Dyn> for () {
 }
 
 // a binary mixture can be specified by a scalar (x1)
-impl<D: DualNum<f64> + Copy> Composition<D, U2> for D {
+impl<D: DualNum<Primitive = f64> + Copy> Composition<D, U2> for D {
     fn into_molefracs<E: Residual<U2, D>>(
         self,
         _: &E,
@@ -111,7 +112,7 @@ impl Composition<f64, Dyn> for f64 {
 }
 
 // a pure component can be specified by the total mole number
-impl<D: DualNum<f64> + Copy> Composition<D, U1> for Moles<D> {
+impl<D: DualNum<Primitive = f64> + Copy> Composition<D, U1> for Moles<D> {
     fn into_molefracs<E: Residual<U1, D>>(
         self,
         _: &E,
@@ -120,7 +121,7 @@ impl<D: DualNum<f64> + Copy> Composition<D, U1> for Moles<D> {
     }
 }
 
-impl<D: DualNum<f64> + Copy> Composition<D, Dyn> for Moles<D> {
+impl<D: DualNum<Primitive = f64> + Copy> Composition<D, Dyn> for Moles<D> {
     fn into_molefracs<E: Residual<Dyn, D>>(
         self,
         eos: &E,
@@ -140,7 +141,7 @@ impl<D: DualNum<f64> + Copy> Composition<D, Dyn> for Moles<D> {
 //
 // for a dynamic number of components, it is also possible to specify only the
 // N-1 first components
-impl<D: DualNum<f64> + Copy, N: Dim> Composition<D, N> for OVector<D, N>
+impl<D: DualNum<Primitive = f64> + Copy, N: Dim> Composition<D, N> for OVector<D, N>
 where
     DefaultAllocator: Allocator<N>,
 {
@@ -152,7 +153,7 @@ where
     }
 }
 
-impl<D: DualNum<f64> + Copy, N: Dim> Composition<D, N> for &OVector<D, N>
+impl<D: DualNum<Primitive = f64> + Copy, N: Dim> Composition<D, N> for &OVector<D, N>
 where
     DefaultAllocator: Allocator<N>,
 {
@@ -181,7 +182,7 @@ where
 }
 
 // the mixture can be specified by its moles
-impl<D: DualNum<f64> + Copy, N: Dim> Composition<D, N> for Moles<OVector<D, N>>
+impl<D: DualNum<Primitive = f64> + Copy, N: Dim> Composition<D, N> for Moles<OVector<D, N>>
 where
     DefaultAllocator: Allocator<N>,
 {
@@ -193,7 +194,7 @@ where
     }
 }
 
-impl<D: DualNum<f64> + Copy, N: Dim> Composition<D, N> for &Moles<OVector<D, N>>
+impl<D: DualNum<Primitive = f64> + Copy, N: Dim> Composition<D, N> for &Moles<OVector<D, N>>
 where
     DefaultAllocator: Allocator<N>,
 {

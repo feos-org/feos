@@ -1,11 +1,11 @@
-use super::profile::{impl_1d_profile, impl_profile};
+use super::profile::impl_profile;
 use super::{PyDFTSolver, PyDFTSolverLog};
 use crate::error::PyFeosError;
 use crate::ideal_gas::IdealGasModel;
 use crate::phase_equilibria::PyPhaseEquilibrium;
 use crate::residual::ResidualModel;
 use crate::state::{PyContributions, PyState};
-use feos_core::{EquationOfState, ReferenceSystem};
+use feos_core::EquationOfState;
 use feos_dft::interface::PlanarInterface;
 use nalgebra::{DMatrix, DVector};
 use ndarray::*;
@@ -23,7 +23,7 @@ pub struct PyPlanarInterface(
     PlanarInterface<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>,
 );
 
-impl_1d_profile!(PyPlanarInterface, [get_z]);
+impl_profile!(PyPlanarInterface);
 
 #[pymethods]
 impl PyPlanarInterface {

@@ -69,7 +69,7 @@ The non-object-safe trait to do that is the ``HelmholtzEnergyDual`` trait:
 .. code-block:: rust
 
     // This trait cannot be made into a trait object
-    pub trait HelmholtzEnergyDual<D: DualNum<f64>> {
+    pub trait HelmholtzEnergyDual<D: DualNum<Primitive = f64>> {
         fn helmholtz_energy(&self, state: &StateHD<D>) -> D;
     }
 
@@ -105,7 +105,7 @@ The residual Helmholtz energy is then computed as sum of all contributions:
     ///
     /// For simple equations of state (see e.g. `PengRobinson`) it might be
     /// easier to overwrite this function instead of implementing `residual`.
-    fn evaluate_residual<D: DualNum<f64>>(&self, state: &StateHD<D>) -> D
+    fn evaluate_residual<D: DualNum<Primitive = f64>>(&self, state: &StateHD<D>) -> D
     where
         dyn HelmholtzEnergy: HelmholtzEnergyDual<D>,
     {
@@ -156,7 +156,7 @@ The ``IdealGasContribution`` supertrait is assembled from ``IdealGasContribution
 
     /// Ideal gas Helmholtz energy contribution that can
     /// be evaluated using generalized (hyper) dual numbers.
-    pub trait IdealGasContributionDual<D: DualNum<f64>> {
+    pub trait IdealGasContributionDual<D: DualNum<Primitive = f64>> {
         /// The thermal de Broglie wavelength of each component in the form $\ln\left(\frac{\Lambda^3}{\AA^3}\right)$
         fn de_broglie_wavelength(&self, temperature: D, components: usize) -> Array1<D>;
 

@@ -10,7 +10,7 @@ mod properties;
 pub use dataset::*;
 pub use properties::*;
 
-pub(crate) type Gradient<const P: usize> = DualSVec<f64, f64, P>;
+pub(crate) type Gradient<const P: usize> = DualSVec<f64, P>;
 
 /// A model that can be evaluated with derivatives of its parameters.
 pub trait ParametersAD<N: Dim>: Residual<N>
@@ -23,7 +23,7 @@ where
     /// defines the canonical parameter order.
     ///
     /// Set `differentiable` to `false` for fixed parameters.
-    fn build<D: DualNum<f64, Inner = f64> + Copy>(
+    fn build<D: DualNum<Primitive = f64, Inner = f64> + Copy>(
         f: impl FnMut(&'static str, bool) -> D,
     ) -> Self::Lifted<D>;
 
@@ -66,8 +66,7 @@ where
             idx += 1;
             let mut d = Gradient::<P>::from(parameter_values[i]);
             if let Some(seed_idx) = derivative_names.iter().position(|&n| n == name) {
-                d.eps =
-                    Derivative::<_, _, Const<P>, _>::derivative_generic(Const::<P>, U1, seed_idx);
+                d.eps = Derivative::<_, Const<P>, _>::derivative_generic(Const::<P>, U1, seed_idx);
             }
             d
         })

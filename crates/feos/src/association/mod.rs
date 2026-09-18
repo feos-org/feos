@@ -25,7 +25,7 @@ pub trait AssociationStrength: HardSphereProperties {
     type Record;
 
     /// Association strength excluding the contact value of the pair correlation function.
-    fn association_strength_ij<D: DualNum<f64> + Copy>(
+    fn association_strength_ij<D: DualNum<Primitive = f64> + Copy>(
         &self,
         temperature: D,
         comp_i: usize,
@@ -34,7 +34,7 @@ pub trait AssociationStrength: HardSphereProperties {
     ) -> D;
 
     /// Association strength matrix for all association sites.
-    fn association_strength<D: DualNum<f64> + Copy>(
+    fn association_strength<D: DualNum<Primitive = f64> + Copy>(
         &self,
         state: &StateHD<D>,
         diameter: &DVector<D>,
@@ -91,7 +91,7 @@ impl Association {
     }
 
     #[inline]
-    pub fn helmholtz_energy_density<A: AssociationStrength, D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<A: AssociationStrength, D: DualNum<Primitive = f64> + Copy>(
         &self,
         model: &A,
         parameters: &AssociationParameters<A::Record>,
@@ -136,7 +136,7 @@ impl Association {
         }
     }
 
-    fn helmholtz_energy_density_ab_analytic<A, D: DualNum<f64> + Copy>(
+    fn helmholtz_energy_density_ab_analytic<A, D: DualNum<Primitive = f64> + Copy>(
         &self,
         parameters: &AssociationParameters<A>,
         state: &StateHD<D>,
@@ -158,7 +158,7 @@ impl Association {
         rhoa * (xa.ln() - xa * 0.5 + 0.5) + rhob * (xb.ln() - xb * 0.5 + 0.5)
     }
 
-    fn helmholtz_energy_density_cc_analytic<A, D: DualNum<f64> + Copy>(
+    fn helmholtz_energy_density_cc_analytic<A, D: DualNum<Primitive = f64> + Copy>(
         &self,
         parameters: &AssociationParameters<A>,
         state: &StateHD<D>,
@@ -176,7 +176,7 @@ impl Association {
         rhoc * (xc.ln() - xc * 0.5 + 0.5)
     }
 
-    fn helmholtz_energy_density_cross_association<D: DualNum<f64> + Copy>(
+    fn helmholtz_energy_density_cross_association<D: DualNum<Primitive = f64> + Copy>(
         &self,
         rho: &DVector<D>,
         delta_ab: &DMatrix<D>,
@@ -232,7 +232,7 @@ impl Association {
         Ok(rho.dot(&x_dual.map(f)))
     }
 
-    fn newton_step_cross_association<D: DualNum<f64> + Copy>(
+    fn newton_step_cross_association<D: DualNum<Primitive = f64> + Copy>(
         x: &mut DVector<D>,
         delta_ab: &DMatrix<D>,
         delta_cc: &DMatrix<D>,

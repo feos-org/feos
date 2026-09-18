@@ -15,15 +15,15 @@ type Quot<T1, T2> = <T1 as Div<T2>>::Output;
 /// Molar weight of all components.
 ///
 /// Enables calculation of (mass) specific properties.
-pub trait Molarweight<N: Dim = Dyn, D: DualNum<f64> + Copy = f64>
+pub trait Molarweight<N: Dim = Dyn, D: DualNum<Primitive = f64> + Copy = f64>
 where
     DefaultAllocator: Allocator<N>,
 {
     fn molar_weight(&self) -> MolarWeight<OVector<D, N>>;
 }
 
-impl<C: Deref<Target = T>, T: Molarweight<N, D>, N: Dim, D: DualNum<f64> + Copy> Molarweight<N, D>
-    for C
+impl<C: Deref<Target = T>, T: Molarweight<N, D>, N: Dim, D: DualNum<Primitive = f64> + Copy>
+    Molarweight<N, D> for C
 where
     DefaultAllocator: Allocator<N>,
 {
@@ -62,23 +62,25 @@ pub trait ResidualDyn {
     /// equilibria and other iterations. It is not explicitly meant to
     /// be a mathematical limit for the density (if those exist in the
     /// equation of state anyways).
-    fn compute_max_density<D: DualNum<f64> + Copy>(&self, molefracs: &DVector<D>) -> D;
+    fn compute_max_density<D: DualNum<Primitive = f64> + Copy>(&self, molefracs: &DVector<D>) -> D;
 
     /// Evaluate the reduced Helmholtz energy density of each individual contribution
     /// and return them together with a string representation of the contribution.
-    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
+    fn reduced_helmholtz_energy_density_contributions<D: DualNum<Primitive = f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(&'static str, D)>;
 }
 
-impl<C: Deref<Target = T> + Clone, T: ResidualDyn, D: DualNum<f64> + Copy> Residual<Dyn, D> for C {
+impl<C: Deref<Target = T> + Clone, T: ResidualDyn, D: DualNum<Primitive = f64> + Copy>
+    Residual<Dyn, D> for C
+{
     type Real = Self;
-    type Lifted<D2: DualNum<f64, Inner = D> + Copy> = Self;
+    type Lifted<D2: DualNum<Primitive = f64, Inner = D> + Copy> = Self;
     fn re(&self) -> Self::Real {
         self.clone()
     }
-    fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
+    fn lift<D2: DualNum<Primitive = f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
         self.clone()
     }
     fn components(&self) -> usize {
@@ -96,7 +98,7 @@ impl<C: Deref<Target = T> + Clone, T: ResidualDyn, D: DualNum<f64> + Copy> Resid
 }
 
 /// A residual Helmholtz energy model.
-pub trait Residual<N: Dim = Dyn, D: DualNum<f64> + Copy = f64>: Clone
+pub trait Residual<N: Dim = Dyn, D: DualNum<Primitive = f64> + Copy = f64>: Clone
 where
     DefaultAllocator: Allocator<N>,
 {
@@ -114,13 +116,13 @@ where
     type Real: Residual<N>;
 
     /// The residual model with the model parameters lifted to a higher dual number.
-    type Lifted<D2: DualNum<f64, Inner = D> + Copy>: Residual<N, D2>;
+    type Lifted<D2: DualNum<Primitive = f64, Inner = D> + Copy>: Residual<N, D2>;
 
     /// Return the real part of the residual model.
     fn re(&self) -> Self::Real;
 
     /// Return the lifted residual model.
-    fn lift<D2: DualNum<f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2>;
+    fn lift<D2: DualNum<Primitive = f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2>;
 
     /// Return the maximum density in Angstrom^-3.
     ///
@@ -303,7 +305,7 @@ where
         molefracs: &OVector<D, N>,
     ) -> (D, D, D, D, D) {
         let molar_volume = density.recip();
-        let (a, da, d2a) = hessian::<_, _, _, U2, _>(
+        let (a, da, d2a) = hessian::<_, _, U2, _>(
             partial(
                 |vt: SVector<_, 2>, x: &OVector<_, N>| {
                     let [[v, t]] = vt.data.0;
@@ -418,7 +420,7 @@ where
 }
 
 /// Reference values and residual entropy correlations for entropy scaling.
-pub trait EntropyScaling<N: Dim = Dyn, D: DualNum<f64> + Copy = f64>
+pub trait EntropyScaling<N: Dim = Dyn, D: DualNum<Primitive = f64> + Copy = f64>
 where
     DefaultAllocator: Allocator<N>,
 {
@@ -445,7 +447,7 @@ where
     fn thermal_conductivity_correlation(&self, s_res: D, x: &OVector<D, N>) -> D;
 }
 
-impl<C: Deref<Target = T>, T: EntropyScaling<N, D>, N: Dim, D: DualNum<f64> + Copy>
+impl<C: Deref<Target = T>, T: EntropyScaling<N, D>, N: Dim, D: DualNum<Primitive = f64> + Copy>
     EntropyScaling<N, D> for C
 where
     DefaultAllocator: Allocator<N>,
@@ -502,11 +504,11 @@ impl ResidualDyn for NoResidual {
         self.0
     }
 
-    fn compute_max_density<D: DualNum<f64> + Copy>(&self, _: &DVector<D>) -> D {
+    fn compute_max_density<D: DualNum<Primitive = f64> + Copy>(&self, _: &DVector<D>) -> D {
         D::one()
     }
 
-    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
+    fn reduced_helmholtz_energy_density_contributions<D: DualNum<Primitive = f64> + Copy>(
         &self,
         _: &StateHD<D>,
     ) -> Vec<(&'static str, D)> {
