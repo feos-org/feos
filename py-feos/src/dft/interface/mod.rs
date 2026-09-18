@@ -1,3 +1,4 @@
+use super::PyGeometry;
 use super::profile::impl_profile;
 use super::{PyDFTSolver, PyDFTSolverLog};
 use crate::error::PyFeosError;
@@ -40,34 +41,22 @@ impl PyPlanarInterface {
     /// critical_temperature: SINumber
     ///     An estimate for the critical temperature of the system.
     ///     Used to guess the width of the interface.
-    /// fix_equimolar_surface: bool, optional
-    ///     If True use additional constraints to fix the
-    ///     equimolar surface of the system.
-    ///     Defaults to False.
     ///
     /// Returns
     /// -------
     /// PlanarInterface
     ///
     #[staticmethod]
-    #[pyo3(
-        text_signature = "(vle, n_grid, l_grid, critical_temperature, fix_equimolar_surface=None)"
-    )]
-    #[pyo3(signature = (vle, n_grid, l_grid, critical_temperature, fix_equimolar_surface=None))]
+    #[pyo3(text_signature = "(vle, n_grid, l_grid, critical_temperature)")]
+    #[pyo3(signature = (vle, n_grid, l_grid, critical_temperature))]
     fn from_tanh(
         vle: &PyPhaseEquilibrium,
         n_grid: usize,
         l_grid: Length,
         critical_temperature: Temperature,
-        fix_equimolar_surface: Option<bool>,
     ) -> Self {
-        let profile = PlanarInterface::from_tanh(
-            &vle.0,
-            n_grid,
-            l_grid,
-            critical_temperature,
-            fix_equimolar_surface.unwrap_or(false),
-        );
+        let profile =
+            PlanarInterface::planar_from_tanh(&vle.0, n_grid, l_grid, critical_temperature);
         PyPlanarInterface(profile)
     }
 
@@ -79,57 +68,62 @@ impl PyPlanarInterface {
     ///     The bulk phase equilibrium.
     /// n_grid : int
     ///     The number of grid points.
-    /// fix_equimolar_surface: bool, optional
-    ///     If True use additional constraints to fix the
-    ///     equimolar surface of the system.
-    ///     Defaults to False.
     ///
     /// Returns
     /// -------
     /// PlanarInterface
     ///
     #[staticmethod]
-    #[pyo3(text_signature = "(vle, n_grid, fix_equimolar_surface=None)")]
-    #[pyo3(signature = (vle, n_grid, fix_equimolar_surface=None))]
-    fn from_pdgt(
-        vle: &PyPhaseEquilibrium,
-        n_grid: usize,
-        fix_equimolar_surface: Option<bool>,
-    ) -> PyResult<Self> {
+    #[pyo3(text_signature = "(vle, n_grid)")]
+    #[pyo3(signature = (vle, n_grid))]
+    fn from_pdgt(vle: &PyPhaseEquilibrium, n_grid: usize) -> PyResult<Self> {
         let profile =
-            PlanarInterface::from_pdgt(&vle.0, n_grid, fix_equimolar_surface.unwrap_or(false))
-                .map_err(PyFeosError::from)?;
-        Ok(PyPlanarInterface(profile))
+            PlanarInterface::planar_from_pdgt(&vle.0, n_grid).map_err(PyFeosError::from)?;
+        Ok(Self(profile))
     }
 
-    /// Initialize a planar interface with a provided density profile.
-    ///
-    /// Parameters
-    /// ----------
-    /// vle : PhaseEquilibrium
-    ///     The bulk phase equilibrium.
-    /// n_grid : int
-    ///     The number of grid points.
-    /// l_grid: SINumber
-    ///     The width of the calculation domain.
-    /// density_profile: SIArray2
-    ///     Initial condition for the density profile iterations
-    ///
-    /// Returns
-    /// -------
-    /// PlanarInterface
-    ///
     #[staticmethod]
-    fn from_density_profile(
-        vle: &PyPhaseEquilibrium,
+    fn curved(
+        planar_interface: &PyPlanarInterface,
         n_grid: usize,
         l_grid: Length,
-        density_profile: Density<Array2<f64>>,
-    ) -> Self {
-        let mut profile = PlanarInterface::new(&vle.0, n_grid, l_grid);
-        profile.profile.density = density_profile;
-        PyPlanarInterface(profile)
+        radius: Length,
+        geometry: PyGeometry,
+    ) -> PyResult<Self> {
+        let profile =
+            PlanarInterface::curved(&planar_interface.0, n_grid, l_grid, radius, geometry.into())
+                .map_err(PyFeosError::from)?;
+        Ok(Self(profile))
     }
+
+    // /// Initialize a planar interface with a provided density profile.
+    // ///
+    // /// Parameters
+    // /// ----------
+    // /// vle : PhaseEquilibrium
+    // ///     The bulk phase equilibrium.
+    // /// n_grid : int
+    // ///     The number of grid points.
+    // /// l_grid: SINumber
+    // ///     The width of the calculation domain.
+    // /// density_profile: SIArray2
+    // ///     Initial condition for the density profile iterations
+    // ///
+    // /// Returns
+    // /// -------
+    // /// PlanarInterface
+    // ///
+    // #[staticmethod]
+    // fn from_density_profile(
+    //     vle: &PyPhaseEquilibrium,
+    //     n_grid: usize,
+    //     l_grid: Length,
+    //     density_profile: Density<Array2<f64>>,
+    // ) -> Self {
+    //     let mut profile = PlanarInterface::new(&vle.0, n_grid, l_grid);
+    //     profile.profile.density = density_profile;
+    //     PyPlanarInterface(profile)
+    // }
 }
 
 #[pymethods]
@@ -140,9 +134,14 @@ impl PyPlanarInterface {
     }
 
     #[getter]
-    fn get_equimolar_radius(&mut self) -> Option<Length> {
-        self.0.equimolar_radius
+    fn get_surface_of_tension(&mut self) -> Option<Length> {
+        self.0.surface_of_tension
     }
+
+    // #[getter]
+    // fn get_equimolar_radius(&mut self) -> Option<Length> {
+    //     self.0.equimolar_radius
+    // }
 
     #[getter]
     fn get_vle(&self) -> PyPhaseEquilibrium {

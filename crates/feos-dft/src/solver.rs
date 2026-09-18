@@ -490,8 +490,8 @@ where
             let second_partial_derivatives =
                 self.solver_log
                     .time_function("second partial derivatives", || {
-                        self.bulk.eos.second_partial_derivatives(
-                            self.bulk.temperature.into_reduced(),
+                        self.functional.second_partial_derivatives(
+                            self.temperature.into_reduced(),
                             rho,
                             self.convolver.as_ref(),
                         )
@@ -506,10 +506,10 @@ where
                 );
                 delta_functional_derivative
                     .outer_iter_mut()
-                    .zip(self.bulk.eos.m().iter())
+                    .zip(self.functional.m().iter())
                     .for_each(|(mut q, &m)| q /= m);
-                let delta_i = self.bulk.eos.delta_bond_integrals(
-                    self.bulk.temperature.into_reduced(),
+                let delta_i = self.functional.delta_bond_integrals(
+                    self.temperature.into_reduced(),
                     &exp_dfdrho,
                     &delta_functional_derivative,
                     self.convolver.as_ref(),
