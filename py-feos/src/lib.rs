@@ -210,7 +210,7 @@ fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
 
         // Interface
         m.add_class::<dft::PySurfaceTensionDiagram>()?;
-        m.add_class::<dft::PyPlanarInterface>()?;
+        m.add_class::<dft::PyInterface>()?;
 
         m.add_class::<dft::PyPairCorrelation>()?;
         #[cfg(feature = "rayon")]

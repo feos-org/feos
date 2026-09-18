@@ -80,6 +80,11 @@ impl PySolvationProfile {
     }
 
     #[getter]
+    fn get_bulk(&self) -> PyState {
+        PyState(self.0.bulk.clone())
+    }
+
+    #[getter]
     fn get_grand_potential(&self) -> Option<Energy> {
         self.0.grand_potential
     }
@@ -119,6 +124,11 @@ impl PyPairCorrelation {
     #[new]
     fn new(bulk: PyState, test_particle: usize, n_grid: usize, width: Length) -> Self {
         Self(PairCorrelation::new(&bulk.0, test_particle, n_grid, width))
+    }
+
+    #[getter]
+    fn get_bulk(&self) -> PyState {
+        PyState(self.0.bulk.clone())
     }
 
     #[getter]
