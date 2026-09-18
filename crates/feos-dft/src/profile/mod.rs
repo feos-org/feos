@@ -6,7 +6,7 @@ use feos_core::{FeosError, FeosResult, ReferenceSystem, State};
 use nalgebra::{DVector, Dyn, U1};
 use ndarray::{Array, Array1, ArrayBase, Axis as Axis_nd, Data, Dimension, Ix0, arr1};
 use num_dual::DualNum;
-use quantity::{_Volume, Density, Energy, Entropy, Length, Moles, Quantity, Volume};
+use quantity::{_Volume, Density, Energy, Entropy, Length, Moles, Quantity, Temperature, Volume};
 use std::ops::{Add, MulAssign};
 use std::sync::Arc;
 
@@ -55,14 +55,11 @@ impl DFTSpecification {
     }
 
     pub fn from_state<F: HelmholtzEnergyFunctional>(state: &State<F>) -> Self {
-        let component_index = state.eos.component_index().into_owned();
         let m = arr1(&state.eos.m());
-        let partial_density = state.partial_density().into_reduced();
         let temperature = state.temperature.into_reduced();
-        let bulk_density = component_index
-            .iter()
-            .map(|&i| partial_density[i])
-            .collect();
+        let bulk_density = state
+            .eos
+            .segment_densities(&state.partial_density().into_reduced());
         let bulk_convolver =
             PeriodicConvolver::<_, Ix0>::new_0d(&state.eos.weight_functions(temperature));
         let mut solver_log = DFTSolverLog::new();
@@ -84,19 +81,44 @@ impl DFTSpecification {
     }
 }
 
+/// Initial condition for the density profile of a [DFTProfile].
+pub enum InitialDensity<D: Dimension> {
+    /// Use the provided density profile.
+    Density(Density<Array<f64, D::Larger>>),
+    /// Initialize the density profile from the given bulk partial densities,
+    /// accounting for the external potential and bond integrals.
+    Bulk(Density<DVector<f64>>),
+}
+
+/// Intermediate results of the evaluation of the Euler-Lagrange equation.
+pub(crate) struct Projection<D: Dimension> {
+    /// $e^{-\frac{\beta}{m_\alpha}\left(\hat F_{\rho_\alpha}^\mathrm{res}+V_\alpha^\mathrm{ext}\right)}$
+    pub exp_dfdrho: Array<f64, D::Larger>,
+    /// Product of the bond integrals $\prod_{\alpha'}I_{\alpha\alpha'}$
+    pub bonds: Array<f64, D::Larger>,
+    /// Configurational integrals $z_\alpha$
+    pub z: Array1<f64>,
+    /// Fugacities $f_\alpha$ determined from the specification
+    pub fugacity: Array1<f64>,
+    /// Projected density profile $f_\alpha e^{\ldots}\prod_{\alpha'}I_{\alpha\alpha'}$
+    pub density: Array<f64, D::Larger>,
+}
+
 #[derive(Clone)]
 /// A one-, two-, or three-dimensional density profile.
 pub struct DFTProfile<D: Dimension, F> {
     pub grid: Grid,
     pub convolver: Arc<dyn Convolver<f64, D>>,
+    pub functional: F,
+    pub temperature: Temperature,
     pub density: Density<Array<f64, D::Larger>>,
     pub specification: DFTSpecification,
     pub external_potential: Array<f64, D::Larger>,
-    pub bulk: State<F>,
     pub solver_log: DFTSolverLog,
 }
 
 impl<D: Dimension, F> DFTProfile<D, F> {
+    /// Return the grid points of every axis.
     pub fn axes(&self) -> Vec<Length<Array1<f64>>> {
         self.grid
             .grids()
@@ -106,6 +128,7 @@ impl<D: Dimension, F> DFTProfile<D, F> {
             .collect()
     }
 
+    /// Return the cell edges of every axis.
     pub fn edges(&self) -> Vec<Length<Array1<f64>>> {
         self.grid
             .axes()
@@ -122,25 +145,24 @@ where
 {
     /// Create a new density profile.
     ///
-    /// If no external potential is specified, it is set to 0. The density is
-    /// initialized based on the bulk state and the external potential. The
-    /// specification is set to `ChemicalPotential` and needs to be overriden
-    /// after this call if something else is required.
+    /// If no external potential is specified, it is set to 0.
     pub fn new(
         grid: Grid,
-        bulk: &State<F>,
+        functional: &F,
+        temperature: Temperature,
         external_potential: Option<&Energy<Array<f64, D::Larger>>>,
-        density: Option<&Density<Array<f64, D::Larger>>>,
+        density: InitialDensity<D>,
+        specification: DFTSpecification,
     ) -> Self {
         // initialize convolver
-        let t = bulk.temperature.to_reduced();
-        let weight_functions = bulk.eos.weight_functions(t);
+        let t = temperature.to_reduced();
+        let weight_functions = functional.weight_functions(t);
         let convolver = ConvolverFFT::plan(&grid, &weight_functions);
 
         // initialize external potential
         let external_potential = external_potential.map_or_else(
             || {
-                let mut n_grid = vec![bulk.eos.component_index().len()];
+                let mut n_grid = vec![functional.component_index().len()];
                 grid.axes()
                     .iter()
                     .for_each(|&ax| n_grid.push(ax.grid.len()));
@@ -158,32 +180,53 @@ where
         );
 
         // initialize density
-        let density = density.map_or_else(
-            || {
+        let density = match density {
+            InitialDensity::Density(density) => density,
+            InitialDensity::Bulk(partial_density) => {
                 let exp_dfdrho = (-&external_potential).mapv(f64::exp);
-                let mut bonds = bulk.eos.bond_integrals(t, &exp_dfdrho, convolver.as_ref());
+                let mut bonds = functional.bond_integrals(t, &exp_dfdrho, convolver.as_ref());
                 bonds *= &exp_dfdrho;
                 let mut density = Array::zeros(external_potential.raw_dim());
-                let bulk_density = bulk.partial_density().into_reduced();
-                for (s, &c) in bulk.eos.component_index().iter().enumerate() {
-                    density.index_axis_mut(Axis_nd(0), s).assign(
-                        &(bonds.index_axis(Axis_nd(0), s).map(|is| is.min(1.0)) * bulk_density[c]),
-                    );
+                let bulk_density = functional.segment_densities(&partial_density.into_reduced());
+                for (s, &rho) in bulk_density.iter().enumerate() {
+                    density
+                        .index_axis_mut(Axis_nd(0), s)
+                        .assign(&(bonds.index_axis(Axis_nd(0), s).map(|is| is.min(1.0)) * rho));
                 }
                 Density::from_reduced(density)
-            },
-            Clone::clone,
-        );
+            }
+        };
 
         Self {
             grid,
             convolver,
+            functional: functional.clone(),
+            temperature,
             density,
-            specification: DFTSpecification::from_state(bulk),
+            specification,
             external_potential,
-            bulk: bulk.clone(),
             solver_log: DFTSolverLog::new(),
         }
+    }
+
+    /// Create a new density profile in equilibrium with a bulk state.
+    ///
+    /// The density is initialized based on the bulk state and the external
+    /// potential. The specification is set to `ChemicalPotential` and needs
+    /// to be overriden after this call if something else is required.
+    pub fn from_bulk(
+        grid: Grid,
+        bulk: &State<F>,
+        external_potential: Option<&Energy<Array<f64, D::Larger>>>,
+    ) -> Self {
+        Self::new(
+            grid,
+            &bulk.eos,
+            bulk.temperature,
+            external_potential,
+            InitialDensity::Bulk(bulk.partial_density()),
+            DFTSpecification::from_state(bulk),
+        )
     }
 
     /// Set a constraint to fix the number of particles of every component based on
@@ -195,11 +238,12 @@ where
 
     /// Set a constraint to fix the total number of particles based on
     /// the current density profile.
-    pub fn fix_total_moles(&mut self) {
+    ///
+    /// The ratios of the fugacities are fixed to those of the bulk state.
+    pub fn fix_total_moles(&mut self, bulk: &State<F>) {
         let rho = self.density.to_reduced();
         let moles = self.grid.integrate_reduced_comp(&rho).sum();
-        let DFTSpecification::ChemicalPotential(fugacity) =
-            DFTSpecification::from_state(&self.bulk)
+        let DFTSpecification::ChemicalPotential(fugacity) = DFTSpecification::from_state(bulk)
         else {
             unreachable!()
         };
@@ -208,7 +252,7 @@ where
 
     /// Return the external potential in SI units.
     pub fn external_potential(&self) -> Energy<Array<f64, D::Larger>> {
-        Entropy::from_reduced(self.external_potential.clone()) * self.bulk.temperature
+        Entropy::from_reduced(self.external_potential.clone()) * self.temperature
     }
 }
 
@@ -224,8 +268,8 @@ where
         profile: &ArrayBase<S, D::Larger>,
     ) -> DVector<N> {
         let integral = self.grid.integrate_reduced_comp(profile);
-        let mut integral_comp = DVector::zeros(self.bulk.eos.components());
-        for (i, &j) in self.bulk.eos.component_index().iter().enumerate() {
+        let mut integral_comp = DVector::zeros(self.functional.components());
+        for (i, &j) in self.functional.component_index().iter().enumerate() {
             integral_comp[j] = integral[i];
         }
         integral_comp
@@ -257,7 +301,7 @@ where
         Volume::from_reduced(functional_determinant) * value.sum()
     }
 
-    /// Integrate each component individually.
+    /// Integrate each segment individually.
     pub fn integrate_comp<S: Data<Elem = f64>, U>(
         &self,
         profile: &Quantity<ArrayBase<S, D::Larger>, U>,
@@ -270,7 +314,11 @@ where
         })
     }
 
-    /// Integrate each segment individually and aggregate to components.
+    /// Integrate each segment individually and assign the result to the
+    /// corresponding component.
+    ///
+    /// Only valid for profiles for which all segments of a molecule have the
+    /// same integral (e.g., density profiles).
     pub fn integrate_segments<S: Data<Elem = f64>, U>(
         &self,
         profile: &Quantity<ArrayBase<S, D::Larger>, U>,
@@ -279,8 +327,8 @@ where
         _Volume: Add<U>,
     {
         let integral = self.integrate_comp(profile);
-        let mut integral_comp = Quantity::new(DVector::zeros(self.bulk.eos.components()));
-        for (i, &j) in self.bulk.eos.component_index().iter().enumerate() {
+        let mut integral_comp = Quantity::new(DVector::zeros(self.functional.components()));
+        for (i, &j) in self.functional.component_index().iter().enumerate() {
             integral_comp.set(j, integral.get(i));
         }
         integral_comp
@@ -303,33 +351,26 @@ where
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
     F: HelmholtzEnergyFunctional,
 {
+    /// Calculate the (reduced) weighted densities of every functional contribution.
     pub fn weighted_densities(&self) -> FeosResult<Vec<Array<f64, D::Larger>>> {
         Ok(self
             .convolver
             .weighted_densities(&self.density.to_reduced()))
     }
 
+    /// Calculate the residual of the Euler-Lagrange equation and its norm.
     pub fn residual(&mut self, log: bool) -> FeosResult<(Array<f64, D::Larger>, f64)> {
         let density = self.density.to_reduced();
-        let (res, res_norm, _, _, _) = self.euler_lagrange_equation(&density, log)?;
+        let (res, res_norm, _) = self.euler_lagrange_equation(&density, log)?;
         Ok((res, res_norm))
     }
 
-    #[expect(clippy::type_complexity)]
-    pub(crate) fn fugacity(
-        &mut self,
-        density: &Array<f64, D::Larger>,
-    ) -> FeosResult<(
-        Array<f64, D::Larger>,
-        Array1<f64>,
-        Array<f64, D::Larger>,
-        Array1<f64>,
-    )> {
+    pub(crate) fn project(&mut self, density: &Array<f64, D::Larger>) -> FeosResult<Projection<D>> {
         // calculate reduced temperature
-        let temperature = self.bulk.temperature.to_reduced();
+        let temperature = self.temperature.to_reduced();
 
         // calculate intrinsic functional derivative
-        let (_, mut dfdrho) = self.bulk.eos.functional_derivative(
+        let (_, mut dfdrho) = self.functional.functional_derivative(
             temperature,
             density,
             self.convolver.as_ref(),
@@ -341,16 +382,15 @@ where
 
         dfdrho
             .outer_iter_mut()
-            .zip(self.bulk.eos.m().iter())
+            .zip(self.functional.m().iter())
             .for_each(|(mut df, &m)| df /= m);
 
         // calculate bond integrals
         let exp_dfdrho = dfdrho.mapv(|x| (-x).exp());
-        let bonds = self
-            .bulk
-            .eos
-            .bond_integrals(temperature, &exp_dfdrho, self.convolver.as_ref());
-        let mut rho_projected = &exp_dfdrho * bonds;
+        let bonds =
+            self.functional
+                .bond_integrals(temperature, &exp_dfdrho, self.convolver.as_ref());
+        let mut rho_projected = &exp_dfdrho * &bonds;
         let z = self.grid.integrate_reduced_comp(&rho_projected);
 
         // calculate fugacity based on the given specification
@@ -364,7 +404,13 @@ where
                 x *= f;
             });
 
-        Ok((exp_dfdrho, z, rho_projected, fugacity))
+        Ok(Projection {
+            exp_dfdrho,
+            bonds,
+            z,
+            fugacity,
+            density: rho_projected,
+        })
     }
 
     #[expect(clippy::type_complexity)]
@@ -372,21 +418,16 @@ where
         &mut self,
         density: &Array<f64, D::Larger>,
         log: bool,
-    ) -> FeosResult<(
-        Array<f64, D::Larger>,
-        f64,
-        Array<f64, D::Larger>,
-        Array1<f64>,
-        Array<f64, D::Larger>,
-    )> {
+    ) -> FeosResult<(Array<f64, D::Larger>, f64, Projection<D>)> {
         // calculate functional derivatives and fugacity
-        let (exp_dfdrho, z, rho_projected, _) = self.fugacity(density)?;
+        let projection = self.project(density)?;
+        let rho_projected = &projection.density;
 
         // calculate residual
         let mut res = if log {
             rho_projected.mapv(f64::ln) - density.mapv(f64::ln)
         } else {
-            &rho_projected - density
+            rho_projected - density
         };
 
         // set residual to 0 where external potentials are overwhelming
@@ -397,16 +438,26 @@ where
 
         // calculate the norm of the residual
         let res_norm =
-            (density - &rho_projected).mapv(|x| x * x).sum().sqrt() / (res.len() as f64).sqrt();
+            (density - rho_projected).mapv(|x| x * x).sum().sqrt() / (res.len() as f64).sqrt();
 
         if res_norm.is_finite() {
-            Ok((res, res_norm, exp_dfdrho, z, rho_projected))
+            Ok((res, res_norm, projection))
         } else {
             Err(FeosError::IterationFailed("Euler-Lagrange equation".into()))
         }
     }
 
-    pub fn solve(&mut self, solver: Option<&DFTSolver>, debug: bool) -> FeosResult<()> {
+    /// Solve the Euler-Lagrange equation.
+    ///
+    /// For specifications other than `ChemicalPotential`, the provided bulk
+    /// states are updated to be in equilibrium with the converged profile.
+    /// If `debug` is true, no error is returned if the solver does not converge.
+    pub fn solve<const B: usize>(
+        &mut self,
+        bulk_states: [&mut State<F>; B],
+        solver: Option<&DFTSolver>,
+        debug: bool,
+    ) -> FeosResult<()> {
         // unwrap solver
         let solver = solver.cloned().unwrap_or_default();
 
@@ -418,22 +469,24 @@ where
 
         // Update bulk state
         if !matches!(self.specification, DFTSpecification::ChemicalPotential(_)) {
-            // solve a bulk profile with the Newton solver
-            let mut bulk_profile = DFTProfile::<Ix0, _>::new(Grid::Bulk, &self.bulk, None, None);
-            let (_, _, _, fugacity) = self.fugacity(&density)?;
-            bulk_profile.specification = DFTSpecification::ChemicalPotential(fugacity);
-            let solver = DFTSolver::new(None).newton(None, None, None, None);
-            bulk_profile.solve(Some(&solver), false)?;
+            let fugacity = self.project(&density)?.fugacity;
+            for bulk in bulk_states {
+                // solve a bulk profile with the Newton solver
+                let mut bulk_profile = DFTProfile::<Ix0, _>::from_bulk(Grid::Bulk, bulk, None);
+                bulk_profile.specification = DFTSpecification::ChemicalPotential(fugacity.clone());
+                let solver = DFTSolver::new(None).newton(None, None, None, None);
+                bulk_profile.solve([], Some(&solver), false)?;
 
-            // create the state based on the results from the bulk profile
-            let component_index = self.bulk.eos.component_index();
-            let mut partial_density = self.bulk.partial_density();
-            bulk_profile
-                .density
-                .into_iter()
-                .enumerate()
-                .for_each(|(i, r)| partial_density.set(component_index[i], r));
-            self.bulk = State::new_density(&self.bulk.eos, self.bulk.temperature, partial_density)?;
+                // create the state based on the results from the bulk profile
+                let component_index = self.functional.component_index();
+                let mut partial_density = bulk.partial_density();
+                bulk_profile
+                    .density
+                    .into_iter()
+                    .enumerate()
+                    .for_each(|(i, r)| partial_density.set(component_index[i], r));
+                *bulk = State::new_density(&self.functional, self.temperature, partial_density)?;
+            }
         }
 
         // Update profile

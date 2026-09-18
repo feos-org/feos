@@ -13,6 +13,7 @@ const CUTOFF_RADIUS: f64 = 14.0;
 /// Density profile and properties of a solute in a inhomogeneous bulk fluid.
 pub struct SolvationProfile<F: HelmholtzEnergyFunctional> {
     pub profile: DFTProfile<Ix3, F>,
+    pub bulk: State<F>,
     pub grand_potential: Option<Energy>,
     pub solvation_free_energy: Option<MolarEnergy>,
 }
@@ -20,7 +21,7 @@ pub struct SolvationProfile<F: HelmholtzEnergyFunctional> {
 impl<F: HelmholtzEnergyFunctional> SolvationProfile<F> {
     pub fn solve_inplace(&mut self, solver: Option<&DFTSolver>, debug: bool) -> FeosResult<()> {
         // Solve the profile
-        self.profile.solve(solver, debug)?;
+        self.profile.solve([&mut self.bulk], solver, debug)?;
 
         // calculate grand potential density
         let omega = self.profile.grand_potential()?;
@@ -28,7 +29,7 @@ impl<F: HelmholtzEnergyFunctional> SolvationProfile<F> {
 
         // calculate solvation free energy
         self.solvation_free_energy = Some(
-            (omega + self.profile.bulk.pressure(Contributions::Total) * self.profile.volume())
+            (omega + self.bulk.pressure(Contributions::Total) * self.profile.volume())
                 / Moles::from_reduced(1.0),
         );
 
@@ -90,7 +91,8 @@ impl<F: HelmholtzEnergyFunctional + FluidParameters> SolvationProfile<F> {
         let grid = Grid::Cartesian3(x, y, z);
 
         Ok(Self {
-            profile: DFTProfile::new(grid, bulk, Some(&external_potential), None),
+            profile: DFTProfile::from_bulk(grid, bulk, Some(&external_potential)),
+            bulk: bulk.clone(),
             grand_potential: None,
             solvation_free_energy: None,
         })

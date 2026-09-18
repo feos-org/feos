@@ -106,6 +106,14 @@ pub trait HelmholtzEnergyFunctional: Residual {
         }
     }
 
+    /// Return the densities of all segments given the partial densities of the components.
+    fn segment_densities<D: Copy>(&self, partial_density: &DVector<D>) -> Array1<D> {
+        self.component_index()
+            .iter()
+            .map(|&c| partial_density[c])
+            .collect()
+    }
+
     fn ideal_chain_contribution(&self) -> IdealChainContribution {
         IdealChainContribution::new(&self.component_index(), &self.m())
     }
