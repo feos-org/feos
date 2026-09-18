@@ -353,17 +353,16 @@ where
     pub fn pressure(&self) -> Pressure<Array1<f64>> {
         Pressure::from_shape_fn(self.profiles.len(), |i| match &self.profiles[i] {
             Ok(p) => {
-                if p.profile.bulk.eos.components() > 1
-                    && !p.profile.bulk.is_stable(SolverOptions::default()).unwrap()
+                if p.profile.functional.components() > 1
+                    && !p.bulk.is_stable(SolverOptions::default()).unwrap()
                 {
-                    p.profile
-                        .bulk
+                    p.bulk
                         .tp_flash(None, SolverOptions::default(), None)
                         .unwrap()
                         .vapor()
                         .pressure(Contributions::Total)
                 } else {
-                    p.profile.bulk.pressure(Contributions::Total)
+                    p.bulk.pressure(Contributions::Total)
                 }
             }
             Err(_) => Pressure::from_reduced(f64::NAN),

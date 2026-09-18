@@ -23,6 +23,7 @@ impl<C: Deref<Target = T>, T: PairPotential> PairPotential for C {
 /// Density profile and properties of a test particle system.
 pub struct PairCorrelation<F> {
     pub profile: DFTProfile<Ix1, F>,
+    pub bulk: State<F>,
     pub pair_correlation_function: Option<Array2<f64>>,
     pub self_solvation_free_energy: Option<Energy>,
     pub structure_factor: Option<f64>,
@@ -41,7 +42,8 @@ impl<F: HelmholtzEnergyFunctional + PairPotential> PairCorrelation<F> {
         let grid = Grid::Spherical(axis);
 
         Self {
-            profile: DFTProfile::new(grid, bulk, Some(&external_potential), None),
+            profile: DFTProfile::from_bulk(grid, bulk, Some(&external_potential)),
+            bulk: bulk.clone(),
             pair_correlation_function: None,
             self_solvation_free_energy: None,
             structure_factor: None,
@@ -50,10 +52,10 @@ impl<F: HelmholtzEnergyFunctional + PairPotential> PairCorrelation<F> {
 
     pub fn solve_inplace(&mut self, solver: Option<&DFTSolver>, debug: bool) -> FeosResult<()> {
         // Solve the profile
-        self.profile.solve(solver, debug)?;
+        self.profile.solve([&mut self.bulk], solver, debug)?;
 
         // calculate pair correlation function
-        let partial_density = self.profile.bulk.partial_density();
+        let partial_density = self.bulk.partial_density();
         self.pair_correlation_function = Some(Array::from_shape_fn(
             self.profile.density.raw_dim(),
             |(i, j)| (self.profile.density.get((i, j)) / partial_density.get(i)).into_value(),
@@ -61,14 +63,12 @@ impl<F: HelmholtzEnergyFunctional + PairPotential> PairCorrelation<F> {
 
         // calculate self solvation free energy
         self.self_solvation_free_energy = Some(self.profile.integrate(
-            &(self.profile.grand_potential_density()?
-                + self.profile.bulk.pressure(Contributions::Total)),
+            &(self.profile.grand_potential_density()? + self.bulk.pressure(Contributions::Total)),
         ));
 
         // calculate structure factor
         self.structure_factor = Some(
-            (self.profile.total_moles() - self.profile.bulk.density * self.profile.volume())
-                .to_reduced()
+            (self.profile.total_moles() - self.bulk.density * self.profile.volume()).to_reduced()
                 + 1.0,
         );
 

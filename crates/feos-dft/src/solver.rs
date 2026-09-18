@@ -312,7 +312,7 @@ where
 
         for k in 0..picard.max_iter {
             // calculate residual
-            let (res, res_norm, _, _, _) = self.euler_lagrange_equation(&*rho, picard.log)?;
+            let (res, res_norm, _) = self.euler_lagrange_equation(&*rho, picard.log)?;
             self.solver_log.add_residual(solver, k, res_norm, verbosity);
 
             // check for convergence
@@ -354,7 +354,7 @@ where
             } else {
                 rho + alpha * delta_rho
             };
-            let Ok((_, res2, _, _, _)) = self.euler_lagrange_equation(&rho_new, logarithm) else {
+            let Ok((_, res2, _)) = self.euler_lagrange_equation(&rho_new, logarithm) else {
                 continue;
             };
             if res2 > res0 {
@@ -367,7 +367,7 @@ where
             } else {
                 rho + 0.5 * alpha * delta_rho
             };
-            let Ok((_, res1, _, _, _)) = self.euler_lagrange_equation(&rho_new, logarithm) else {
+            let Ok((_, res1, _)) = self.euler_lagrange_equation(&rho_new, logarithm) else {
                 continue;
             };
 
@@ -417,7 +417,7 @@ where
             let m = resm.len() + 1;
 
             // calculate residual
-            let (res, res_norm, _, _, _) = self.euler_lagrange_equation(&*rho, anderson.log)?;
+            let (res, res_norm, _) = self.euler_lagrange_equation(&*rho, anderson.log)?;
             self.solver_log.add_residual(solver, k, res_norm, verbosity);
 
             // check for convergence
@@ -477,8 +477,7 @@ where
         let solver = if newton.log { "Newton (log)" } else { "Newton" };
         for k in 0..newton.max_iter {
             // calculate initial residual
-            let (res, res_norm, exp_dfdrho, z, rho_p) =
-                self.euler_lagrange_equation(rho, newton.log)?;
+            let (res, res_norm, projection) = self.euler_lagrange_equation(rho, newton.log)?;
             self.solver_log.add_residual(solver, k, res_norm, verbosity);
 
             // check convergence
@@ -490,8 +489,8 @@ where
             let second_partial_derivatives =
                 self.solver_log
                     .time_function("second partial derivatives", || {
-                        self.bulk.eos.second_partial_derivatives(
-                            self.bulk.temperature.into_reduced(),
+                        self.functional.second_partial_derivatives(
+                            self.temperature.into_reduced(),
                             rho,
                             self.convolver.as_ref(),
                         )
@@ -506,20 +505,20 @@ where
                 );
                 delta_functional_derivative
                     .outer_iter_mut()
-                    .zip(self.bulk.eos.m().iter())
+                    .zip(self.functional.m().iter())
                     .for_each(|(mut q, &m)| q /= m);
-                let delta_i = self.bulk.eos.delta_bond_integrals(
-                    self.bulk.temperature.into_reduced(),
-                    &exp_dfdrho,
+                let delta_i = self.functional.delta_bond_integrals(
+                    self.temperature.into_reduced(),
+                    &projection.exp_dfdrho,
                     &delta_functional_derivative,
                     self.convolver.as_ref(),
                 );
                 let mut delta_exp_dfdrho = delta_functional_derivative - delta_i;
-                let delta_z = -self
-                    .grid
-                    .integrate_reduced_comp(&(&delta_exp_dfdrho * &exp_dfdrho));
+                let delta_z = -self.grid.integrate_reduced_comp(
+                    &(&delta_exp_dfdrho * &projection.exp_dfdrho * &projection.bonds),
+                );
 
-                let delta_fugacity = self.specification.delta_fugacity(&z, &delta_z);
+                let delta_fugacity = self.specification.delta_fugacity(&projection.z, &delta_z);
                 delta_exp_dfdrho
                     .outer_iter_mut()
                     .zip(delta_fugacity.iter())
@@ -527,7 +526,11 @@ where
                         z -= f;
                     });
 
-                let rho = if newton.log { &*rho } else { &rho_p };
+                let rho = if newton.log {
+                    &*rho
+                } else {
+                    &projection.density
+                };
                 delta_rho + delta_exp_dfdrho * rho
             };
 

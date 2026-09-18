@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `PoreSpecification` enum to specify the state of the fluid in the pore (currently chemical potential or moles). [#371](https://github.com/feos-org/feos/pull/371)
 - Added the `Grid` and `PoreProfile` classes as an entry points to DFT in various coordinate systems in Python. [#376](https://github.com/feos-org/feos/pull/376)
 - `PoreProfile.solver_log` now stores a timing profile of the different solver steps. [#385](https://github.com/feos-org/feos/pull/385)
+- Added `Interface::curved` to calculate cylindrical and spherical interfaces from a planar interface. [#387](https://github.com/feos-org/feos/pull/387)
 
 ### Changed
 - Changed data type of initial temperatures or pressure for phase equilibrium calculations (`TemperatureOrPressure::Other`) from `D` to `f64`. [#369](https://github.com/feos-org/feos/pull/369)
@@ -16,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - External potentials are passed and returned as quantities (energies) instead of reduced units. [#372](https://github.com/feos-org/feos/pull/372)
 - Merged the `Adsorption1D` and `Adsorption3D` classes in Python into `Adsorption` using dynamically dimensioned arrays. [#376](https://github.com/feos-org/feos/pull/376)
 - If the `rayon` feature is activated (default for the released Python wheels), the evaluation of the helmholtz energy density and its derivatives will now be run in parallel. The number of CPUs can be set via the global rayon threadpool (see changelog for `0.9.5`) [#385](https://github.com/feos-org/feos/pull/385)
+- Renamed `PlanarInterface` to `Interface` and its constructors `from_tanh` and `from_pdgt` to `planar_from_tanh` and `planar_from_pdgt`. [#387](https://github.com/feos-org/feos/pull/387)
+- Replaced `PlanarInterface.from_density_profile` in Python with the `Interface(grid, vle, density)` constructor in analogy to `PoreProfile`. [#387](https://github.com/feos-org/feos/pull/387)
+- `drho_dp`, `dn_dp`, `drho_dt`, and `dn_dt` of DFT profiles now take the bulk state as an argument (methods instead of properties in Python). [#387](https://github.com/feos-org/feos/pull/387)
 
 ### Removed
 - Removed the `DFTSpecification` trait in favor of only using the `DFTSpecification` enum (renamed from `DFTSpecifications`). [#371](https://github.com/feos-org/feos/pull/371)
