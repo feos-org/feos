@@ -29,10 +29,6 @@ use std::sync::Arc;
 /// critical_temperature: SINumber, optional
 ///     An estimate for the critical temperature, used to initialize
 ///     density profile (default: 500 K)
-/// fix_equimolar_surface: bool, optional
-///     If True use additional constraints to fix the
-///     equimolar surface of the system.
-///     Defaults to False.
 /// solver: DFTSolver, optional
 ///     Custom solver options
 ///
@@ -48,16 +44,15 @@ pub struct PySurfaceTensionDiagram(
 impl PySurfaceTensionDiagram {
     #[new]
     #[pyo3(
-        text_signature = "(dia, init_densities=None, n_grid=None, l_grid=None, critical_temperature=None, fix_equimolar_surface=None, solver=None)"
+        text_signature = "(dia, init_densities=None, n_grid=None, l_grid=None, critical_temperature=None, solver=None)"
     )]
-    #[pyo3(signature = (dia, init_densities=None, n_grid=None, l_grid=None, critical_temperature=None, fix_equimolar_surface=None, solver=None))]
+    #[pyo3(signature = (dia, init_densities=None, n_grid=None, l_grid=None, critical_temperature=None, solver=None))]
     pub fn isotherm(
         dia: Vec<PyPhaseEquilibrium>,
         init_densities: Option<bool>,
         n_grid: Option<usize>,
         l_grid: Option<Length>,
         critical_temperature: Option<Temperature>,
-        fix_equimolar_surface: Option<bool>,
         solver: Option<PyDFTSolver>,
     ) -> PyResult<Self> {
         let x: Vec<_> = dia.into_iter().map(|vle| vle.0).collect();
@@ -67,7 +62,6 @@ impl PySurfaceTensionDiagram {
             n_grid,
             l_grid,
             critical_temperature,
-            fix_equimolar_surface,
             solver.map(|s| s.0).as_ref(),
         )))
     }

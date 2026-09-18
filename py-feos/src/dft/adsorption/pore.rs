@@ -165,6 +165,11 @@ impl PyPoreProfile {
     }
 
     #[getter]
+    fn get_bulk(&self) -> PyState {
+        PyState(self.0.bulk.clone())
+    }
+
+    #[getter]
     fn get_grand_potential(&self) -> Option<Energy> {
         self.0.grand_potential
     }
