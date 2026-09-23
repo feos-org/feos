@@ -8,7 +8,7 @@ $$ n_\alpha(\mathbf{r})=\sum_in_\alpha^i(\mathbf{r})=\sum_i\int\rho_i(\mathbf{r}
 
 These convolutions are time-consuming calculations. Therefore, these equations are simplified by using a Taylor expansion around $\mathbf{r}$ for the density of each component $\rho_i$ as
 
-$$\rho_i(\mathbf{r}-\mathbf{r}')=\rho_i(\mathbf{r})-\nabla\rho_i(\mathbf{r})\cdot \mathbf{r}'+\frac{1}{2}\nabla\nabla\rho(\mathbf{r}):\mathbf{r}'\mathbf{r}'+\ldots$$
+$$\rho_i(\mathbf{r}-\mathbf{r}')=\rho_i(\mathbf{r})-\nabla\rho_i(\mathbf{r})\cdot \mathbf{r}'+\frac{1}{2}\nabla\nabla\rho_i(\mathbf{r}):\mathbf{r}'\mathbf{r}'+\ldots$$
 
 In the convolution integrals, the integration over angles can now be performed analytically for the spherically symmetric weight functions $\omega_\alpha^i(\mathbf{r})=\omega_\alpha^i(r)$
 which provides

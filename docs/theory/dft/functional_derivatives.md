@@ -20,10 +20,10 @@ $$F_{\rho_\alpha}(r)=\int\frac{\delta f(r')}{\delta\rho_\alpha(r)}\mathrm{d}r'=\
 
 with $f_{n_\gamma}$ as abbreviation for the *partial* derivative $\frac{\partial f}{\partial n_\gamma}$. Using the definition of the weighted densities (1), the expression can be rewritten as
 
-$$\begin{align}
+$$\begin{aligned}
 F_{\rho_\alpha}(r)&=\int\sum_\gamma f_{n_\gamma}(r')\frac{\delta n_\gamma(r')}{\delta\rho_\alpha(r)}\mathrm{d}r'=\int\sum_\gamma f_{n_\gamma}(r')\sum_{\alpha'}\int\underbrace{\frac{\delta\rho_{\alpha'}(r'')}{\delta\rho_\alpha(r)}}_{\delta(r-r'')\delta_{\alpha\alpha'}}\omega_\gamma^{\alpha'}(r'-r'')\mathrm{d}r''\mathrm{d}r'\\
 &=\sum_\gamma\int f_{n_\gamma}(r')\omega_\gamma^\alpha(r'-r)\mathrm{d}r
-\end{align}$$
+\end{aligned}$$
 
 At this point the parity of the weight functions has to be taken into account. By construction scalar and spherically symmetric weight functions (the standard case) are even functions, i.e., $\omega(-r)=\omega(r)$. In contrast, vector valued weight functions, as they appear in fundamental measure theory, are odd functions, i.e., $\omega(-r)=-\omega(r)$. Therefore, the sum over the weight functions needs to be split into two contributions, as
 
