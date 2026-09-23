@@ -3,7 +3,9 @@ For converged density profiles equilibrium properties can be calculated as parti
 
 The density profiles are calculated implicitly from the Euler-Lagrange equation, which can be written simplified as
 
-$$\Omega_{\rho_i}(T,\lbrace\mu_k\rbrace,[\lbrace\rho_k(\mathbf{r})\rbrace])=F_{\rho_i}(T,[\lbrace\rho_k(\mathbf{r})\rbrace])-\mu_i+V_i^\mathrm{ext}(\mathbf{r})=0$$ (eqn:euler_lagrange)
+$$
+\Omega_{\rho_i}(T,\lbrace\mu_k\rbrace,[\lbrace\rho_k(\mathbf{r})\rbrace])=F_{\rho_i}(T,[\lbrace\rho_k(\mathbf{r})\rbrace])-\mu_i+V_i^\mathrm{ext}(\mathbf{r})=0
+$$ (eqn:euler_lagrange)
 
 Incorporating bond integrals can be done similar to the section on the [Newton solver](solver.md) but will not be discussed in this section. The derivatives of the density profiles can then be calculated from the total differential of eq. {eq}`eqn:euler_lagrange`, leading to
 
@@ -11,7 +13,9 @@ $$\mathrm{d}\Omega_{\rho_i}(\mathbf{r})=\left(\frac{\partial\Omega_{\rho_i}(\mat
 
 Using eq. {eq}`eqn:euler_lagrange` and the shortened notation for derivatives of functionals in their natural variables, e.g., $F_T=\left(\frac{\partial F}{\partial T}\right)_{\rho_k}$, the expression can be simplified to
 
-$$F_{T\rho_i}(\mathbf{r})\mathrm{d}T-\mathrm{d}\mu_i+\int\sum_j F_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\delta\rho_j(\mathbf{r}')\mathrm{d}\mathbf{r}'=0$$ (eqn:gibbs_duhem)
+$$
+F_{T\rho_i}(\mathbf{r})\mathrm{d}T-\mathrm{d}\mu_i+\int\sum_j F_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\delta\rho_j(\mathbf{r}')\mathrm{d}\mathbf{r}'=0
+$$ (eqn:gibbs_duhem)
 
 Similar to the Gibbs-Duhem relation for bulk phases, eq. {eq}`eqn:gibbs_duhem` shows how temperature, chemical potentials and the density profiles in an inhomogeneous system cannot be varied independently. The derivatives of the density profiles with respect to the intensive variables can be directly identified as
 
@@ -19,7 +23,9 @@ $$\int\sum_j F_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\left(\frac{\partial\rho_j(
 
 and
 
-$$\int\sum_j F_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\left(\frac{\partial\rho_j(\mathbf{r}')}{\partial\mu_k}\right)_{T}\mathrm{d}\mathbf{r}'=\delta_{ik}$$ (eqn:drho_dmu)
+$$
+\int\sum_j F_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\left(\frac{\partial\rho_j(\mathbf{r}')}{\partial\mu_k}\right)_{T}\mathrm{d}\mathbf{r}'=\delta_{ik}
+$$ (eqn:drho_dmu)
 
 Both of these expressions are implicit (linear) equations for the derivatives. They can be solved rapidly analogously to the implicit expression appearing in the [Newton solver](solver.md). In practice, it is useful to explicitly cancel out the (often unknown) thermal de Broglie wavelength $\Lambda_i$ from the expression where it has no influence. This is done by splitting the intrinsic Helmholtz energy into an ideal gas and a residual part.
 
@@ -47,10 +53,10 @@ $$s_i=v_i\left(\frac{\partial p}{\partial T}\right)_{V,N_k}-F_{T\rho_i}^\mathrm{
 
 Then, the intrinsic Helmholtz energy can be split into an ideal gas and a residual part again, and the de Broglie wavelength cancels.
 
-$$\begin{align*}
+$$\begin{aligned}
 &\left(m_ik_\mathrm{B}\ln\left(\frac{\rho_i(\mathbf{r})}{\rho_i^\mathrm{b}}\right)+F_{T\rho_i}^\mathrm{res}(\mathbf{r})-F_{T\rho_i}^\mathrm{b,res}+v_i\left(\frac{\partial p}{\partial T}\right)_{V,N_k}\right)\mathrm{d}T\\
 &~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~+m_i\frac{k_\mathrm{B}T}{\rho_i(\mathbf{r})}\delta\rho_i(\mathbf{r})+\int\sum_j\mathcal{\hat F}_{\rho_i\rho_j}^\mathrm{res}(\mathbf{r},\mathbf{r}')\delta\rho_j(\mathbf{r}')\mathrm{d}\mathbf{r}'=v_i\mathrm{d}p
-\end{align*}$$
+\end{aligned}$$
 
 Finally the expressions for the derivatives with respect to pressure
 
@@ -58,14 +64,14 @@ $$m_i\left(\frac{\partial\rho_i(\mathbf{r})}{\partial\beta p}\right)_{T,x_k}+\rh
 
 and temperature
 
-$$\begin{align*}
+$$\begin{aligned}
 &m_i\left(\frac{\partial\rho_i(\mathbf{r})}{\partial T}\right)_{p,x_k}+\rho_i(\mathbf{r})\int\sum_j\beta\mathcal{\hat F}_{\rho_i\rho_j}^\mathrm{res}(\mathbf{r},\mathbf{r}')\left(\frac{\partial\rho_j(\mathbf{r}')}{\partial T}\right)_{p,x_k}\mathrm{d}\mathbf{r}'\\
 &~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~=-\frac{\rho_i(\mathbf{r})}{k_\mathrm{B}T}\left(m_ik_\mathrm{B}\ln\left(\frac{\rho_i(\mathbf{r})}{\rho_i^\mathrm{b}}\right)+F_{T\rho_i}^\mathrm{res}(\mathbf{r})-F_{T\rho_i}^\mathrm{b,res}+v_i\left(\frac{\partial p}{\partial T}\right)_{V,N_k}\right)
-\end{align*}$$
+\end{aligned}$$
 
 follow. All derivatives $x_i$ shown here can be calculated from the same linear equation
 
-$$m_ix_i+\rho_i(\mathbf{r})\int\sum_j\beta\mathcal{\hat F}_{\rho_i\rho_j}^\mathrm{res}(\mathbf{r},\mathbf{r}')x_i\mathrm{d}\mathbf{r}'=y_i$$
+$$m_ix_i(\mathbf{r})+\rho_i(\mathbf{r})\int\sum_j\beta\mathcal{\hat F}_{\rho_i\rho_j}^\mathrm{res}(\mathbf{r},\mathbf{r}')x_j(\mathbf{r}')\mathrm{d}\mathbf{r}'=y_i(\mathbf{r})$$
 
 by just replacing the right hand side $y_i$.
 
