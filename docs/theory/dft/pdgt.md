@@ -1,6 +1,6 @@
 # Predictive density gradient theory
 
-Predictive density gradient theory (pDGT)  is an efficient approach for the prediction of surface tensions, which is derived from non-local DFT, see [Rehner et al. (2018)](https://journals.aps.org/pre/abstract/10.1103/PhysRevE.98.063312). A gradient expansion is applied to the weighted densities of the Helmholtz energy functional to second order as well as to the Helmholtz energy density to first order. 
+Predictive density gradient theory (pDGT) is an efficient approach for the prediction of surface tensions, which is derived from non-local DFT, see [Rehner et al. (2018)](https://journals.aps.org/pre/abstract/10.1103/PhysRevE.98.063312). A gradient expansion is applied to the weighted densities of the Helmholtz energy functional to second order as well as to the Helmholtz energy density to first order. 
 
 Weighted densities (in non-local DFT) are determined from
 
@@ -36,7 +36,7 @@ $$	F[\mathbf{\rho}(\mathbf{r})]=\int\left(f(\mathbf{\rho})+\sum_{ij}\frac{c_{ij}
 
 with the density dependent influence parameter
 
-$$	\beta c_{ij}(\mathbf{\rho})=-\sum_{\alpha\beta}\frac{\partial^2\Phi}{\partial n_\alpha\partial n_\beta}\left(\omega_\alpha^{i2}\omega_\beta^{j0}+ \omega_\alpha^{i0}\omega_\beta^{j2}\right).$$
+$$	\beta c_{ij}(\mathbf{\rho})=-\sum_{\alpha\beta}\frac{\partial^2\Phi}{\partial n_\alpha\partial n_\beta}\left(\omega_\alpha^{i2}\omega_\beta^{j0}+ \omega_\alpha^{i0}\omega_\beta^{j2}\right)$$
 
 and the local Helmholtz energy density $f(\mathbf{\rho})$.
 
@@ -44,10 +44,10 @@ and the local Helmholtz energy density $f(\mathbf{\rho})$.
 
 For pure components, as derived in the original publication, the surface tension can be calculated from the surface excess grand potential per area according to
 
-$$	\gamma=\frac{F-\mu N+pV}{A}=\int_{\rho^\mathrm{V}}^{\rho^\mathrm{L}}   \sqrt{2c \left(f(\rho)-\rho\mu+p\right) } d\rho $$
+$$	\gamma=\frac{F-\mu N+pV}{A}=\int_{\rho^\mathrm{V}}^{\rho^\mathrm{L}}   \sqrt{2c \left(f(\rho)-\rho\mu+p\right) } \mathrm{d}\rho $$
 
 
 Thus, no iterative solver is necessary to calculate the surface tension of pure components, which is a major advantage of pDGT. Finally, the density profile can be calculated from
 
-$$ z(\rho)=\int_{\rho^\mathrm{V}}^{\rho}   \sqrt{\frac{c/2}{ f(\rho)-\rho\mu+p} } d\rho $$
+$$ z(\rho)=\int_{\rho^\mathrm{V}}^{\rho}   \sqrt{\frac{c/2}{ f(\rho)-\rho\mu+p} } \mathrm{d}\rho $$
 
