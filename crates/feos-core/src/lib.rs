@@ -221,7 +221,7 @@ mod tests {
             "NoIdealGas"
         }
 
-        fn ln_lambda3<D: DualNum<f64> + Copy>(&self, _: D) -> D {
+        fn ln_lambda3<D: DualNum<Primitive = f64> + Copy>(&self, _: D) -> D {
             unreachable!()
         }
     }

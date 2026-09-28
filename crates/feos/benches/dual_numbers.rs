@@ -26,7 +26,7 @@ fn state_pcsaft(n: usize, eos: &PcSaft) -> State<&PcSaft> {
 }
 
 /// Residual Helmholtz energy given an equation of state and a StateHD.
-fn a_res<D: DualNum<f64> + Copy, E: Residual<Dyn, D>>((eos, state): (&E, &StateHD<D>)) -> D {
+fn a_res<D: DualNum<Primitive = f64> + Copy, E: Residual<Dyn, D>>((eos, state): (&E, &StateHD<D>)) -> D {
     eos.reduced_residual_helmholtz_energy_density(state)
 }
 

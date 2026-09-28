@@ -5,7 +5,7 @@ use feos::gc_pcsaft::{GcPcSaft, GcPcSaftFunctional, GcPcSaftParameters};
 use feos_core::parameter::{ChemicalRecord, Identifier, IdentifierOption, SegmentRecord};
 use feos_core::{PhaseEquilibrium, State, Verbosity};
 use feos_dft::adsorption::{ExternalPotential, Pore1D, PoreSpecification};
-use feos_dft::interface::PlanarInterface;
+use feos_dft::interface::Interface;
 use feos_dft::{DFTSolver, Geometry};
 use nalgebra::dvector;
 use quantity::*;
@@ -160,7 +160,7 @@ fn test_dft() -> Result<(), Box<dyn Error>> {
     let points = 2048;
     let tc = State::critical_point(&&func, (), None, None, Default::default())?.temperature;
     let vle = PhaseEquilibrium::pure(&&func, t, None, Default::default())?;
-    let profile = PlanarInterface::from_tanh(&vle, points, w, tc, false).solve(None)?;
+    let profile = Interface::planar_from_tanh(&vle, points, w, tc).solve(None)?;
     println!(
         "hetero {} {} {}",
         profile.surface_tension.unwrap(),
@@ -205,7 +205,7 @@ fn test_dft_assoc() -> Result<(), Box<dyn Error>> {
     let w = 100.0 * ANGSTROM;
     let points = 4096;
     let vle = PhaseEquilibrium::pure(&func, t, None, Default::default())?;
-    let profile = PlanarInterface::from_tanh(&vle, points, w, 600.0 * KELVIN, false).solve(None)?;
+    let profile = Interface::planar_from_tanh(&vle, points, w, 600.0 * KELVIN).solve(None)?;
     println!(
         "hetero {} {} {}",
         profile.surface_tension.unwrap(),
@@ -218,6 +218,7 @@ fn test_dft_assoc() -> Result<(), Box<dyn Error>> {
         .anderson_mixing(None, None, None, None, None);
     let bulk = State::new_npt(&func, t, 5.0 * BAR, (), None)?;
     Pore1D::new(
+        &func,
         Geometry::Cartesian,
         20.0 * ANGSTROM,
         ExternalPotential::LJ93 {
@@ -226,9 +227,8 @@ fn test_dft_assoc() -> Result<(), Box<dyn Error>> {
             rho_s: 0.08,
         },
         None,
-        None,
     )
-    .initialize(&bulk, None, None)
+    .initialize(&bulk, None, PoreSpecification::ChemicalPotential)
     .unwrap()
     .solve(Some(&solver))?;
     Ok(())
@@ -254,6 +254,6 @@ fn test_dft_newton() -> Result<(), Box<dyn Error>> {
     let solver = DFTSolver::new(Some(Verbosity::Iter))
         .picard_iteration(None, Some(10), None, None)
         .newton(None, None, None, None);
-    PlanarInterface::from_tanh(&vle, points, w, tc, false).solve(Some(&solver))?;
+    Interface::planar_from_tanh(&vle, points, w, tc).solve(Some(&solver))?;
     Ok(())
 }

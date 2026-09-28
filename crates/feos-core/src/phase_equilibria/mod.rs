@@ -46,7 +46,7 @@ pub use phase_diagram_pure::PhaseDiagram;
 /// + [Heteroazeotropes](#heteroazeotropes)
 /// + [Utility functions](#utility-functions)
 #[derive(Debug, Clone)]
-pub struct PhaseEquilibrium<E, const P: usize, N: Dim = Dyn, D: DualNum<f64> + Copy = f64>
+pub struct PhaseEquilibrium<E, const P: usize, N: Dim = Dyn, D: DualNum<Primitive = f64> + Copy = f64>
 where
     DefaultAllocator: Allocator<N>,
 {
@@ -100,7 +100,7 @@ impl<E: Residual, const P: usize> PhaseEquilibrium<E, P> {
     }
 }
 
-impl<E: Residual<N, D>, N: Dim, D: DualNum<f64> + Copy> PhaseEquilibrium<E, 2, N, D>
+impl<E: Residual<N, D>, N: Dim, D: DualNum<Primitive = f64> + Copy> PhaseEquilibrium<E, 2, N, D>
 where
     DefaultAllocator: Allocator<N>,
 {
@@ -131,7 +131,7 @@ impl<E> PhaseEquilibrium<E, 3> {
     }
 }
 
-impl<E: Residual<N, D>, N: Dim, D: DualNum<f64> + Copy> PhaseEquilibrium<E, 2, N, D>
+impl<E: Residual<N, D>, N: Dim, D: DualNum<Primitive = f64> + Copy> PhaseEquilibrium<E, 2, N, D>
 where
     DefaultAllocator: Allocator<N>,
 {
@@ -164,7 +164,7 @@ where
     }
 }
 
-impl<E: Residual<N, D>, N: Dim, D: DualNum<f64> + Copy> PhaseEquilibrium<E, 3, N, D>
+impl<E: Residual<N, D>, N: Dim, D: DualNum<Primitive = f64> + Copy> PhaseEquilibrium<E, 3, N, D>
 where
     DefaultAllocator: Allocator<N>,
 {
@@ -177,7 +177,7 @@ where
     }
 }
 
-impl<E: Residual<N, D>, N: Gradients, const P: usize, D: DualNum<f64> + Copy>
+impl<E: Residual<N, D>, N: Gradients, const P: usize, D: DualNum<Primitive = f64> + Copy>
     PhaseEquilibrium<E, P, N, D>
 where
     DefaultAllocator: Allocator<N>,
@@ -187,8 +187,7 @@ where
     }
 }
 
-impl<E: Total<N, D>, N: Gradients, const P: usize, D: DualNum<f64> + Copy>
-    PhaseEquilibrium<E, P, N, D>
+impl<E: Total<N, D>, N: Gradients, const P: usize, D: DualNum<Primitive = f64> + Copy> PhaseEquilibrium<E, P, N, D>
 where
     DefaultAllocator: Allocator<N>,
 {

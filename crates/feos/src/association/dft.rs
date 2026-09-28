@@ -15,7 +15,7 @@ impl Association {
     /// Uses the contact value of hard-sphere pair correlation function and model-specific
     /// implementations for the bonding volume.
     #[expect(clippy::too_many_arguments)]
-    fn yu_wu_association_strength<A: AssociationStrength, D: DualNum<f64> + Copy>(
+    fn yu_wu_association_strength<A: AssociationStrength, D: DualNum<Primitive = f64> + Copy>(
         &self,
         parameters: &AssociationParameters<A::Record>,
         model: &A,
@@ -98,7 +98,7 @@ where
         "Association"
     }
 
-    fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
+    fn weight_functions<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
         let p = self.model;
         let r = p.hs_diameter(temperature) * N::from(0.5);
         let [_, _, _, c3] = p.geometry_coefficients(temperature);
@@ -125,7 +125,7 @@ where
             )
     }
 
-    fn helmholtz_energy_density<N: DualNum<f64> + Copy>(
+    fn helmholtz_energy_density<N: DualNum<Primitive = f64> + Copy>(
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
@@ -191,7 +191,7 @@ where
 }
 
 impl<'a, A: AssociationStrength> YuWuAssociationFunctional<'a, A> {
-    pub fn _helmholtz_energy_density<N: DualNum<f64> + Copy, S: Data<Elem = N>>(
+    pub fn _helmholtz_energy_density<N: DualNum<Primitive = f64> + Copy, S: Data<Elem = N>>(
         &self,
         temperature: N,
         rho0: &Array2<N>,
@@ -268,7 +268,7 @@ impl<'a, A: AssociationStrength> YuWuAssociationFunctional<'a, A> {
     }
 
     #[expect(clippy::too_many_arguments)]
-    fn helmholtz_energy_density_ab_analytic<N: DualNum<f64> + Copy, S: Data<Elem = N>>(
+    fn helmholtz_energy_density_ab_analytic<N: DualNum<Primitive = f64> + Copy, S: Data<Elem = N>>(
         &self,
         parameters: Option<&A::Record>,
         temperature: N,
@@ -307,7 +307,7 @@ impl<'a, A: AssociationStrength> YuWuAssociationFunctional<'a, A> {
     }
 
     #[expect(clippy::too_many_arguments)]
-    fn helmholtz_energy_density_cc_analytic<N: DualNum<f64> + Copy, S: Data<Elem = N>>(
+    fn helmholtz_energy_density_cc_analytic<N: DualNum<Primitive = f64> + Copy, S: Data<Elem = N>>(
         &self,
         parameters: Option<&A::Record>,
         temperature: N,

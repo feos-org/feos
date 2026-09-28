@@ -31,7 +31,7 @@ impl<'a> FunctionalContribution for PureFMTFunctional<'a> {
         "Pure FMT"
     }
 
-    fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
+    fn weight_functions<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
         let r = self.parameters.hs_diameter(temperature) * N::from(0.5);
         WeightFunctionInfo::new(dvector![0], false).extend(
             vec![
@@ -46,7 +46,7 @@ impl<'a> FunctionalContribution for PureFMTFunctional<'a> {
         )
     }
 
-    fn helmholtz_energy_density<N: DualNum<f64> + Copy>(
+    fn helmholtz_energy_density<N: DualNum<Primitive = f64> + Copy>(
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
@@ -123,7 +123,7 @@ impl<'a> FunctionalContribution for PureAttFunctional<'a> {
         "Pure attractive"
     }
 
-    fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
+    fn weight_functions<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
         let d = self.parameters.hs_diameter(temperature);
         const PSI: f64 = 1.21; // Homosegmented DFT (Heier2018)
         WeightFunctionInfo::new(dvector![0], false).add(
@@ -132,7 +132,7 @@ impl<'a> FunctionalContribution for PureAttFunctional<'a> {
         )
     }
 
-    fn helmholtz_energy_density<N: DualNum<f64> + Copy>(
+    fn helmholtz_energy_density<N: DualNum<Primitive = f64> + Copy>(
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
