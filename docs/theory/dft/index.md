@@ -6,6 +6,7 @@ This section explains the implementation of the core expressions from classical 
    :maxdepth: 1
 
    euler_lagrange_equation
+   particle_constraint
    functional_derivatives
    solver
    derivatives
