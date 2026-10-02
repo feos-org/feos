@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - The Newton solver for cDFT now correctly handles specifications other than the chemical potential. [#384](https://github.com/feos-org/feos/pull/384)
+- The analytic (non-cross-associating) branches of the Yu-Wu association functional now evaluate the association strength for the correct segments instead of always using the parameters of the first segment.
 
 ### Packaging
 - Removed the `gauss-quad` dependency which was only used in the FEA potential calculation. [#376](https://github.com/feos-org/feos/pull/376)
