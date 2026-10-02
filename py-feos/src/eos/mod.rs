@@ -15,6 +15,8 @@ type Quot<T1, T2> = <T1 as Div<T2>>::Output;
 mod constructors;
 #[cfg(feature = "epcsaft")]
 mod epcsaft;
+#[cfg(feature = "fcsaft")]
+mod fcsaft;
 #[cfg(feature = "gc_pcsaft")]
 mod gc_pcsaft;
 #[cfg(feature = "multiparameter")]

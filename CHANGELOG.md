@@ -10,8 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the `Grid` and `PoreProfile` classes as an entry points to DFT in various coordinate systems in Python. [#376](https://github.com/feos-org/feos/pull/376)
 - `PoreProfile.solver_log` now stores a timing profile of the different solver steps. [#385](https://github.com/feos-org/feos/pull/385)
 - Added `Interface::curved` to calculate cylindrical and spherical interfaces from a planar interface. [#387](https://github.com/feos-org/feos/pull/387)
+- Added the heterosegmented fused-chain SAFT (FC-SAFT) equation of state and Helmholtz energy functional (feature `fcsaft`).
+- Added optional bond records (`bond_records`/`bonds_path`) to `GcParameters` in Python for models that require bond parameters.
+- Added `FcSaftPure` and `FcSaftBinary`, optimized pure-component and binary implementations of FC-SAFT that support automatic differentiation with respect to model parameters, available in Python as `EquationOfStateAD.FcSaftNonAssoc` and `EquationOfStateAD.FcSaftFull`.
 
 ### Changed
+- The `ad` feature of the Python package no longer activates any models. The `EquationOfStateAD` variants are available depending on the active model features (`pcsaft`, `fcsaft`).
 - Changed data type of initial temperatures or pressure for phase equilibrium calculations (`TemperatureOrPressure::Other`) from `D` to `f64`. [#369](https://github.com/feos-org/feos/pull/369)
 - Reworked DFT solution algorithms slightly for the cases in which additional specifications are given. [#371](https://github.com/feos-org/feos/pull/371)
 - External potentials are passed and returned as quantities (energies) instead of reduced units. [#372](https://github.com/feos-org/feos/pull/372)
@@ -28,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - The Newton solver for cDFT now correctly handles specifications other than the chemical potential. [#384](https://github.com/feos-org/feos/pull/384)
+- The analytic (non-cross-associating) branches of the Yu-Wu association functional now evaluate the association strength for the correct segments instead of always using the parameters of the first segment.
 
 ### Packaging
 - Removed the `gauss-quad` dependency which was only used in the FEA potential calculation. [#376](https://github.com/feos-org/feos/pull/376)
