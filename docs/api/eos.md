@@ -14,6 +14,7 @@ The `State` and `PhaseEquilibrium` objects are used to define thermodynamic cond
     EquationOfState.pcsaft
     EquationOfState.epcsaft
     EquationOfState.gc_pcsaft
+    EquationOfState.fcsaft
     EquationOfState.peng_robinson
     EquationOfState.pets
     EquationOfState.uvtheory

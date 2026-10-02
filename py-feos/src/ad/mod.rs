@@ -1,4 +1,5 @@
 use crate::eos::PyEquationOfState;
+use feos::fcsaft::{FcSaftBinary, FcSaftPure};
 use feos::pcsaft::{PcSaftBinary, PcSaftPure};
 use feos_core::ad::{
     BoilingTemperature, BubblePointPressure, DewPointPressure, EnthalpyOfVaporization,
@@ -19,11 +20,15 @@ pub use dataset::{PyBinaryDataset, PyPureDataset};
 pub enum PyEquationOfStateAD {
     PcSaftNonAssoc,
     PcSaftFull,
+    FcSaftNonAssoc,
+    FcSaftFull,
 }
 
 enum BinaryModels {
     PcSaftNonAssoc,
     PcSaftFull,
+    FcSaftNonAssoc,
+    FcSaftFull,
 }
 
 impl From<PyEquationOfStateAD> for BinaryModels {
@@ -31,6 +36,8 @@ impl From<PyEquationOfStateAD> for BinaryModels {
         match value {
             PyEquationOfStateAD::PcSaftNonAssoc => Self::PcSaftNonAssoc,
             PyEquationOfStateAD::PcSaftFull => Self::PcSaftFull,
+            PyEquationOfStateAD::FcSaftNonAssoc => Self::FcSaftNonAssoc,
+            PyEquationOfStateAD::FcSaftFull => Self::FcSaftFull,
         }
     }
 }
@@ -520,11 +527,11 @@ macro_rules! impl_evaluate_gradients {
 impl_evaluate_gradients!(
     pure,
     [vapor_pressure: VaporPressure, boiling_temperature: BoilingTemperature, liquid_density: LiquidDensity, equilibrium_liquid_density: EquilibriumLiquidDensity, enthalpy_of_vaporization: EnthalpyOfVaporization, residual_isobaric_heat_capacity: ResidualIsobaricHeatCapacity],
-    {PcSaftNonAssoc: PcSaftPure<f64, 4>, PcSaftFull: PcSaftPure<f64, 8>}
+    {PcSaftNonAssoc: PcSaftPure<f64, 4>, PcSaftFull: PcSaftPure<f64, 8>, FcSaftNonAssoc: FcSaftPure<f64, 5>, FcSaftFull: FcSaftPure<f64, 9>}
 );
 
 impl_evaluate_gradients!(
     binary,
     [bubble_point_pressure: BubblePointPressure, dew_point_pressure: DewPointPressure],
-    {PcSaftNonAssoc: PcSaftBinary<f64, 4>, PcSaftFull: PcSaftBinary<f64, 8>}
+    {PcSaftNonAssoc: PcSaftBinary<f64, 4>, PcSaftFull: PcSaftBinary<f64, 8>, FcSaftNonAssoc: FcSaftBinary<f64, 5>, FcSaftFull: FcSaftBinary<f64, 9>}
 );

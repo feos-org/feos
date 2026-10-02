@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the `Grid` and `PoreProfile` classes as an entry points to DFT in various coordinate systems in Python. [#376](https://github.com/feos-org/feos/pull/376)
 - `PoreProfile.solver_log` now stores a timing profile of the different solver steps. [#385](https://github.com/feos-org/feos/pull/385)
 - Added `Interface::curved` to calculate cylindrical and spherical interfaces from a planar interface. [#387](https://github.com/feos-org/feos/pull/387)
+- Added the heterosegmented fused-chain SAFT (FC-SAFT) equation of state and Helmholtz energy functional (feature `fcsaft`).
+- Added optional bond records (`bond_records`/`bonds_path`) to `GcParameters` in Python for models that require bond parameters.
+- Added `FcSaftPure` and `FcSaftBinary`, optimized pure-component and binary implementations of FC-SAFT that support automatic differentiation with respect to model parameters, available in Python as `EquationOfStateAD.FcSaftNonAssoc` and `EquationOfStateAD.FcSaftFull`.
 
 ### Changed
 - Changed data type of initial temperatures or pressure for phase equilibrium calculations (`TemperatureOrPressure::Other`) from `D` to `f64`. [#369](https://github.com/feos-org/feos/pull/369)

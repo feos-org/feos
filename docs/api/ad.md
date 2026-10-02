@@ -14,6 +14,8 @@ The currently available models are:
 |-|-|-|-|
 |`PcSaftNonAssoc`|The PC-SAFT equation of state including a dipolar contribution but no association|`m`, `sigma`, `epsilon_k`, `mu`|`k_ij`|
 |`PcSaftFull`|The PC-SAFT equation of state with a dipolar contribution and association|`m`, `sigma`, `epsilon_k`, `mu`, `kappa_ab`, `epsilon_k_ab`, `na`, `nb`|`k_ij`|
+|`FcSaftNonAssoc`|The (homosegmented) FC-SAFT equation of state including a dipolar contribution but no association|`s`, `l`, `sigma`, `epsilon_k`, `mu`|`k_ij`|
+|`FcSaftFull`|The (homosegmented) FC-SAFT equation of state with a dipolar contribution and association|`s`, `l`, `sigma`, `epsilon_k`, `mu`, `kappa_ab`, `epsilon_k_ab`, `na`, `nb`|`k_ij`|
 
 ## Properties
 All properties that have parallel automatic differentiation with respect to model parameters enabled are available from the `Property` class

@@ -20,6 +20,7 @@ Implementations of Helmholtz energy functionals for DFT.
 .. autosummary::
     HelmholtzEnergyFunctional.pcsaft
     HelmholtzEnergyFunctional.gc_pcsaft
+    HelmholtzEnergyFunctional.fcsaft
     HelmholtzEnergyFunctional.pets
     HelmholtzEnergyFunctional.saftvrqmie
     HelmholtzEnergyFunctional.fmt
