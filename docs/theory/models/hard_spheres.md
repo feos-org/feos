@@ -17,8 +17,8 @@ The geometry coefficients $C_{k,\alpha}$ and the segment diameters $d_\alpha$ de
 |$d_\alpha$|$\sigma_\alpha$|$\sigma_\alpha\left(1-0.12e^{\frac{-3\varepsilon_\alpha}{k_\mathrm{B}T}}\right)$|$\sigma_\alpha$|
 |$C_{0,\alpha}$|$1$|$m_\alpha$|$1$|
 |$C_{1,\alpha}$|$1$|$m_\alpha$|$A_\alpha^*$|
-|$C_{1,\alpha}$|$1$|$m_\alpha$|$A_\alpha^*$|
-|$C_{1,\alpha}$|$1$|$m_\alpha$|$V_\alpha^*$|
+|$C_{2,\alpha}$|$1$|$m_\alpha$|$A_\alpha^*$|
+|$C_{3,\alpha}$|$1$|$m_\alpha$|$V_\alpha^*$|
 
 ## Fundamental measure theory
 

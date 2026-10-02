@@ -3,7 +3,9 @@
 use feos_core::Verbosity;
 use pyo3::prelude::*;
 
-#[cfg(feature = "ad")]
+#[cfg(all(feature = "ad", not(any(feature = "pcsaft", feature = "fcsaft"))))]
+compile_error!("The `ad` feature requires at least one of the features `pcsaft` and `fcsaft`.");
+#[cfg(all(feature = "ad", any(feature = "pcsaft", feature = "fcsaft")))]
 pub(crate) mod ad;
 #[cfg(feature = "dft")]
 pub(crate) mod dft;
@@ -180,7 +182,7 @@ fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<eos::PyEquationOfState>()?;
 
     // AD
-    #[cfg(feature = "ad")]
+    #[cfg(all(feature = "ad", any(feature = "pcsaft", feature = "fcsaft")))]
     {
         m.add_class::<ad::PyEquationOfStateAD>()?;
         m.add_class::<ad::PyPropertyAD>()?;

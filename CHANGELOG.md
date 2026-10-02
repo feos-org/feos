@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `drho_dn` and `drho_dt_n` to DFT profiles to calculate derivatives of density profiles at constant number of particles. [#403](https://github.com/feos-org/feos/pull/403)
 - Added the association functionals of Yu and Wu, WDA, and iSAFT with the fractions of non-bonded sites as additional variables of the density profile. The version is selected with `AssociationVersion` (default iSAFT). [#403](https://github.com/feos-org/feos/pull/403)
 - Added `non_bonded_fractions` to DFT profiles to access the fractions of non-bonded association sites. [#403](https://github.com/feos-org/feos/pull/403)
+- Added the heterosegmented fused-chain SAFT (FC-SAFT) equation of state and Helmholtz energy functional (feature `fcsaft`).
+- Added optional bond records (`bond_records`/`bonds_path`) to `GcParameters` in Python for models that require bond parameters.
+- Added `FcSaftPure` and `FcSaftBinary`, optimized pure-component and binary implementations of FC-SAFT that support automatic differentiation with respect to model parameters, available in Python as `EquationOfStateAD.FcSaftNonAssoc` and `EquationOfStateAD.FcSaftFull`.
 
 ### Changed
 - Removed most heap allocations from the evaluation of the residual Helmholtz energy of PC-SAFT. [#397](https://github.com/feos-org/feos/pull/397)
@@ -20,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `HelmholtzEnergyFunctional::evaluate_bulk` passes each contribution to a closure instead of returning a `Vec`. [#397](https://github.com/feos-org/feos/pull/397)
 - `MonomerShape::NonSpherical` holds a reference `&DVector<f64>` to the segment numbers instead of an owned `DVector<D>`. [#397](https://github.com/feos-org/feos/pull/397)
 - `StateHD::new_density` takes the partial densities by value. [#397](https://github.com/feos-org/feos/pull/397)
+- The `ad` feature of the Python package no longer activates any models. The `EquationOfStateAD` variants are available depending on the active model features (`pcsaft`, `fcsaft`).
 - Changed data type of initial temperatures or pressure for phase equilibrium calculations (`TemperatureOrPressure::Other`) from `D` to `f64`. [#369](https://github.com/feos-org/feos/pull/369)
 - Reworked DFT solution algorithms slightly for the cases in which additional specifications are given. [#371](https://github.com/feos-org/feos/pull/371)
 - External potentials are passed and returned as quantities (energies) instead of reduced units. [#372](https://github.com/feos-org/feos/pull/372)
@@ -40,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - The Newton solver for cDFT now correctly handles specifications other than the chemical potential. [#384](https://github.com/feos-org/feos/pull/384)
+- The analytic (non-cross-associating) branches of the Yu-Wu association functional now evaluate the association strength for the correct segments instead of always using the parameters of the first segment.
 
 ### Packaging
 - Removed the `gauss-quad` dependency which was only used in the FEA potential calculation. [#376](https://github.com/feos-org/feos/pull/376)

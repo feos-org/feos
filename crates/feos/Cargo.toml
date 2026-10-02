@@ -42,6 +42,7 @@ dft = ["feos-dft", "petgraph", "ndarray", "num-dual/ndarray", "feos-derive"]
 association = []
 pcsaft = ["association"]
 epcsaft = ["association"]
+fcsaft = ["association", "petgraph"]
 gc_pcsaft = ["association"]
 uvtheory = []
 pets = []
@@ -53,6 +54,7 @@ all_models = [
     "dft",
     "pcsaft",
     "epcsaft",
+    "fcsaft",
     "gc_pcsaft",
     "uvtheory",
     "pets",
