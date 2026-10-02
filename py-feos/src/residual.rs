@@ -35,6 +35,14 @@ pub enum ResidualModel {
     #[implement(molar_weight)]
     GcPcSaft(feos::gc_pcsaft::GcPcSaft),
 
+    #[cfg(feature = "fcsaft")]
+    #[implement(molar_weight)]
+    FcSaft(feos::fcsaft::FcSaft),
+
+    #[cfg(feature = "fcsaft")]
+    #[implement(molar_weight)]
+    FcSaftHomo(feos::fcsaft::FcSaftHomo),
+
     #[implement(molar_weight, parameter_info)]
     PengRobinson(PengRobinson),
 
@@ -76,6 +84,10 @@ pub enum ResidualModel {
     #[implement(molar_weight, functional, fluid_parameters, bond_lengths)]
     GcPcSaftFunctional(feos::gc_pcsaft::GcPcSaftFunctional),
 
+    #[cfg(all(feature = "dft", feature = "fcsaft"))]
+    #[implement(molar_weight, functional, fluid_parameters, bond_lengths)]
+    FcSaftFunctional(feos::fcsaft::FcSaftFunctional),
+
     #[cfg(all(feature = "dft", feature = "pets"))]
     #[implement(
         molar_weight,
@@ -108,6 +120,8 @@ pub enum FunctionalContributionVariant<'a> {
     PcSaftFunctional(feos::pcsaft::PcSaftFunctionalContribution<'a>),
     #[cfg(feature = "gc_pcsaft")]
     GcPcSaftFunctional(feos::gc_pcsaft::GcPcSaftFunctionalContribution<'a>),
+    #[cfg(feature = "fcsaft")]
+    FcSaftFunctional(feos::fcsaft::FcSaftFunctionalContribution<'a>),
     #[cfg(feature = "pets")]
     PetsFunctional(feos::pets::PetsFunctionalContribution<'a>),
     Fmt(feos::hard_sphere::FMTContribution<'a, feos::hard_sphere::HardSphereParameters>),

@@ -6,7 +6,7 @@ This section refers specifically to automatic (implicit) differentiation of phas
 Within Rust most phase equilibrium calculations can be used in an AD context, e.g., in order to calculate derivatives of process models (see [here](https://github.com/feos-org/feos-campd)). The Python interface focuses on the important use case of massively parallel phase equilibrium calculations for parameter estimation or prediction.
 
 ## Available equations of state
-Only a subset of the models in FeOs can be used to calculate derivatives with respect to model parameters. However, those dedicated implementations also result in unprecedented performance (see example below). Similar to the [`EquationOfState`](eos.md#the-equationofstate-class) class, models with AD capabilities are collected in the `EquationOfStateAD` class. 
+Only a subset of the models in FeOs can be used to calculate derivatives with respect to model parameters. However, those dedicated implementations also result in unprecedented performance (see example below). Similar to the [`EquationOfState`](eos.md#the-equationofstate-class) class, models with AD capabilities are collected in the `EquationOfStateAD` class. The AD interface is enabled with the `ad` feature; the PC-SAFT and FC-SAFT variants are only available if the respective model features (`pcsaft`, `fcsaft`) are active as well.
 
 The currently available models are:
 
@@ -14,6 +14,8 @@ The currently available models are:
 |-|-|-|-|
 |`PcSaftNonAssoc`|The PC-SAFT equation of state including a dipolar contribution but no association|`m`, `sigma`, `epsilon_k`, `mu`|`k_ij`|
 |`PcSaftFull`|The PC-SAFT equation of state with a dipolar contribution and association|`m`, `sigma`, `epsilon_k`, `mu`, `kappa_ab`, `epsilon_k_ab`, `na`, `nb`|`k_ij`|
+|`FcSaftNonAssoc`|The (homosegmented) FC-SAFT equation of state including a dipolar contribution but no association|`s`, `l`, `sigma`, `epsilon_k`, `mu`|`k_ij`|
+|`FcSaftFull`|The (homosegmented) FC-SAFT equation of state with a dipolar contribution and association|`s`, `l`, `sigma`, `epsilon_k`, `mu`, `kappa_ab`, `epsilon_k_ab`, `na`, `nb`|`k_ij`|
 
 ## Properties
 All properties that have parallel automatic differentiation with respect to model parameters enabled are available from the `Property` class

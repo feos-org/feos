@@ -27,7 +27,10 @@ pub enum MonomerShape<'a, D> {
 /// Properties of (generalized) hard sphere systems.
 pub trait HardSphereProperties {
     /// The [MonomerShape] used in the model.
-    fn monomer_shape<D: DualNum<Primitive = f64> + Copy>(&self, temperature: D) -> MonomerShape<'_, D>;
+    fn monomer_shape<D: DualNum<Primitive = f64> + Copy>(
+        &self,
+        temperature: D,
+    ) -> MonomerShape<'_, D>;
 
     /// The temperature dependent hard-sphere diameters of every segment.
     fn hs_diameter<D: DualNum<Primitive = f64> + Copy>(&self, temperature: D) -> DVector<D>;
@@ -44,7 +47,10 @@ pub trait HardSphereProperties {
     }
 
     /// The geometry coefficients $C_{k,\alpha}$ for every segment.
-    fn geometry_coefficients<D: DualNum<Primitive = f64> + Copy>(&self, temperature: D) -> [DVector<D>; 4] {
+    fn geometry_coefficients<D: DualNum<Primitive = f64> + Copy>(
+        &self,
+        temperature: D,
+    ) -> [DVector<D>; 4] {
         match self.monomer_shape(temperature) {
             MonomerShape::Spherical(n) => {
                 let m = DVector::from_element(n, D::from(1.0));
@@ -117,12 +123,22 @@ impl HardSphere {
         let zeta_23 = zeta[2] / zeta[3];
         let density = state.partial_density.sum();
         zeta.iter_mut().for_each(|z| *z *= density);
+        let a = Self::bmcsl_helmholtz_energy_density(zeta, zeta_23);
+        (a, zeta, diameter)
+    }
+
+    /// The BMCSL Helmholtz energy density for given packing fractions $\zeta_k$
+    /// and the (density independent) ratio $\zeta_2/\zeta_3$.
+    #[inline]
+    pub fn bmcsl_helmholtz_energy_density<D: DualNum<Primitive = f64> + Copy>(
+        zeta: [D; 4],
+        zeta_23: D,
+    ) -> D {
         let frac_1mz3 = -(zeta[3] - 1.0).recip();
-        let a = (zeta[1] * zeta[2] * frac_1mz3 * 3.0
+        (zeta[1] * zeta[2] * frac_1mz3 * 3.0
             + zeta[2].powi(2) * frac_1mz3.powi(2) * zeta_23
             + (zeta[2] * zeta_23.powi(2) - zeta[0]) * (-zeta[3]).ln_1p())
-            / std::f64::consts::FRAC_PI_6;
-        (a, zeta, diameter)
+            / std::f64::consts::FRAC_PI_6
     }
 
     #[inline]

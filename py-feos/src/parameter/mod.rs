@@ -564,6 +564,8 @@ pub struct PyGcParameters {
     chemical_records: Vec<ChemicalRecord>,
     segment_records: Vec<SegmentRecord<Value, Value>>,
     binary_segment_records: Option<Vec<BinaryRecord<String, Value, Value>>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    bond_records: Option<Vec<BinaryRecord<String, Value, Value>>>,
 }
 
 impl PyGcParameters {
@@ -623,6 +625,48 @@ impl PyGcParameters {
         )
         .map_err(PyFeosError::from)?)
     }
+
+    #[cfg(feature = "fcsaft")]
+    pub fn try_convert_heterosegmented_with_bonds<P, B, A, Bo, C: GroupCount + Default>(
+        self,
+    ) -> PyResult<GcParameters<P, B, A, Bo, C>>
+    where
+        for<'de> P: Deserialize<'de> + Clone,
+        for<'de> B: Deserialize<'de> + Clone,
+        for<'de> A: Deserialize<'de> + CombiningRule<P> + Clone,
+        for<'de> Bo: Deserialize<'de> + Clone,
+    {
+        let Some(bond_records) = self.bond_records else {
+            return Err(PyFeosError::Error(
+                "The model requires bond records, but none were provided.".to_string(),
+            )
+            .into());
+        };
+        let segment_records = self
+            .segment_records
+            .into_iter()
+            .map(|r| Ok(serde_json::from_value(serde_json::to_value(r)?)?))
+            .collect::<Result<Vec<_>, PyFeosError>>()?;
+        let binary_segment_records = self
+            .binary_segment_records
+            .map(|bsr| {
+                bsr.into_iter()
+                    .map(|r| Ok(serde_json::from_value(serde_json::to_value(r)?)?))
+                    .collect::<Result<Vec<_>, PyFeosError>>()
+            })
+            .transpose()?;
+        let bond_records = bond_records
+            .into_iter()
+            .map(|r| Ok(serde_json::from_value(serde_json::to_value(r)?)?))
+            .collect::<Result<Vec<_>, PyFeosError>>()?;
+        Ok(GcParameters::<P, B, A, Bo, C>::from_segments_with_bonds(
+            self.chemical_records,
+            &segment_records,
+            binary_segment_records.as_deref(),
+            &bond_records,
+        )
+        .map_err(PyFeosError::from)?)
+    }
 }
 
 #[pymethods]
@@ -638,22 +682,28 @@ impl PyGcParameters {
     ///     all individual segments.
     /// binary_segment_records : [BinarySegmentRecord], optional
     ///     A list of binary segment-segment parameters.
+    /// bond_records : [BinarySegmentRecord], optional
+    ///     A list of bond parameters (e.g., bond lengths) for models that
+    ///     require them.
     #[staticmethod]
-    #[pyo3(text_signature = "(chemical_records, segment_records, binary_segment_records=None)",
-    signature = (chemical_records, segment_records, binary_segment_records=None))]
+    #[pyo3(text_signature = "(chemical_records, segment_records, binary_segment_records=None, bond_records=None)",
+    signature = (chemical_records, segment_records, binary_segment_records=None, bond_records=None))]
     fn from_segments(
         chemical_records: Vec<PyChemicalRecord>,
         segment_records: Vec<PySegmentRecord>,
         binary_segment_records: Option<Vec<PyBinarySegmentRecord>>,
+        bond_records: Option<Vec<PyBinarySegmentRecord>>,
     ) -> Self {
         let chemical_records = chemical_records.into_iter().map(|r| r.into()).collect();
         let segment_records = segment_records.into_iter().map(|r| r.into()).collect();
         let binary_segment_records =
             binary_segment_records.map(|bsr| bsr.into_iter().map(|r| r.into()).collect());
+        let bond_records = bond_records.map(|br| br.into_iter().map(|r| r.into()).collect());
         Self {
             chemical_records,
             segment_records,
             binary_segment_records,
+            bond_records,
         }
     }
 
@@ -671,10 +721,13 @@ impl PyGcParameters {
     ///     Path to file containing binary segment-segment parameters.
     /// identifier_option : IdentifierOption, optional, defaults to IdentifierOption.Name
     ///     Identifier that is used to search substance.
+    /// bonds_path : str, optional
+    ///     Path to file containing bond parameters (e.g., bond lengths) for
+    ///     models that require them.
     #[staticmethod]
     #[pyo3(
-        signature = (substances, pure_path, segments_path, binary_path=None, identifier_option=PyIdentifierOption::Name),
-        text_signature = "(substances, pure_path, segments_path, binary_path=None, identifier_option=IdentiferOption.Name)"
+        signature = (substances, pure_path, segments_path, binary_path=None, identifier_option=PyIdentifierOption::Name, bonds_path=None),
+        text_signature = "(substances, pure_path, segments_path, binary_path=None, identifier_option=IdentiferOption.Name, bonds_path=None)"
     )]
     fn from_json_segments(
         substances: Vec<String>,
@@ -682,6 +735,7 @@ impl PyGcParameters {
         segments_path: &str,
         binary_path: Option<&str>,
         identifier_option: PyIdentifierOption,
+        bonds_path: Option<&str>,
     ) -> PyResult<Self> {
         let chemical_records =
             PyChemicalRecord::from_json(substances, pure_path, identifier_option)?;
@@ -694,10 +748,18 @@ impl PyGcParameters {
             })
             .transpose()
             .map_err(PyFeosError::from)?;
+        let bond_records = bonds_path
+            .map(|p| {
+                BinarySegmentRecord::from_json(p)
+                    .map(|brs| brs.into_iter().map(|r| r.into()).collect())
+            })
+            .transpose()
+            .map_err(PyFeosError::from)?;
         Ok(Self::from_segments(
             chemical_records,
             segment_records,
             binary_segment_records,
+            bond_records,
         ))
     }
 
@@ -736,6 +798,7 @@ impl PyGcParameters {
             chemical_records,
             segment_records,
             binary_segment_records,
+            None,
         ))
     }
 
