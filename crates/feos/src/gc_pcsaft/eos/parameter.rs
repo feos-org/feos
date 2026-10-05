@@ -65,7 +65,7 @@ impl GcPcSaftEosParameters {
         }
 
         // Combining rules dispersion
-        let [k_ij] = parameters.collate_binary(|&br| [br]);
+        let [k_ij] = parameters.collate_binary(|&br| [br.k_ij]);
         let sigma_ij =
             DMatrix::from_fn(sigma.len(), sigma.len(), |i, j| 0.5 * (sigma[i] + sigma[j]));
         let epsilon_k_ij = DMatrix::from_fn(epsilon_k.len(), epsilon_k.len(), |i, j| {
@@ -142,13 +142,13 @@ impl AssociationStrength for GcPcSaftEosParameters {
 #[cfg(test)]
 pub mod test {
     use super::*;
-    use crate::gc_pcsaft::GcPcSaftRecord;
+    use crate::gc_pcsaft::{GcPcSaftRecord, record::GcPcSaftBinaryRecord};
     use feos_core::parameter::{
         AssociationRecord, BinarySegmentRecord, ChemicalRecord, Identifier, SegmentRecord,
     };
 
     type Pure = SegmentRecord<GcPcSaftRecord, GcPcSaftAssociationRecord>;
-    type Binary = BinarySegmentRecord<f64, GcPcSaftAssociationRecord>;
+    type Binary = BinarySegmentRecord<GcPcSaftBinaryRecord, GcPcSaftAssociationRecord>;
 
     fn ch3() -> Pure {
         SegmentRecord::new(
@@ -181,7 +181,11 @@ pub mod test {
     }
 
     pub fn ch3_oh() -> Binary {
-        BinarySegmentRecord::new("CH3".to_string(), "OH".to_string(), Some(-0.0087))
+        BinarySegmentRecord::new(
+            "CH3".to_string(),
+            "OH".to_string(),
+            Some(GcPcSaftBinaryRecord::new(-0.0087)),
+        )
     }
 
     pub fn propane() -> GcPcSaftEosParameters {

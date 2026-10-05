@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fixed off-by-one error for the convergence-check in `_density_iteration`. [#386](https://github.com/feos-org/feos/pull/386)
 - Fixed erroneously transposed jacobian layout in binary association of `PcSaftBinary`. [#386](https://github.com/feos-org/feos/pull/386)
+- Fixed parsing of binary group/group interaction parameters in gc-PC-SAFT. [#389](https://github.com/feos-org/feos/pull/389)
 
 ## [0.10.1] - 2026-07-24
 ### Fixed
