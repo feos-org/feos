@@ -32,7 +32,7 @@ impl GcPcSaftFunctionalParameters {
         );
 
         // Combining rules dispersion
-        let [k_ij] = parameters.collate_binary(|&br| [br]);
+        let [k_ij] = parameters.collate_binary(|&br| [br.k_ij]);
         let sigma_ij =
             DMatrix::from_fn(sigma.len(), sigma.len(), |i, j| 0.5 * (sigma[i] + sigma[j]));
         let epsilon_k_ij = DMatrix::from_fn(epsilon_k.len(), epsilon_k.len(), |i, j| {

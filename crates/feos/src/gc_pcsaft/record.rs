@@ -63,6 +63,19 @@ impl CombiningRule<GcPcSaftRecord> for GcPcSaftAssociationRecord {
     }
 }
 
+/// gc-PC-SAFT binary interaction parameters.
+#[derive(Serialize, Deserialize, Clone, Copy, Default)]
+pub struct GcPcSaftBinaryRecord {
+    /// Binary dispersion group-group interaction parameter
+    pub k_ij: f64,
+}
+
+impl GcPcSaftBinaryRecord {
+    pub fn new(k_ij: f64) -> Self {
+        Self { k_ij }
+    }
+}
+
 /// Parameter set required for the gc-PC-SAFT equation of state.
 pub type GcPcSaftParameters<C> =
-    GcParameters<GcPcSaftRecord, f64, GcPcSaftAssociationRecord, (), C>;
+    GcParameters<GcPcSaftRecord, GcPcSaftBinaryRecord, GcPcSaftAssociationRecord, (), C>;
