@@ -19,7 +19,7 @@ const BH_CONSTANTS_ETA_A: [[f64; 4]; 4] = [
 /// Dimensionless Hard-sphere diameter according to Barker-Henderson division.
 /// Eq. S23 and S24.
 impl BarkerHenderson {
-    pub fn diameter_bh<D: DualNum<f64> + Copy>(
+    pub fn diameter_bh<D: DualNum<Primitive = f64> + Copy>(
         parameters: &UVTheoryPars,
         temperature: D,
     ) -> DVector<D> {
@@ -39,7 +39,7 @@ impl BarkerHenderson {
     }
 }
 
-pub(super) fn packing_fraction<D: DualNum<f64> + Copy>(
+pub(super) fn packing_fraction<D: DualNum<Primitive = f64> + Copy>(
     partial_density: &DVector<D>,
     diameter: &DVector<D>,
 ) -> D {
@@ -48,7 +48,7 @@ pub(super) fn packing_fraction<D: DualNum<f64> + Copy>(
     })
 }
 
-pub(super) fn packing_fraction_b<D: DualNum<f64> + Copy>(
+pub(super) fn packing_fraction_b<D: DualNum<Primitive = f64> + Copy>(
     parameters: &UVTheoryPars,
     diameter: &DVector<D>,
     eta: D,
@@ -68,7 +68,7 @@ pub(super) fn packing_fraction_b<D: DualNum<f64> + Copy>(
     })
 }
 
-pub(super) fn packing_fraction_a<D: DualNum<f64> + Copy>(
+pub(super) fn packing_fraction_a<D: DualNum<Primitive = f64> + Copy>(
     parameters: &UVTheoryPars,
     diameter: &DVector<D>,
     eta: D,

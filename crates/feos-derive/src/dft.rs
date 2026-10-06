@@ -67,7 +67,7 @@ pub(crate) fn impl_helmholtz_energy_functional(
                     #(#contributions,)*
                 }
             }
-            fn bond_lengths<N: DualNum<f64> + Copy>(&self, temperature: N) -> petgraph::graph::UnGraph<(), N> {
+            fn bond_lengths<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> petgraph::graph::UnGraph<(), N> {
                 match self {
                     #(#bond_lengths,)*
                     _ => petgraph::Graph::with_capacity(0, 0),
@@ -139,7 +139,7 @@ fn impl_pair_potential(
     }
     Ok(quote! {
         impl feos_dft::solvation::PairPotential for #ident {
-            fn pair_potential(&self, i: usize, r: &Array1<f64>, temperature: f64) -> ndarray::Array2<f64> {
+            fn pair_potential(&self, i: usize, r: &Array1<f64>, temperature: f64) -> quantity::Energy<ndarray::Array2<f64>> {
                 match self {
                     #(#pair_potential,)*
                 }

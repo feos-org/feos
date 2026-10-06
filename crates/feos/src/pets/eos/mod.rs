@@ -92,13 +92,13 @@ impl ResidualDyn for Pets {
         self.parameters.pure.len()
     }
 
-    fn compute_max_density<D: num_dual::DualNum<f64> + Copy>(&self, moles: &DVector<D>) -> D {
+    fn compute_max_density<D: num_dual::DualNum<Primitive = f64> + Copy>(&self, moles: &DVector<D>) -> D {
         moles.sum() * self.options.max_eta
             / (self.sigma.map(|v| D::from(v.powi(3))).component_mul(moles)).sum()
             / FRAC_PI_6
     }
 
-    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
+    fn reduced_helmholtz_energy_density_contributions<D: DualNum<Primitive = f64> + Copy>(
         &self,
         state: &feos_core::StateHD<D>,
     ) -> Vec<(&'static str, D)> {
@@ -122,11 +122,11 @@ impl Molarweight for Pets {
 }
 
 impl HardSphereProperties for Pets {
-    fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<'_, N> {
+    fn monomer_shape<N: DualNum<Primitive = f64>>(&self, _: N) -> MonomerShape<'_, N> {
         MonomerShape::Spherical(self.sigma.len())
     }
 
-    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {
+    fn hs_diameter<D: DualNum<Primitive = f64> + Copy>(&self, temperature: D) -> DVector<D> {
         let ti = temperature.recip() * -3.052785558;
         DVector::from_fn(self.sigma.len(), |i, _| {
             -((ti * self.epsilon_k[i]).exp() * 0.127112544 - 1.0) * self.sigma[i]

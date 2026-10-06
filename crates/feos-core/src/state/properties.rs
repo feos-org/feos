@@ -10,7 +10,7 @@ use std::ops::{Div, Neg};
 type InvP<T> = Quantity<T, <_Pressure as Neg>::Output>;
 type InvT<T> = Quantity<T, <_Temperature as Neg>::Output>;
 
-impl<E: Total<N, D>, N: Gradients, D: DualNum<f64> + Copy> State<E, N, D>
+impl<E: Total<N, D>, N: Gradients, D: DualNum<Primitive = f64> + Copy> State<E, N, D>
 where
     DefaultAllocator: Allocator<N>,
 {
@@ -269,7 +269,7 @@ where
     }
 }
 
-impl<E: Total<N, D> + Molarweight<N, D>, N: Gradients, D: DualNum<f64> + Copy> State<E, N, D>
+impl<E: Total<N, D> + Molarweight<N, D>, N: Gradients, D: DualNum<Primitive = f64> + Copy> State<E, N, D>
 where
     DefaultAllocator: Allocator<N>,
 {

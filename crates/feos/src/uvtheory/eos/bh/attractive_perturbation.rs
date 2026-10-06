@@ -40,7 +40,7 @@ pub(super) struct AttractivePerturbation;
 
 impl AttractivePerturbation {
     /// Helmholtz energy for attractive perturbation, eq. 52
-    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<Primitive = f64> + Copy>(
         &self,
         parameters: &UVTheoryPars,
         state: &StateHD<D>,
@@ -74,11 +74,11 @@ impl AttractivePerturbation {
     }
 }
 
-fn delta_b12u<D: DualNum<f64>>(t_x: D, mean_field_constant_x: D, weighted_sigma3_ij: D) -> D {
+fn delta_b12u<D: DualNum<Primitive = f64>>(t_x: D, mean_field_constant_x: D, weighted_sigma3_ij: D) -> D {
     -mean_field_constant_x / t_x * 2.0 * PI * weighted_sigma3_ij
 }
 
-fn residual_virial_coefficient<D: DualNum<f64> + Copy>(
+fn residual_virial_coefficient<D: DualNum<Primitive = f64> + Copy>(
     p: &UVTheoryPars,
     x: &DVector<D>,
     t: D,
@@ -95,7 +95,7 @@ fn residual_virial_coefficient<D: DualNum<f64> + Copy>(
     delta_b2bar
 }
 
-fn correlation_integral_bh<D: DualNum<f64> + Copy>(
+fn correlation_integral_bh<D: DualNum<Primitive = f64> + Copy>(
     rho_x: D,
     mean_field_constant_x: D,
     rep_x: D,
@@ -110,7 +110,7 @@ fn correlation_integral_bh<D: DualNum<f64> + Copy>(
 
 /// U-fraction according to Barker-Henderson division.
 /// Eq. 15
-fn u_fraction_bh<D: DualNum<f64> + Copy>(rep_x: D, reduced_density: D, one_fluid_beta: D) -> D {
+fn u_fraction_bh<D: DualNum<Primitive = f64> + Copy>(rep_x: D, reduced_density: D, one_fluid_beta: D) -> D {
     let mut c = [D::zero(); 4];
     let inv_rep = rep_x.recip();
     for i in 0..4 {
@@ -124,11 +124,11 @@ fn u_fraction_bh<D: DualNum<f64> + Copy>(rep_x: D, reduced_density: D, one_fluid
 
 /// Activation function used for u-fraction according to Barker-Henderson division.
 /// Eq. 16
-fn activation<D: DualNum<f64> + Copy>(c: D, one_fluid_beta: D) -> D {
+fn activation<D: DualNum<Primitive = f64> + Copy>(c: D, one_fluid_beta: D) -> D {
     one_fluid_beta * c.sqrt() / (one_fluid_beta.powi(2) * c + 1.0).sqrt()
 }
 
-fn one_fluid_properties<D: DualNum<f64> + Copy>(
+fn one_fluid_properties<D: DualNum<Primitive = f64> + Copy>(
     p: &UVTheoryPars,
     x: &DVector<D>,
     t: D,
@@ -164,7 +164,7 @@ fn one_fluid_properties<D: DualNum<f64> + Copy>(
     )
 }
 
-fn coefficients_bh<D: DualNum<f64> + Copy>(rep: D, att: D, d: D) -> [D; 3] {
+fn coefficients_bh<D: DualNum<Primitive = f64> + Copy>(rep: D, att: D, d: D) -> [D; 3] {
     let c11 = d.powd(-rep + 6.0) * ((D::one() * 2.0f64).powd(-rep + 3.0) - d.powd(rep - 3.0))
         / (-rep + 3.0)
         + (-d.powi(3) * 8.0 + 1.0) / 24.0;
@@ -182,14 +182,14 @@ fn coefficients_bh<D: DualNum<f64> + Copy>(rep: D, att: D, d: D) -> [D; 3] {
     [c1, c2, c3]
 }
 
-fn delta_b2<D: DualNum<f64> + Copy>(reduced_temperature: D, rep: f64, att: f64) -> D {
+fn delta_b2<D: DualNum<Primitive = f64> + Copy>(reduced_temperature: D, rep: f64, att: f64) -> D {
     let rc = 5.0;
     let alpha = mean_field_constant(rep, att, rc);
     let yeff = y_eff(reduced_temperature, rep, att);
     -(yeff * (rc.powi(3) - 1.0) / 3.0 + reduced_temperature.recip() * alpha) * 2.0 * PI
 }
 
-fn y_eff<D: DualNum<f64> + Copy>(reduced_temperature: D, rep: f64, att: f64) -> D {
+fn y_eff<D: DualNum<Primitive = f64> + Copy>(reduced_temperature: D, rep: f64, att: f64) -> D {
     // optimize: move this part to parameter initialization
     let rc = 5.0;
     let rs = 1.0;

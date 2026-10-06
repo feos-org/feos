@@ -73,7 +73,7 @@ pub(crate) struct TemperatureDependentProperties<D> {
     quantum_d_ij: DMatrix<D>,
 }
 
-impl<D: DualNum<f64> + Copy> TemperatureDependentProperties<D> {
+impl<D: DualNum<Primitive = f64> + Copy> TemperatureDependentProperties<D> {
     fn new(parameters: &SaftVRQMiePars, temperature: D) -> Self {
         let n = parameters.m.len();
         let sigma_eff_ij = DMatrix::from_fn(n, n, |i, j| -> D {
@@ -146,7 +146,7 @@ impl ResidualDyn for SaftVRQMie {
         self.parameters.pure.len()
     }
 
-    fn compute_max_density<D: num_dual::DualNum<f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
+    fn compute_max_density<D: num_dual::DualNum<Primitive = f64> + Copy>(&self, molefracs: &DVector<D>) -> D {
         let msigma3 = self
             .params
             .m
@@ -154,7 +154,7 @@ impl ResidualDyn for SaftVRQMie {
         (msigma3.map(D::from).dot(molefracs) * FRAC_PI_6).recip() * self.options.max_eta
     }
 
-    fn reduced_helmholtz_energy_density_contributions<D: num_dual::DualNum<f64> + Copy>(
+    fn reduced_helmholtz_energy_density_contributions<D: num_dual::DualNum<Primitive = f64> + Copy>(
         &self,
         state: &StateHD<D>,
     ) -> Vec<(&'static str, D)> {

@@ -8,7 +8,7 @@ use ndarray::*;
 use num_dual::DualNum;
 use std::f64::consts::{FRAC_PI_3, PI};
 
-pub(super) fn helmholtz_energy_density_polar<N: DualNum<f64> + Copy>(
+pub(super) fn helmholtz_energy_density_polar<N: DualNum<Primitive = f64> + Copy>(
     parameters: &PcSaftPars,
     temperature: N,
     density: ArrayView2<N>,
@@ -36,7 +36,7 @@ pub(super) fn helmholtz_energy_density_polar<N: DualNum<f64> + Copy>(
     Ok(phi)
 }
 
-pub fn pair_integral_ij<N: DualNum<f64> + Copy>(
+pub fn pair_integral_ij<N: DualNum<Primitive = f64> + Copy>(
     mij1: f64,
     mij2: f64,
     eta: &Array1<N>,
@@ -63,7 +63,7 @@ pub fn pair_integral_ij<N: DualNum<f64> + Copy>(
     integral
 }
 
-pub fn triplet_integral_ijk<N: DualNum<f64>>(
+pub fn triplet_integral_ijk<N: DualNum<Primitive = f64>>(
     mijk1: f64,
     mijk2: f64,
     eta: &Array1<N>,
@@ -78,7 +78,7 @@ pub fn triplet_integral_ijk<N: DualNum<f64>>(
     integral
 }
 
-fn triplet_integral_ijk_dq<N: DualNum<f64>>(
+fn triplet_integral_ijk_dq<N: DualNum<Primitive = f64>>(
     mijk: f64,
     eta: &Array1<N>,
     c: &[[f64; 2]],
@@ -91,7 +91,7 @@ fn triplet_integral_ijk_dq<N: DualNum<f64>>(
     integral
 }
 
-fn phi_polar_dipole<N: DualNum<f64> + Copy>(
+fn phi_polar_dipole<N: DualNum<Primitive = f64> + Copy>(
     p: &PcSaftPars,
     temperature: N,
     density: ArrayView2<N>,
@@ -179,7 +179,7 @@ fn phi_polar_dipole<N: DualNum<f64> + Copy>(
     Ok(result)
 }
 
-fn phi_polar_quadrupole<N: DualNum<f64> + Copy>(
+fn phi_polar_quadrupole<N: DualNum<Primitive = f64> + Copy>(
     p: &PcSaftPars,
     temperature: N,
     density: ArrayView2<N>,
@@ -267,7 +267,7 @@ fn phi_polar_quadrupole<N: DualNum<f64> + Copy>(
     Ok(result)
 }
 
-fn phi_polar_dipole_quadrupole<N: DualNum<f64> + Copy>(
+fn phi_polar_dipole_quadrupole<N: DualNum<Primitive = f64> + Copy>(
     p: &PcSaftPars,
     temperature: N,
     density: ArrayView2<N>,

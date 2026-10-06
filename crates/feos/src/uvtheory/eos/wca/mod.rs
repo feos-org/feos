@@ -17,7 +17,7 @@ use reference_perturbation_uvb3::ReferencePerturbationB3;
 pub struct WeeksChandlerAndersen;
 
 impl WeeksChandlerAndersen {
-    pub fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy>(
+    pub fn residual_helmholtz_energy_contributions<D: DualNum<Primitive = f64> + Copy>(
         &self,
         parameters: &UVTheoryPars,
         state: &StateHD<D>,
@@ -42,7 +42,7 @@ impl WeeksChandlerAndersen {
 pub struct WeeksChandlerAndersenB3;
 
 impl WeeksChandlerAndersenB3 {
-    pub fn residual_helmholtz_energy_contributions<D: DualNum<f64> + Copy>(
+    pub fn residual_helmholtz_energy_contributions<D: DualNum<Primitive = f64> + Copy>(
         &self,
         parameters: &UVTheoryPars,
         state: &StateHD<D>,

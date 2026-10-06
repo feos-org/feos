@@ -34,12 +34,12 @@ const CD_BH: SMatrix<f64, 4, 3> = matrix![
          3.71527116894441E-03,  5.05384813757953E-03, 4.91003312452622E-02];
 
 #[inline]
-pub fn mie_prefactor<D: DualNum<f64> + Copy>(rep: D, att: D) -> D {
+pub fn mie_prefactor<D: DualNum<Primitive = f64> + Copy>(rep: D, att: D) -> D {
     rep / (rep - att) * (rep / att).powd(att / (rep - att))
 }
 
 #[inline]
-pub fn mean_field_constant<D: DualNum<f64> + Copy>(rep: D, att: D, x: D) -> D {
+pub fn mean_field_constant<D: DualNum<Primitive = f64> + Copy>(rep: D, att: D, x: D) -> D {
     mie_prefactor(rep, att) * (x.powd(-att + 3.0) / (att - 3.0) - x.powd(-rep + 3.0) / (rep - 3.0))
 }
 
@@ -123,11 +123,11 @@ fn bh_coefficients(rep: f64, att: f64) -> [f64; 5] {
 }
 
 impl HardSphereProperties for UVTheoryPars {
-    fn monomer_shape<D: DualNum<f64> + Copy>(&self, _: D) -> MonomerShape<'_, D> {
+    fn monomer_shape<D: DualNum<Primitive = f64> + Copy>(&self, _: D) -> MonomerShape<'_, D> {
         MonomerShape::Spherical(self.sigma.len())
     }
 
-    fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {
+    fn hs_diameter<D: DualNum<Primitive = f64> + Copy>(&self, temperature: D) -> DVector<D> {
         match self.perturbation {
             Perturbation::BarkerHenderson => BarkerHenderson::diameter_bh(self, temperature),
             Perturbation::WeeksChandlerAndersen => {

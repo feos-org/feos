@@ -40,7 +40,7 @@ where
     }
 }
 
-impl<E: Residual<U2, D>, D: DualNum<f64> + Copy> PhaseEquilibrium<E, 2, U2, D> {
+impl<E: Residual<U2, D>, D: DualNum<Primitive = f64> + Copy> PhaseEquilibrium<E, 2, U2, D> {
     /// Perform a Tp-flash calculation for a binary mixture.
     /// Compared to the version of the algorithm for a generic
     /// number of components ([tp_flash](PhaseEquilibrium::tp_flash)),
@@ -79,7 +79,7 @@ impl<E: Residual<U2, D>, D: DualNum<f64> + Copy> PhaseEquilibrium<E, 2, U2, D> {
                 let [[v_l, v_v, x, y]] = variables.data.0;
                 let beta = (z - x) / (y - x);
                 let eos = eos.lift();
-                let molar_gibbs_energy = |x: Dual2Vec<_, _, _>, v| {
+                let molar_gibbs_energy = |x: Dual2Vec<_, _>, v| {
                     let molefracs = vector![x, -x + 1.0];
                     let a_res = eos.residual_helmholtz_energy(t, v, &molefracs);
                     let a_ig = (x * (x / v).ln() - (x - 1.0) * ((-x + 1.0) / v).ln() - 1.0) * t;
