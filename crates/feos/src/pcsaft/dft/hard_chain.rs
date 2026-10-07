@@ -22,7 +22,10 @@ impl<'a> FunctionalContribution for ChainFunctional<'a> {
         "Hard chain functional"
     }
 
-    fn weight_functions<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
+    fn weight_functions<N: DualNum<Primitive = f64> + Copy>(
+        &self,
+        temperature: N,
+    ) -> WeightFunctionInfo<N> {
         let p = &self.parameters;
         let d = p.hs_diameter(temperature);
         WeightFunctionInfo::new(DVector::from_fn(d.len(), |i, _| i), true)

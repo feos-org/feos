@@ -7,7 +7,7 @@ use crate::ideal_gas::IdealGasModel;
 use crate::residual::ResidualModel;
 use crate::state::{PyContributions, PyState};
 use feos_core::{EquationOfState, ReferenceSystem};
-use feos_dft::{Axis as AxisDFT, Grid, adsorption::*};
+use feos_dft::{Axis as AxisDFT, Grid, HelmholtzEnergyFunctional, adsorption::*};
 use nalgebra::{DMatrix, DVector};
 use ndarray::*;
 use numpy::*;
@@ -162,6 +162,42 @@ impl PyPoreProfile {
             density.as_ref(),
             specification.0,
         ))
+    }
+
+    /// Return the external potential, corrected such that an ideal gas of
+    /// homosegmented chains reproduces the density profile of the original
+    /// external potential.
+    ///
+    /// The corrected potential depends on temperature and is used in place of
+    /// the original external potential, e.g., when creating a PoreProfile or
+    /// calculating adsorption isotherms.
+    ///
+    /// Parameters
+    /// ----------
+    /// functional : HelmholtzEnergyFunctional
+    ///     The Helmholtz energy functional.
+    /// grid : Grid
+    ///     The grid on which the external potential is defined.
+    /// temperature : SINumber
+    ///     The temperature.
+    /// external_potential : SIArray
+    ///     The original external potential.
+    ///
+    /// Returns
+    /// -------
+    /// SIArray
+    #[staticmethod]
+    fn chain_corrected_external_potential(
+        functional: &PyEquationOfState,
+        grid: PyGrid,
+        temperature: Temperature,
+        external_potential: Energy<ArrayD<f64>>,
+    ) -> Energy<ArrayD<f64>> {
+        functional.0.chain_corrected_external_potential::<IxDyn>(
+            &grid.0,
+            temperature,
+            &external_potential,
+        )
     }
 
     #[getter]

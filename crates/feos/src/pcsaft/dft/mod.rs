@@ -1,7 +1,7 @@
 use super::PcSaftParameters;
 use super::parameters::PcSaftPars;
 use crate::association::{Association, YuWuAssociationFunctional};
-use crate::hard_sphere::{FMTContribution, FMTVersion};
+use crate::hard_sphere::{FMTContribution, FMTVersion, HardSphereProperties};
 use crate::pcsaft::eos::PcSaftOptions;
 use feos_core::{FeosResult, Molarweight, ReferenceSystem, ResidualDyn, StateHD, Subset};
 use feos_derive::FunctionalContribution;
@@ -144,6 +144,10 @@ impl HelmholtzEnergyFunctionalDyn for PcSaftFunctional {
 
     fn molecule_shape(&self) -> MoleculeShape<'_> {
         MoleculeShape::NonSpherical(&self.params.m)
+    }
+
+    fn bond_lengths_homo<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> DVector<N> {
+        self.params.hs_diameter(temperature)
     }
 }
 
