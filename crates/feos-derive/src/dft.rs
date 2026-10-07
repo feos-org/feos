@@ -25,6 +25,8 @@ pub(crate) fn impl_helmholtz_energy_functional(
 ) -> syn::Result<proc_macro2::TokenStream> {
     let mut molecule_shape = Vec::new();
     let mut contributions = Vec::new();
+    let mut bond_lengths_homo = Vec::new();
+    let mut bond_lengths_hetero = Vec::new();
     for v in variants.iter() {
         let name = &v.ident;
         if implement("functional", v, &OPT_IMPLS)? {
@@ -34,23 +36,20 @@ pub(crate) fn impl_helmholtz_energy_functional(
             contributions.push(quote! {
                 Self::#name(functional) => functional.contributions().map(FunctionalContributionVariant::from).collect::<Vec<_>>().into_iter()
             });
+            bond_lengths_homo.push(quote! {
+                Self::#name(functional) => functional.bond_lengths_homo(temperature)
+            });
+            bond_lengths_hetero.push(quote! {
+                Self::#name(functional) => functional.bond_lengths_hetero(temperature)
+            });
         } else {
-            molecule_shape.push(quote! {
+            let panic = quote! {
                 Self::#name(functional) => panic!("{} is not a Helmholtz energy functional!", stringify!(#name))
-            });
-            contributions.push(quote! {
-                Self::#name(functional) => panic!("{} is not a Helmholtz energy functional!", stringify!(#name))
-            });
-        }
-    }
-
-    let mut bond_lengths = Vec::new();
-    for v in variants.iter() {
-        if implement("bond_lengths", v, &OPT_IMPLS)? {
-            let name = &v.ident;
-            bond_lengths.push(quote! {
-                Self::#name(functional) => functional.bond_lengths(temperature)
-            });
+            };
+            molecule_shape.push(panic.clone());
+            contributions.push(panic.clone());
+            bond_lengths_homo.push(panic.clone());
+            bond_lengths_hetero.push(panic);
         }
     }
 
@@ -67,10 +66,14 @@ pub(crate) fn impl_helmholtz_energy_functional(
                     #(#contributions,)*
                 }
             }
-            fn bond_lengths<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> petgraph::graph::UnGraph<(), N> {
+            fn bond_lengths_homo<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> nalgebra::DVector<N> {
                 match self {
-                    #(#bond_lengths,)*
-                    _ => petgraph::Graph::with_capacity(0, 0),
+                    #(#bond_lengths_homo,)*
+                }
+            }
+            fn bond_lengths_hetero<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> petgraph::graph::UnGraph<(), N> {
+                match self {
+                    #(#bond_lengths_hetero,)*
                 }
             }
         }

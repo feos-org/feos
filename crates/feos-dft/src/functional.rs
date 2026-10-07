@@ -1,14 +1,19 @@
-use crate::convolver::Convolver;
+use crate::convolver::{Convolver, ConvolverFFT};
+use crate::geometry::Grid;
 use crate::ideal_chain_contribution::IdealChainContribution;
+use crate::profile::MAX_POTENTIAL;
 use crate::weight_functions::{WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use crate::{DFTSolverLog, functional_contribution::*};
-use feos_core::{EquationOfState, FeosError, FeosResult, Residual, ResidualDyn, StateHD};
+use feos_core::{
+    EquationOfState, FeosError, FeosResult, ReferenceSystem, Residual, ResidualDyn, StateHD,
+};
 use nalgebra::{DVector, dvector};
 use ndarray::*;
 use num_dual::*;
 use petgraph::Directed;
 use petgraph::graph::{Graph, UnGraph};
 use petgraph::visit::EdgeRef;
+use quantity::{Energy, Temperature};
 use std::borrow::Cow;
 use std::ops::{AddAssign, Deref, MulAssign};
 
@@ -28,8 +33,15 @@ impl<I: Clone, F: HelmholtzEnergyFunctionalDyn> HelmholtzEnergyFunctionalDyn
         self.residual.molecule_shape()
     }
 
-    fn bond_lengths<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> UnGraph<(), N> {
-        self.residual.bond_lengths(temperature)
+    fn bond_lengths_homo<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> DVector<N> {
+        self.residual.bond_lengths_homo(temperature)
+    }
+
+    fn bond_lengths_hetero<N: DualNum<Primitive = f64> + Copy>(
+        &self,
+        temperature: N,
+    ) -> UnGraph<(), N> {
+        self.residual.bond_lengths_hetero(temperature)
     }
 }
 
@@ -57,8 +69,16 @@ pub trait HelmholtzEnergyFunctionalDyn: ResidualDyn {
     /// Return the shape of the molecules and the necessary specifications.
     fn molecule_shape(&self) -> MoleculeShape<'_>;
 
+    /// Overwrite this, if the functional consists of homosegmented chains.
+    fn bond_lengths_homo<N: DualNum<Primitive = f64> + Copy>(&self, _temperature: N) -> DVector<N> {
+        DVector::zeros(self.components())
+    }
+
     /// Overwrite this, if the functional consists of heterosegmented chains.
-    fn bond_lengths<N: DualNum<Primitive = f64> + Copy>(&self, _temperature: N) -> UnGraph<(), N> {
+    fn bond_lengths_hetero<N: DualNum<Primitive = f64> + Copy>(
+        &self,
+        _temperature: N,
+    ) -> UnGraph<(), N> {
         Graph::with_capacity(0, 0)
     }
 }
@@ -75,8 +95,16 @@ pub trait HelmholtzEnergyFunctional: Residual {
     /// Return the shape of the molecules and the necessary specifications.
     fn molecule_shape(&self) -> MoleculeShape<'_>;
 
+    /// Overwrite this, if the functional consists of homosegmented chains.
+    fn bond_lengths_homo<N: DualNum<Primitive = f64> + Copy>(&self, _temperature: N) -> DVector<N> {
+        DVector::zeros(self.components())
+    }
+
     /// Overwrite this, if the functional consists of heterosegmented chains.
-    fn bond_lengths<N: DualNum<Primitive = f64> + Copy>(&self, _temperature: N) -> UnGraph<(), N> {
+    fn bond_lengths_hetero<N: DualNum<Primitive = f64> + Copy>(
+        &self,
+        _temperature: N,
+    ) -> UnGraph<(), N> {
         Graph::with_capacity(0, 0)
     }
 
@@ -203,6 +231,47 @@ pub trait HelmholtzEnergyFunctional: Residual {
         Ok(second_partial_derivatives)
     }
 
+    /// Return the external potential, corrected such that an ideal gas of homosegmented
+    /// chains reproduces the density profile $\rho_\alpha(\mathbf{r})\propto e^{-\beta V_\alpha^\mathrm{ext}(\mathbf{r})}$
+    /// of the original external potential.
+    ///
+    /// The corrected potential is temperature dependent and has to be used in place of
+    /// the original potential when creating the density profile.
+    fn chain_corrected_external_potential<D>(
+        &self,
+        grid: &Grid,
+        temperature: Temperature,
+        external_potential: &Energy<Array<f64, D::Larger>>,
+    ) -> Energy<Array<f64, D::Larger>>
+    where
+        D: Dimension + 'static,
+        D::Larger: Dimension<Smaller = D>,
+        <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
+    {
+        let t = temperature.to_reduced();
+        let convolver = ConvolverFFT::<f64, D>::plan(grid, &self.weight_functions(t));
+        let cap = |x: &mut f64| *x = x.min(MAX_POTENTIAL);
+
+        let mut potential = external_potential.to_reduced() / t;
+        potential.map_inplace(cap);
+
+        let bonds = self.bond_lengths_homo(t);
+        let m = self.m();
+        for ((mut v, &l), &m) in potential.outer_iter_mut().zip(bonds.iter()).zip(m.iter()) {
+            let w = WeightFunction::new_scaled(dvector![l], WeightFunctionShape::Delta);
+            let rho = v.mapv(|x| (-x).exp());
+            let lambda = convolver
+                .convolve(rho.clone(), &w)
+                .mapv(|l| l.abs() + f64::EPSILON);
+            let rho_lambda = &rho / &lambda;
+            v += &((-rho_lambda.mapv(f64::ln) + convolver.convolve(rho_lambda, &w) - 1.0)
+                * (m - 1.0));
+        }
+
+        potential.map_inplace(cap);
+        Energy::from_reduced(potential * t)
+    }
+
     /// Calculate the bond integrals $I_{\alpha\alpha'}(\mathbf{r})$
     fn bond_integrals<D, N: DualNum<Primitive = f64> + Copy>(
         &self,
@@ -215,7 +284,7 @@ pub trait HelmholtzEnergyFunctional: Residual {
         D::Larger: Dimension<Smaller = D>,
     {
         // calculate weight functions
-        let bond_lengths = self.bond_lengths(temperature).into_edge_type();
+        let bond_lengths = self.bond_lengths_hetero(temperature).into_edge_type();
         let mut bond_weight_functions = bond_lengths.map(
             |_, _| (),
             |_, &l| WeightFunction::new_scaled(dvector![l], WeightFunctionShape::Delta),
@@ -297,7 +366,7 @@ pub trait HelmholtzEnergyFunctional: Residual {
         D::Larger: Dimension<Smaller = D>,
     {
         // calculate weight functions
-        let bond_lengths = self.bond_lengths(temperature).into_edge_type();
+        let bond_lengths = self.bond_lengths_hetero(temperature).into_edge_type();
         let mut bond_weight_functions = bond_lengths.map(
             |_, _| (),
             |_, &l| WeightFunction::new_scaled(dvector![l], WeightFunctionShape::Delta),
@@ -418,7 +487,14 @@ impl<C: Deref<Target = F> + Clone, F: HelmholtzEnergyFunctionalDyn + ResidualDyn
         F::molecule_shape(self.deref())
     }
 
-    fn bond_lengths<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> UnGraph<(), N> {
-        F::bond_lengths(self.deref(), temperature)
+    fn bond_lengths_homo<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> DVector<N> {
+        F::bond_lengths_homo(self.deref(), temperature)
+    }
+
+    fn bond_lengths_hetero<N: DualNum<Primitive = f64> + Copy>(
+        &self,
+        temperature: N,
+    ) -> UnGraph<(), N> {
+        F::bond_lengths_hetero(self.deref(), temperature)
     }
 }

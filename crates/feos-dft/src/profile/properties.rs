@@ -48,7 +48,7 @@ where
             f -= &((&dfdrho + m) * &rho);
         }
 
-        let bond_lengths = self.functional.bond_lengths(t);
+        let bond_lengths = self.functional.bond_lengths_hetero(t);
         for segment in bond_lengths.node_indices() {
             let n = bond_lengths.neighbors(segment).count();
             f += &(&rho.index_axis(Axis(0), segment.index()) * (0.5 * n as f64));

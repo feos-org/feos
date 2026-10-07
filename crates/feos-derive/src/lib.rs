@@ -8,7 +8,7 @@ use ideal_gas::expand_ideal_gas;
 use proc_macro::TokenStream;
 use residual::expand_residual;
 use subset::expand_subset;
-use syn::{parse_macro_input, DeriveInput};
+use syn::{DeriveInput, parse_macro_input};
 
 mod dft;
 mod functional_contribution;
@@ -17,12 +17,11 @@ mod residual;
 mod subset;
 
 // possible additional traits to implement
-const OPT_IMPLS: [&str; 7] = [
+const OPT_IMPLS: [&str; 6] = [
     "molar_weight",
     "parameter_info",
     "entropy_scaling",
     "functional",
-    "bond_lengths",
     "fluid_parameters",
     "pair_potential",
 ];

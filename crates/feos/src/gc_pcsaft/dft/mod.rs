@@ -131,7 +131,10 @@ impl HelmholtzEnergyFunctionalDyn for GcPcSaftFunctional {
         contributions.into_iter()
     }
 
-    fn bond_lengths<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> UnGraph<(), N> {
+    fn bond_lengths_hetero<N: DualNum<Primitive = f64> + Copy>(
+        &self,
+        temperature: N,
+    ) -> UnGraph<(), N> {
         // temperature dependent segment diameter
         let d = self.params.hs_diameter(temperature);
 
