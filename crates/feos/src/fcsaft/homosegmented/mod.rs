@@ -1,5 +1,5 @@
 //! Homosegmented formulation of FC-SAFT for chains of identical fused spheres.
-use super::FcSaftOptions;
+use super::{DispersionConstants, FcSaftOptions};
 use super::eos::dispersion::Dispersion;
 use super::reference::ReferenceFluid;
 use crate::association::Association;
@@ -27,20 +27,27 @@ pub struct FcSaftHomo {
     dispersion: Dispersion,
     dipole: Option<Dipole>,
     association: Option<Association>,
+    model_constants: Option<DispersionConstants>,
 }
 
 impl FcSaftHomo {
     pub fn new(parameters: FcSaftHomoParameters) -> Self {
-        Self::with_options(parameters, FcSaftOptions::default())
+        Self::with_options(parameters, FcSaftOptions::default(), None)
     }
 
-    pub fn with_options(parameters: FcSaftHomoParameters, options: FcSaftOptions) -> Self {
+    /// Homosegmented FC-SAFT with custom options and (optionally) custom
+    /// model constants `[a1, a2, b1, b2]` of the dispersion contribution.
+    pub fn with_options(
+        parameters: FcSaftHomoParameters,
+        options: FcSaftOptions,
+        model_constants: Option<DispersionConstants>,
+    ) -> Self {
         let params = FcSaftHomoPars::new(&parameters);
         let dispersion = Dispersion::new(
             &params.component_index,
             &params.sigma_ij,
             &params.epsilon_k_ij,
-            None,
+            model_constants,
         );
         let dipole = (!params.dipole_comp.is_empty()).then_some(Dipole);
         let association = (!parameters.association.is_empty())
@@ -52,6 +59,7 @@ impl FcSaftHomo {
             dispersion,
             dipole,
             association,
+            model_constants,
         }
     }
 }
@@ -109,7 +117,11 @@ impl ResidualDyn for FcSaftHomo {
 
 impl Subset for FcSaftHomo {
     fn subset(&self, component_list: &[usize]) -> Self {
-        Self::with_options(self.parameters.subset(component_list), self.options)
+        Self::with_options(
+            self.parameters.subset(component_list),
+            self.options,
+            self.model_constants,
+        )
     }
 }
 

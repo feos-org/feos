@@ -12,9 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `Interface::curved` to calculate cylindrical and spherical interfaces from a planar interface. [#387](https://github.com/feos-org/feos/pull/387)
 - Added the heterosegmented fused-chain SAFT (FC-SAFT) equation of state and Helmholtz energy functional (feature `fcsaft`).
 - Added optional bond records (`bond_records`/`bonds_path`) to `GcParameters` in Python for models that require bond parameters.
-- Added `FcSaftPure` and `FcSaftBinary`, optimized pure-component and binary implementations of FC-SAFT that support automatic differentiation with respect to model parameters, available in Python as `EquationOfStateAD.FcSaftNonAssoc` and `EquationOfStateAD.FcSaftFull`.
+- Added the homosegmented FC-SAFT equation of state (`FcSaftHomo`, including the dipolar contribution) to Python: `EquationOfState.fcsaft` uses it when called with `Parameters` (and the heterosegmented model with `GcParameters`). Both accept custom dispersion constants (`model_params`).
+- Added `FcSaftPure` and `FcSaftBinary`, optimized pure-component and binary implementations of FC-SAFT that support automatic differentiation with respect to model parameters, available in Python as `EquationOfStateAD.FcSaftNonAssoc` and `EquationOfStateAD.FcSaftFull`. The variants `EquationOfStateAD.FcSaftNonAssocConstants` and `EquationOfStateAD.FcSaftFullConstants` additionally expose the model constants of the dispersion contribution as parameters.
 
 ### Changed
+- The `ad` feature of the Python package no longer activates any models. The `EquationOfStateAD` variants are available depending on the active model features (`pcsaft`, `fcsaft`).
 - Changed data type of initial temperatures or pressure for phase equilibrium calculations (`TemperatureOrPressure::Other`) from `D` to `f64`. [#369](https://github.com/feos-org/feos/pull/369)
 - Reworked DFT solution algorithms slightly for the cases in which additional specifications are given. [#371](https://github.com/feos-org/feos/pull/371)
 - External potentials are passed and returned as quantities (energies) instead of reduced units. [#372](https://github.com/feos-org/feos/pull/372)

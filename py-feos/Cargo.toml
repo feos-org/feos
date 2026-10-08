@@ -58,7 +58,8 @@ multiparameter = ["feos/multiparameter"]
 rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
 # Loading parameters from a sqlite database. Not active for emscripten wheel.
 sqlite = ["feos-core/rusqlite"]
-ad = ["feos/pcsaft", "feos/fcsaft"]
+# AD interface for the models that support it (requires `pcsaft` and/or `fcsaft`).
+ad = []
 # EoS and DFT model implementations.
 all_models = [
     "dft",

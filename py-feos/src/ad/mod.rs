@@ -1,5 +1,7 @@
 use crate::eos::PyEquationOfState;
+#[cfg(feature = "fcsaft")]
 use feos::fcsaft::{FcSaftBinary, FcSaftPure};
+#[cfg(feature = "pcsaft")]
 use feos::pcsaft::{PcSaftBinary, PcSaftPure};
 use feos_core::ad::{
     BoilingTemperature, BubblePointPressure, DewPointPressure, EnthalpyOfVaporization,
@@ -10,6 +12,8 @@ use nalgebra::{U1, U2};
 use num_dual::DualSVec;
 use numpy::{PyArray1, PyArray2, PyReadonlyArray1, PyReadonlyArray2, ToPyArray};
 use paste::paste;
+#[cfg(feature = "fcsaft")]
+use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 
 pub mod dataset;
@@ -18,26 +22,48 @@ pub use dataset::{PyBinaryDataset, PyPureDataset};
 #[pyclass(name = "EquationOfStateAD", eq, eq_int, from_py_object)]
 #[derive(Clone, Copy, PartialEq)]
 pub enum PyEquationOfStateAD {
+    #[cfg(feature = "pcsaft")]
     PcSaftNonAssoc,
+    #[cfg(feature = "pcsaft")]
     PcSaftFull,
+    #[cfg(feature = "fcsaft")]
     FcSaftNonAssoc,
+    #[cfg(feature = "fcsaft")]
     FcSaftFull,
+    #[cfg(feature = "fcsaft")]
+    FcSaftNonAssocConstants,
+    #[cfg(feature = "fcsaft")]
+    FcSaftFullConstants,
 }
 
 enum BinaryModels {
+    #[cfg(feature = "pcsaft")]
     PcSaftNonAssoc,
+    #[cfg(feature = "pcsaft")]
     PcSaftFull,
+    #[cfg(feature = "fcsaft")]
     FcSaftNonAssoc,
+    #[cfg(feature = "fcsaft")]
     FcSaftFull,
 }
 
-impl From<PyEquationOfStateAD> for BinaryModels {
-    fn from(value: PyEquationOfStateAD) -> Self {
+impl TryFrom<PyEquationOfStateAD> for BinaryModels {
+    type Error = PyErr;
+    fn try_from(value: PyEquationOfStateAD) -> PyResult<Self> {
         match value {
-            PyEquationOfStateAD::PcSaftNonAssoc => Self::PcSaftNonAssoc,
-            PyEquationOfStateAD::PcSaftFull => Self::PcSaftFull,
-            PyEquationOfStateAD::FcSaftNonAssoc => Self::FcSaftNonAssoc,
-            PyEquationOfStateAD::FcSaftFull => Self::FcSaftFull,
+            #[cfg(feature = "pcsaft")]
+            PyEquationOfStateAD::PcSaftNonAssoc => Ok(Self::PcSaftNonAssoc),
+            #[cfg(feature = "pcsaft")]
+            PyEquationOfStateAD::PcSaftFull => Ok(Self::PcSaftFull),
+            #[cfg(feature = "fcsaft")]
+            PyEquationOfStateAD::FcSaftNonAssoc => Ok(Self::FcSaftNonAssoc),
+            #[cfg(feature = "fcsaft")]
+            PyEquationOfStateAD::FcSaftFull => Ok(Self::FcSaftFull),
+            #[cfg(feature = "fcsaft")]
+            PyEquationOfStateAD::FcSaftNonAssocConstants
+            | PyEquationOfStateAD::FcSaftFullConstants => Err(PyValueError::new_err(
+                "Adjustable model constants are only available for pure-component properties.",
+            )),
         }
     }
 }
@@ -100,7 +126,7 @@ impl PyPropertyAD {
         parameter_names: &Bound<'py, PyAny>,
         parameters: &Bound<'py, PyAny>,
         input: PyReadonlyArray2<f64>,
-    ) -> GradResult<'py> {
+    ) -> PyResult<GradResult<'py>> {
         _vapor_pressure_derivatives(model, parameter_names, parameters, input)
     }
 
@@ -148,7 +174,7 @@ impl PyPropertyAD {
         parameter_names: &Bound<'py, PyAny>,
         parameters: &Bound<'py, PyAny>,
         input: PyReadonlyArray2<f64>,
-    ) -> GradResult<'py> {
+    ) -> PyResult<GradResult<'py>> {
         _boiling_temperature_derivatives(model, parameter_names, parameters, input)
     }
 
@@ -196,7 +222,7 @@ impl PyPropertyAD {
         parameter_names: &Bound<'py, PyAny>,
         parameters: &Bound<'py, PyAny>,
         input: PyReadonlyArray2<f64>,
-    ) -> GradResult<'py> {
+    ) -> PyResult<GradResult<'py>> {
         _liquid_density_derivatives(model, parameter_names, parameters, input)
     }
 
@@ -244,7 +270,7 @@ impl PyPropertyAD {
         parameter_names: &Bound<'py, PyAny>,
         parameters: &Bound<'py, PyAny>,
         input: PyReadonlyArray2<f64>,
-    ) -> GradResult<'py> {
+    ) -> PyResult<GradResult<'py>> {
         _equilibrium_liquid_density_derivatives(model, parameter_names, parameters, input)
     }
 
@@ -294,7 +320,7 @@ impl PyPropertyAD {
         parameter_names: &Bound<'py, PyAny>,
         parameters: &Bound<'py, PyAny>,
         input: PyReadonlyArray2<f64>,
-    ) -> GradResult<'py> {
+    ) -> PyResult<GradResult<'py>> {
         _enthalpy_of_vaporization_derivatives(model, parameter_names, parameters, input)
     }
 
@@ -345,7 +371,7 @@ impl PyPropertyAD {
         parameter_names: &Bound<'py, PyAny>,
         parameters: &Bound<'py, PyAny>,
         input: PyReadonlyArray2<f64>,
-    ) -> GradResult<'py> {
+    ) -> PyResult<GradResult<'py>> {
         _residual_isobaric_heat_capacity_derivatives(model, parameter_names, parameters, input)
     }
 
@@ -395,7 +421,7 @@ impl PyPropertyAD {
         parameter_names: &Bound<'py, PyAny>,
         parameters: &Bound<'py, PyAny>,
         input: PyReadonlyArray2<f64>,
-    ) -> GradResult<'py> {
+    ) -> PyResult<GradResult<'py>> {
         _bubble_point_pressure_derivatives(model, parameter_names, parameters, input)
     }
 
@@ -445,13 +471,13 @@ impl PyPropertyAD {
         parameter_names: &Bound<'py, PyAny>,
         parameters: &Bound<'py, PyAny>,
         input: PyReadonlyArray2<f64>,
-    ) -> GradResult<'py> {
+    ) -> PyResult<GradResult<'py>> {
         _dew_point_pressure_derivatives(model, parameter_names, parameters, input)
     }
 }
 
 macro_rules! expand_models {
-    ($enum:ty, $prop:ident, $($model:ident: $type:ty),*) => {
+    ($enum:ty, $prop:ident, $($(#[$meta:meta])* $model:ident: $type:ty),*) => {
         paste!(
         #[pyfunction]
         fn [<_ $prop _derivatives>]<'py>(
@@ -459,13 +485,14 @@ macro_rules! expand_models {
             parameter_names: &Bound<'py, PyAny>,
             parameters: &Bound<'py, PyAny>,
             input: PyReadonlyArray2<f64>,
-        ) -> GradResult<'py> {
-            match <$enum>::from(model) {
+        ) -> PyResult<GradResult<'py>> {
+            Ok(match <$enum>::try_from(model)? {
                 $(
+                $(#[$meta])*
                 <$enum>::$model => {
                     $prop::<$type>(parameter_names, parameters, input)
                 })*
-            }
+            })
         });
     };
 }
@@ -477,8 +504,8 @@ macro_rules! impl_evaluate_gradients {
     (binary, [$($prop:ident: $prop_type:ty),*], $models:tt) => {
         $(impl_evaluate_gradients!(U2,BinaryModels,$prop,$prop_type,$models,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,max:15);)*
     };
-    ($n:ty, $enum:ty, $prop:ident, $prop_type:ty, {$($model:ident: $type:ty),*}, $($p:literal,)* max: $max:literal) => {
-        expand_models!($enum, $prop, $($model: $type),*);
+    ($n:ty, $enum:ty, $prop:ident, $prop_type:ty, {$($(#[$meta:meta])* $model:ident: $type:ty),*}, $($p:literal,)* max: $max:literal) => {
+        expand_models!($enum, $prop, $($(#[$meta])* $model: $type),*);
         fn $prop<'py, R: ParametersAD<$n>>(
             parameter_names: &Bound<'py, PyAny>,
             parameters: &Bound<'py, PyAny>,
@@ -527,11 +554,23 @@ macro_rules! impl_evaluate_gradients {
 impl_evaluate_gradients!(
     pure,
     [vapor_pressure: VaporPressure, boiling_temperature: BoilingTemperature, liquid_density: LiquidDensity, equilibrium_liquid_density: EquilibriumLiquidDensity, enthalpy_of_vaporization: EnthalpyOfVaporization, residual_isobaric_heat_capacity: ResidualIsobaricHeatCapacity],
-    {PcSaftNonAssoc: PcSaftPure<f64, 4>, PcSaftFull: PcSaftPure<f64, 8>, FcSaftNonAssoc: FcSaftPure<f64, 5>, FcSaftFull: FcSaftPure<f64, 9>}
+    {
+        #[cfg(feature = "pcsaft")] PcSaftNonAssoc: PcSaftPure<f64, 4>,
+        #[cfg(feature = "pcsaft")] PcSaftFull: PcSaftPure<f64, 8>,
+        #[cfg(feature = "fcsaft")] FcSaftNonAssoc: FcSaftPure<f64, 5>,
+        #[cfg(feature = "fcsaft")] FcSaftFull: FcSaftPure<f64, 9>,
+        #[cfg(feature = "fcsaft")] FcSaftNonAssocConstants: FcSaftPure<f64, 33>,
+        #[cfg(feature = "fcsaft")] FcSaftFullConstants: FcSaftPure<f64, 37>
+    }
 );
 
 impl_evaluate_gradients!(
     binary,
     [bubble_point_pressure: BubblePointPressure, dew_point_pressure: DewPointPressure],
-    {PcSaftNonAssoc: PcSaftBinary<f64, 4>, PcSaftFull: PcSaftBinary<f64, 8>, FcSaftNonAssoc: FcSaftBinary<f64, 5>, FcSaftFull: FcSaftBinary<f64, 9>}
+    {
+        #[cfg(feature = "pcsaft")] PcSaftNonAssoc: PcSaftBinary<f64, 4>,
+        #[cfg(feature = "pcsaft")] PcSaftFull: PcSaftBinary<f64, 8>,
+        #[cfg(feature = "fcsaft")] FcSaftNonAssoc: FcSaftBinary<f64, 5>,
+        #[cfg(feature = "fcsaft")] FcSaftFull: FcSaftBinary<f64, 9>
+    }
 );

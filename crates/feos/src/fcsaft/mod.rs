@@ -14,7 +14,7 @@ mod reference;
 #[cfg(feature = "dft")]
 pub use dft::{FcSaftFunctional, FcSaftFunctionalContribution};
 pub use eos::{DispersionConstants, FcSaft};
-pub use homosegmented::{FcSaftBinary, FcSaftPure};
+pub use homosegmented::{FcSaftBinary, FcSaftHomo, FcSaftPure};
 pub use parameters::FcSaftPars;
 pub use record::{
     FcSaftAssociationRecord, FcSaftBinaryRecord, FcSaftBondRecord, FcSaftParameters, FcSaftRecord,

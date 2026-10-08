@@ -11,8 +11,34 @@ const PI_SQ_43: f64 = 4.0 / 3.0 * PI * PI;
 const MAX_ETA: f64 = 0.5;
 
 /// Optimized implementation of FC-SAFT for a single (homosegmented) component.
+///
+/// The parameters are `[s, l, sigma, epsilon_k, mu]` (`N = 5`), extended by
+/// `[kappa_ab, epsilon_k_ab, na, nb]` for associating components (`N = 9`).
+/// The variants `N = 33` and `N = 37` additionally contain the 28 model
+/// constants `[a1, a2, b1, b2]` (7 coefficients each) of the dispersion
+/// contribution, so that they can be adjusted together with the
+/// pure-component parameters.
 #[derive(Clone, Copy)]
 pub struct FcSaftPure<D: DualNum<Primitive = f64> + Copy, const N: usize>(pub [D; N]);
+
+/// Names of the model constants of the dispersion contribution.
+#[rustfmt::skip]
+const DISPERSION_CONSTANTS: [&str; 28] = [
+    "a1_0", "a1_1", "a1_2", "a1_3", "a1_4", "a1_5", "a1_6",
+    "a2_0", "a2_1", "a2_2", "a2_3", "a2_4", "a2_5", "a2_6",
+    "b1_0", "b1_1", "b1_2", "b1_3", "b1_4", "b1_5", "b1_6",
+    "b2_0", "b2_1", "b2_2", "b2_3", "b2_4", "b2_5", "b2_6",
+];
+
+/// The default model constants of the dispersion contribution.
+fn default_constants<D: DualNum<Primitive = f64> + Copy>() -> [[D; 7]; 4] {
+    [A1, A2, B1, B2].map(|c| c.map(D::from))
+}
+
+/// The model constants of the dispersion contribution from a flat slice.
+fn constants<D: Copy>(c: &[D]) -> [[D; 7]; 4] {
+    std::array::from_fn(|i| std::array::from_fn(|j| c[7 * i + j]))
+}
 
 /// Reduced volume $m^*$ of a chain of `s` fused spheres with bond length `l` and diameter `d`.
 pub(super) fn reduced_volume<D: DualNum<Primitive = f64> + Copy>(s: D, l: D, d: D) -> D {
@@ -20,12 +46,14 @@ pub(super) fn reduced_volume<D: DualNum<Primitive = f64> + Copy>(s: D, l: D, d: 
     ld * (-ld * ld + 3.0) * (s - 1.0) * 0.5 + 1.0
 }
 
+#[expect(clippy::too_many_arguments)]
 fn helmholtz_energy_density_non_assoc<D: DualNum<Primitive = f64> + Copy>(
     s: D,
     l: D,
     sigma: D,
     epsilon_k: D,
     mu: D,
+    [a1, a2, b1, b2]: &[[D; 7]; 4],
     temperature: D,
     density: D,
 ) -> (D, [D; 3]) {
@@ -81,8 +109,8 @@ fn helmholtz_energy_density_non_assoc<D: DualNum<Primitive = f64> + Copy>(
     let m1 = (m - 1.0) / m;
     let m2 = (m - 2.0) / m;
     for i in 0..7 {
-        i1 += (m1 * (m2 * A2[i] + A1[i]) + A0[i]) * etas[i];
-        i2 += (m1 * (m2 * B2[i] + B1[i]) + B0[i]) * etas[i];
+        i1 += (m1 * (m2 * a2[i] + a1[i]) + A0[i]) * etas[i];
+        i2 += (m1 * (m2 * b2[i] + b1[i]) + B0[i]) * etas[i];
     }
     let i = i1 * 2.0 + c1 * i2 * m * e;
     let disp = -density * density * m.powi(2) * e * s3 * i * PI;
@@ -116,12 +144,21 @@ fn helmholtz_energy_density_non_assoc<D: DualNum<Primitive = f64> + Copy>(
 
 fn helmholtz_energy_density<D: DualNum<Primitive = f64> + Copy>(
     parameters: &[D; 9],
+    constants: &[[D; 7]; 4],
     temperature: D,
     density: D,
 ) -> D {
     let [s, l, sigma, epsilon_k, mu, kappa_ab, epsilon_k_ab, na, nb] = *parameters;
-    let (non_assoc, [eta, eta_m1, m_m_star]) =
-        helmholtz_energy_density_non_assoc(s, l, sigma, epsilon_k, mu, temperature, density);
+    let (non_assoc, [eta, eta_m1, m_m_star]) = helmholtz_energy_density_non_assoc(
+        s,
+        l,
+        sigma,
+        epsilon_k,
+        mu,
+        constants,
+        temperature,
+        density,
+    );
 
     // association
     let delta_assoc = ((epsilon_k_ab / temperature).exp() - 1.0) * sigma.powi(3) * kappa_ab;
@@ -169,7 +206,7 @@ impl<D: DualNum<Primitive = f64> + Copy> Residual<U1, D> for FcSaftPure<D, 9> {
 
     fn reduced_residual_helmholtz_energy_density(&self, state: &StateHD<D, U1>) -> D {
         let density = state.partial_density.data.0[0][0];
-        helmholtz_energy_density(&self.0, state.temperature, density)
+        helmholtz_energy_density(&self.0, &default_constants(), state.temperature, density)
     }
 }
 
@@ -205,7 +242,102 @@ impl<D: DualNum<Primitive = f64> + Copy> Residual<U1, D> for FcSaftPure<D, 5> {
     fn reduced_residual_helmholtz_energy_density(&self, state: &StateHD<D, U1>) -> D {
         let density = state.partial_density.data.0[0][0];
         let [s, l, sigma, epsilon_k, mu] = self.0;
-        helmholtz_energy_density_non_assoc(s, l, sigma, epsilon_k, mu, state.temperature, density).0
+        let c = default_constants();
+        helmholtz_energy_density_non_assoc(
+            s,
+            l,
+            sigma,
+            epsilon_k,
+            mu,
+            &c,
+            state.temperature,
+            density,
+        )
+        .0
+    }
+}
+
+impl<D: DualNum<Primitive = f64> + Copy> Residual<U1, D> for FcSaftPure<D, 37> {
+    fn components(&self) -> usize {
+        1
+    }
+
+    type Real = FcSaftPure<f64, 37>;
+    type Lifted<D2: DualNum<Primitive = f64, Inner = D> + Copy> = FcSaftPure<D2, 37>;
+    fn re(&self) -> Self::Real {
+        FcSaftPure(self.0.each_ref().map(D::re))
+    }
+    fn lift<D2: DualNum<Primitive = f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
+        FcSaftPure(self.0.each_ref().map(D2::from_inner))
+    }
+
+    fn compute_max_density(&self, _: &SVector<D, 1>) -> D {
+        let &[s, l, sigma, ..] = &self.0;
+        (reduced_volume(s, l, sigma) * sigma.powi(3) * FRAC_PI_6).recip() * MAX_ETA
+    }
+
+    fn reduced_helmholtz_energy_density_contributions(
+        &self,
+        state: &StateHD<D, U1>,
+    ) -> Vec<(&'static str, D)> {
+        vec![(
+            "FC-SAFT (pure, model constants)",
+            self.reduced_residual_helmholtz_energy_density(state),
+        )]
+    }
+
+    fn reduced_residual_helmholtz_energy_density(&self, state: &StateHD<D, U1>) -> D {
+        let density = state.partial_density.data.0[0][0];
+        let (parameters, c) = self.0.split_at(9);
+        let parameters = parameters.try_into().unwrap();
+        helmholtz_energy_density(parameters, &constants(c), state.temperature, density)
+    }
+}
+
+impl<D: DualNum<Primitive = f64> + Copy> Residual<U1, D> for FcSaftPure<D, 33> {
+    fn components(&self) -> usize {
+        1
+    }
+
+    type Real = FcSaftPure<f64, 33>;
+    type Lifted<D2: DualNum<Primitive = f64, Inner = D> + Copy> = FcSaftPure<D2, 33>;
+    fn re(&self) -> Self::Real {
+        FcSaftPure(self.0.each_ref().map(D::re))
+    }
+    fn lift<D2: DualNum<Primitive = f64, Inner = D> + Copy>(&self) -> Self::Lifted<D2> {
+        FcSaftPure(self.0.each_ref().map(D2::from_inner))
+    }
+
+    fn compute_max_density(&self, _: &SVector<D, 1>) -> D {
+        let &[s, l, sigma, ..] = &self.0;
+        (reduced_volume(s, l, sigma) * sigma.powi(3) * FRAC_PI_6).recip() * MAX_ETA
+    }
+
+    fn reduced_helmholtz_energy_density_contributions(
+        &self,
+        state: &StateHD<D, U1>,
+    ) -> Vec<(&'static str, D)> {
+        vec![(
+            "FC-SAFT (pure, non-assoc, model constants)",
+            self.reduced_residual_helmholtz_energy_density(state),
+        )]
+    }
+
+    fn reduced_residual_helmholtz_energy_density(&self, state: &StateHD<D, U1>) -> D {
+        let density = state.partial_density.data.0[0][0];
+        let [s, l, sigma, epsilon_k, mu, ..] = self.0;
+        let c = constants(&self.0[5..]);
+        helmholtz_energy_density_non_assoc(
+            s,
+            l,
+            sigma,
+            epsilon_k,
+            mu,
+            &c,
+            state.temperature,
+            density,
+        )
+        .0
     }
 }
 
@@ -238,6 +370,26 @@ impl ParametersAD<U1> for FcSaftPure<f64, 9> {
             f("na", false),
             f("nb", false),
         ])
+    }
+}
+
+impl ParametersAD<U1> for FcSaftPure<f64, 33> {
+    fn build<D: DualNum<Primitive = f64, Inner = f64> + Copy>(
+        mut f: impl FnMut(&'static str, bool) -> D,
+    ) -> FcSaftPure<D, 33> {
+        let p = FcSaftPure::<f64, 5>::build(&mut f).0;
+        let c = DISPERSION_CONSTANTS.map(|name| f(name, true));
+        FcSaftPure(std::array::from_fn(|i| if i < 5 { p[i] } else { c[i - 5] }))
+    }
+}
+
+impl ParametersAD<U1> for FcSaftPure<f64, 37> {
+    fn build<D: DualNum<Primitive = f64, Inner = f64> + Copy>(
+        mut f: impl FnMut(&'static str, bool) -> D,
+    ) -> FcSaftPure<D, 37> {
+        let p = FcSaftPure::<f64, 9>::build(&mut f).0;
+        let c = DISPERSION_CONSTANTS.map(|name| f(name, true));
+        FcSaftPure(std::array::from_fn(|i| if i < 9 { p[i] } else { c[i - 9] }))
     }
 }
 
@@ -355,6 +507,59 @@ pub mod test {
 
         assert_relative_eq!(a_feos, a_ad, max_relative = 1e-13);
         assert_relative_eq!(p_feos, p_ad, max_relative = 1e-13);
+        Ok(())
+    }
+
+    #[test]
+    fn test_fcsaft_pure_model_constants() -> FeosResult<()> {
+        let temperature = 300.0 * KELVIN;
+        let volume = 1.7 * METER * METER * METER;
+        let moles = vector![2.1] * KILO * MOL;
+
+        // default model constants: identical to the variants without constants
+        let (fcsaft, _) = fcsaft()?;
+        let default = [A1, A2, B1, B2].concat();
+        let p = fcsaft.0;
+        let fcsaft_c = FcSaftPure::<f64, 37>(std::array::from_fn(|i| {
+            if i < 9 { p[i] } else { default[i - 9] }
+        }));
+        let a = State::new_nvt(&fcsaft, temperature, volume, moles)?;
+        let a_c = State::new_nvt(&fcsaft_c, temperature, volume, moles)?;
+        assert_relative_eq!(
+            a.residual_molar_helmholtz_energy(),
+            a_c.residual_molar_helmholtz_energy(),
+            max_relative = 1e-14
+        );
+
+        // modified model constants: identical to the heterosegmented model
+        let (s, l, sigma, epsilon_k) = (4, 2.1, 3.6, 220.0);
+        let mut model_constants = [A1, A2, B1, B2];
+        model_constants
+            .iter_mut()
+            .flatten()
+            .enumerate()
+            .for_each(|(i, c)| {
+                *c *= 1.0 + 0.01 * i as f64;
+            });
+        let c = model_constants.concat();
+        let p = [s as f64, l, sigma, epsilon_k, 0.0];
+        let fcsaft =
+            FcSaftPure::<f64, 33>(std::array::from_fn(|i| if i < 5 { p[i] } else { c[i - 5] }));
+        let params =
+            new_pure_homosegmented(Identifier::default(), s, sigma, epsilon_k, l, 0.0, None)?;
+        let eos = FcSaft::with_options(params, Default::default(), Some(model_constants));
+        let state = State::new_nvt(&&eos, temperature, volume, &(dvector![2.1] * KILO * MOL))?;
+        let state_ad = State::new_nvt(&fcsaft, temperature, volume, moles)?;
+        assert_relative_eq!(
+            state.residual_molar_helmholtz_energy(),
+            state_ad.residual_molar_helmholtz_energy(),
+            max_relative = 1e-13
+        );
+        assert_relative_eq!(
+            state.pressure(Total),
+            state_ad.pressure(Total),
+            max_relative = 1e-13
+        );
         Ok(())
     }
 }

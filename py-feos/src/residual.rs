@@ -39,6 +39,10 @@ pub enum ResidualModel {
     #[implement(molar_weight)]
     FcSaft(feos::fcsaft::FcSaft),
 
+    #[cfg(feature = "fcsaft")]
+    #[implement(molar_weight)]
+    FcSaftHomo(feos::fcsaft::FcSaftHomo),
+
     #[implement(molar_weight, parameter_info)]
     PengRobinson(PengRobinson),
 

@@ -1,23 +1,32 @@
 use super::PyEquationOfState;
 #[cfg(feature = "dft")]
 use crate::dft::{PyFMTVersion, PyHelmholtzEnergyFunctional};
-use crate::{ideal_gas::IdealGasModel, parameter::PyGcParameters, residual::ResidualModel};
+use crate::ideal_gas::IdealGasModel;
+use crate::parameter::{PyGcParameters, PyParameters};
+use crate::residual::ResidualModel;
 #[cfg(feature = "dft")]
 use feos::fcsaft::FcSaftFunctional;
-use feos::fcsaft::{FcSaft, FcSaftOptions};
+use feos::fcsaft::{FcSaft, FcSaftHomo, FcSaftOptions};
 use feos_core::{EquationOfState, ResidualDyn};
+use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use std::sync::Arc;
 
 #[pymethods]
 impl PyEquationOfState {
-    /// (heterosegmented) fused-chain SAFT (FC-SAFT) equation of state.
+    /// Fused-chain SAFT (FC-SAFT) equation of state.
+    ///
+    /// With `Parameters`, the homosegmented model is used, in which every
+    /// molecule consists of `s` identical segments with bond length `l`
+    /// (pure-component parameters `s`, `l`, `sigma`, `epsilon_k`, optionally
+    /// `mu` and association sites). This version includes a dipolar contribution.
+    /// With `GcParameters`, the heterosegmented model is used.
     ///
     /// Parameters
     /// ----------
-    /// parameters : GcParameters
-    ///     The parameters of the FC-SAFT equation of state to use. Requires
-    ///     bond records that specify the bond lengths between segments.
+    /// parameters : Parameters | GcParameters
+    ///     The parameters of the FC-SAFT equation of state to use. GcParameters
+    ///     require bond records that specify the bond lengths between segments.
     /// max_eta : float, optional
     ///     Maximum packing fraction. Defaults to 0.5.
     /// max_iter_cross_assoc : unsigned integer, optional
@@ -26,7 +35,7 @@ impl PyEquationOfState {
     ///     Tolerance for convergence of cross association. Defaults to 1e-10.
     /// model_params : [[float]], optional
     ///     Model constants [a1, a2, b1, b2] (each with 7 entries) of the
-    ///     dispersion contribution. Defaults to the published FC-SAFT constants.
+    ///     dispersion contribution. Defaults to the FC-SAFT constants in feos.
     ///
     /// Returns
     /// -------
@@ -39,7 +48,7 @@ impl PyEquationOfState {
         text_signature = "(parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, model_params=None)"
     )]
     pub fn fcsaft(
-        parameters: PyGcParameters,
+        parameters: &Bound<'_, PyAny>,
         max_eta: f64,
         max_iter_cross_assoc: usize,
         tol_cross_assoc: f64,
@@ -50,11 +59,23 @@ impl PyEquationOfState {
             max_iter_cross_assoc,
             tol_cross_assoc,
         };
-        let residual = ResidualModel::FcSaft(FcSaft::with_options(
-            parameters.try_convert_heterosegmented_with_bonds()?,
-            options,
-            model_params,
-        ));
+        let residual = if let Ok(parameters) = parameters.extract::<PyParameters>() {
+            ResidualModel::FcSaftHomo(FcSaftHomo::with_options(
+                parameters.try_convert()?,
+                options,
+                model_params,
+            ))
+        } else if let Ok(parameters) = parameters.extract::<PyGcParameters>() {
+            ResidualModel::FcSaft(FcSaft::with_options(
+                parameters.try_convert_heterosegmented_with_bonds()?,
+                options,
+                model_params,
+            ))
+        } else {
+            return Err(PyErr::new::<PyValueError, _>(
+                "Argument `parameters` must be Parameters or GcParameters",
+            ));
+        };
         let ideal_gas = vec![IdealGasModel::NoModel; residual.components()];
         Ok(Self(Arc::new(EquationOfState::new(ideal_gas, residual))))
     }
