@@ -102,7 +102,7 @@ jobs:
         with:
           python-version: 3.14
       - name: Install pyodide-build
-        run: pip install "pyodide-build>=0.35,<0.36"
+        run: pip install "pyodide-build>=0.39,<0.40"
       - name: Get Pyodide configuration
         id: pyodide-config
         run: |
