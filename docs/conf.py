@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.abspath('.'))
 project = 'feos'
 copyright = '2022, Gernot Bauer, Philipp Rehner'
 author = 'Gernot Bauer, Philipp Rehner'
+release = feos.__version__
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -43,4 +44,11 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '**.ipynb_checkpoints']
 # -- Options for HTML output -------------------------------------------------
 html_theme = 'furo'
 html_title = f'FeOs v{feos.__version__}'
+html_favicon = '_static/favicon.svg'
+html_static_path = ['_static']
+html_theme_options = {
+    'light_logo': 'logo_light.svg',
+    'dark_logo': 'logo_dark.svg',
+    'sidebar_hide_name': True,
+}
 
