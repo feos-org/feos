@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fixed numerical roundoff errors in the analytic solution of association site fractions for asymmetric association schemes. [#393](https://github.com/feos-org/feos/pull/393)
+
 ## [0.10.2] - 2026-10-12
 ### Fixed
 - Fixed off-by-one error for the convergence-check in `_density_iteration`. [#386](https://github.com/feos-org/feos/pull/386)

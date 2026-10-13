@@ -152,8 +152,15 @@ impl Association {
 
         // fraction of non-bonded association sites
         let sqrt = ((delta * (rhoa - rhob) + 1.0).powi(2) + delta * rhob * 4.0).sqrt();
-        let xa = (sqrt + (delta * (rhob - rhoa) + 1.0)).recip() * 2.0;
-        let xb = (sqrt + (delta * (rhoa - rhob) + 1.0)).recip() * 2.0;
+        let (xa, xb) = if rhoa > rhob {
+            let xb = (sqrt + delta * (rhoa - rhob) + 1.0).recip() * 2.0;
+            let xa = (delta * rhob * xb + 1.0).recip();
+            (xa, xb)
+        } else {
+            let xa = (sqrt + delta * (rhob - rhoa) + 1.0).recip() * 2.0;
+            let xb = (delta * rhoa * xa + 1.0).recip();
+            (xa, xb)
+        };
 
         rhoa * (xa.ln() - xa * 0.5 + 0.5) + rhob * (xb.ln() - xb * 0.5 + 0.5)
     }
