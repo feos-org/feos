@@ -1,6 +1,6 @@
 use super::*;
-use feos_core::parameter::GenericParameters;
 use feos_core::FeosResult;
+use feos_core::parameter::GenericParameters;
 use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
 use ndarray::{Array1, Array2, ArrayBase, ArrayView2, Axis, Data, Ix1, Slice};
 use num_dual::DualNum;
@@ -297,10 +297,17 @@ impl<'a, A: AssociationStrength> YuWuAssociationFunctional<'a, A> {
             * self.model.association_strength_ij(temperature, i, j, par);
 
         // no cross association, two association sites
-        let aux = &delta * (&rhob - &rhoa) + 1.0;
-        let xa = ((&aux * &aux + &delta * &rhoa * 4.0).map(N::sqrt) + &aux).map(N::recip) * 2.0;
-        let aux = -aux + 2.0;
-        let xb = ((&aux * &aux + delta * &rhob * 4.0).map(N::sqrt) + aux).map(N::recip) * 2.0;
+        let (xa, xb) = if rhoa.sum().re() > rhob.sum().re() {
+            let aux = &delta * (&rhoa - &rhob) + 1.0;
+            let xb = ((&aux * &aux + &delta * &rhob * 4.0).map(N::sqrt) + aux).map(N::recip) * 2.0;
+            let xa = (&delta * &rhob * &xb + 1.0).map(N::recip);
+            (xa, xb)
+        } else {
+            let aux = &delta * (&rhob - &rhoa) + 1.0;
+            let xa = ((&aux * &aux + &delta * &rhoa * 4.0).map(N::sqrt) + aux).map(N::recip) * 2.0;
+            let xb = (&delta * &rhoa * &xa + 1.0).map(N::recip);
+            (xa, xb)
+        };
 
         let f = |x: N| x.ln() - x * 0.5 + 0.5;
         rhoa * xa.mapv(f) + rhob * xb.mapv(f)
