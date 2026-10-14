@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
-- Fixed numerical roundoff errors in the analytic solution of association site fractions for asymmetric association schemes. [#393](https://github.com/feos-org/feos/pull/393)
+- Fixed numerical roundoff errors in the analytic solution of association site fractions for asymmetric association schemes. [#393](https://github.com/feos-org/feos/pull/393),[#394](https://github.com/feos-org/feos/pull/394)
 
 ## [0.10.2] - 2026-10-12
 ### Fixed

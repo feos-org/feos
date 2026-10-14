@@ -105,8 +105,15 @@ fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
     let rhob = nb * density;
     let aux = (rhoa - rhob) * delta + 1.0;
     let sqrt = (aux * aux + rhob * delta * 4.0).sqrt();
-    let xa = (sqrt + 1.0 + (rhob - rhoa) * delta).recip() * 2.0;
-    let xb = (sqrt + 1.0 - (rhob - rhoa) * delta).recip() * 2.0;
+    let (xa, xb) = if na > nb {
+        let xb = (sqrt + aux).recip() * 2.0;
+        let xa = (rhob * delta * xb + 1.0).recip();
+        (xa, xb)
+    } else {
+        let xa = (sqrt - aux + 2.0).recip() * 2.0;
+        let xb = (rhoa * delta * xa + 1.0).recip();
+        (xa, xb)
+    };
     let assoc = rhoa * (xa.ln() - xa * 0.5 + 0.5) + rhob * (xb.ln() - xb * 0.5 + 0.5);
 
     non_assoc + assoc
