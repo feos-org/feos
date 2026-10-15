@@ -48,7 +48,7 @@ let parameters = Parameters::from_json(
 let eos = &PcSaft::new(parameters);
 
 // Define thermodynamic conditions
-let critical_point = State::critical_point(&eos, None, None, None, Default::default())?;
+let critical_point = State::critical_point(&eos, (), None, None, Default::default())?;
 
 // Compute properties
 let p = critical_point.pressure(Contributions::Total);

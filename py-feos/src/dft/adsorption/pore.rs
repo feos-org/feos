@@ -145,7 +145,7 @@ pub struct PyPoreProfile(
 impl PyPoreProfile {
     #[new]
     #[pyo3(
-        text_signature = "(grid, bulk, external_potential, density=None, specification=PyPoreSpecification.ChemicalPotential)"
+        text_signature = "(grid, bulk, external_potential, density=None, specification=PoreSpecification.ChemicalPotential)"
     )]
     #[pyo3(signature = (grid, bulk, external_potential, density=None, specification=PyPoreSpecification::ChemicalPotential()))]
     fn new(
@@ -239,17 +239,17 @@ impl PyPoreSpecification {
 ///
 /// Parameters
 /// ----------
+/// functional : HelmholtzEnergyFunctional
+///     The Helmholtz energy functional.
 /// geometry : Geometry
 ///     The pore geometry.
 /// pore_size : SINumber
 ///     The width of the slit pore in cartesian coordinates,
 ///     or the pore radius in spherical and cylindrical coordinates.
-/// potential : ExternalPotential
+/// external_potential : ExternalPotential
 ///     The potential used to model wall-fluid interactions.
 /// n_grid : int, optional
 ///     The number of grid points.
-/// potential_cutoff : float, optional
-///     Maximum value for the external potential.
 ///
 /// Returns
 /// -------
@@ -293,7 +293,7 @@ impl PyPore1D {
     ///
     /// Returns
     /// -------
-    /// PoreProfile1D
+    /// PoreProfile
     #[pyo3(
         text_signature = "($self, bulk, density=None, specification=PoreSpecification.ChemicalPotential)"
     )]
