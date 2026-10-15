@@ -44,7 +44,13 @@ type GradResult<'py> = (
 );
 
 #[pyclass(name = "Property")]
-/// Blibalblub
+/// Parallel evaluation of phase equilibrium properties.
+///
+/// For every property `xyz`, the static method `Property.xyz(eos, input)`
+/// evaluates the property for an `EquationOfState`, and
+/// `Property.xyz_derivatives(model, parameter_names, parameters, input)`
+/// evaluates the property and its derivatives w.r.t. the model parameters
+/// listed in `parameter_names` for an `EquationOfStateAD`.
 pub struct PyPropertyAD;
 
 #[pymethods]

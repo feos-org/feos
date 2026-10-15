@@ -153,7 +153,7 @@ maturin build --profile="release-lto"
 ```
 
 which will use the `wheel` feature collection specified in the `pyproject.toml` file. 
-The `emscripten_wheel` collection provides the same models and AD support for Pyodide while omitting incompatible features (such as Rayon, SQLite, and the Rayon-dependent 3D DFT classes).
+The `emscripten_wheel` collection provides the same models and AD support for Pyodide while omitting incompatible features (such as Rayon and SQLite).
 Use the following command to build a wheel with specific features:
 
 ```
