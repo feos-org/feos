@@ -1,6 +1,6 @@
 use super::eos::GcPcSaftOptions;
 use super::record::GcPcSaftAssociationRecord;
-use crate::association::{Association, AssociationStrength, YuWuAssociationFunctional};
+use crate::association::{AssociationStrength, AssociationVersion, SaftAssociationFunctional};
 use crate::gc_pcsaft::GcPcSaftParameters;
 use crate::hard_sphere::{FMTContribution, FMTVersion, HardSphereProperties, MonomerShape};
 use feos_core::{FeosResult, Molarweight, ResidualDyn, StateHD, Subset};
@@ -27,9 +27,9 @@ pub use parameter::GcPcSaftFunctionalParameters;
 pub struct GcPcSaftFunctional {
     parameters: GcPcSaftParameters<()>,
     params: GcPcSaftFunctionalParameters,
-    association: Option<Association>,
     fmt_version: FMTVersion,
     options: GcPcSaftOptions,
+    association_version: AssociationVersion,
 }
 
 impl GcPcSaftFunctional {
@@ -37,6 +37,7 @@ impl GcPcSaftFunctional {
         Self::with_options(
             parameters,
             FMTVersion::WhiteBear,
+            AssociationVersion::ISaft,
             GcPcSaftOptions::default(),
         )
     }
@@ -44,21 +45,16 @@ impl GcPcSaftFunctional {
     pub fn with_options(
         parameters: GcPcSaftParameters<()>,
         fmt_version: FMTVersion,
+        association_version: AssociationVersion,
         saft_options: GcPcSaftOptions,
     ) -> Self {
         let params = GcPcSaftFunctionalParameters::new(&parameters);
-        let association = (!parameters.association.is_empty()).then(|| {
-            Association::new(
-                saft_options.max_iter_cross_assoc,
-                saft_options.tol_cross_assoc,
-            )
-        });
         Self {
             parameters,
             params,
-            association,
             fmt_version,
             options: saft_options,
+            association_version,
         }
     }
 }
@@ -68,6 +64,7 @@ impl Subset for GcPcSaftFunctional {
         Self::with_options(
             self.parameters.subset(component_list),
             self.fmt_version,
+            self.association_version,
             self.options,
         )
     }
@@ -100,6 +97,7 @@ impl ResidualDyn for GcPcSaftFunctional {
 
 impl HelmholtzEnergyFunctionalDyn for GcPcSaftFunctional {
     type Contribution<'a> = GcPcSaftFunctionalContribution<'a>;
+    type Association<'a> = SaftAssociationFunctional<'a, GcPcSaftFunctionalParameters>;
 
     fn molecule_shape(&self) -> MoleculeShape<'_> {
         MoleculeShape::Heterosegmented(&self.params.component_index)
@@ -107,9 +105,6 @@ impl HelmholtzEnergyFunctionalDyn for GcPcSaftFunctional {
 
     fn contributions<'a>(&'a self) -> impl Iterator<Item = GcPcSaftFunctionalContribution<'a>> {
         let mut contributions = Vec::with_capacity(4);
-
-        let assoc =
-            YuWuAssociationFunctional::new(&self.params, &self.parameters, self.association);
 
         // Hard sphere contribution
         let hs = FMTContribution::new(&self.params, self.fmt_version);
@@ -122,11 +117,6 @@ impl HelmholtzEnergyFunctionalDyn for GcPcSaftFunctional {
         // Dispersion
         let att = AttractiveFunctional::new(&self.params);
         contributions.push(att.into());
-
-        // Association
-        if let Some(assoc) = assoc {
-            contributions.push(assoc.into());
-        }
 
         contributions.into_iter()
     }
@@ -144,6 +134,16 @@ impl HelmholtzEnergyFunctionalDyn for GcPcSaftFunctional {
                 (di + dj) * 0.5
             },
         )
+    }
+
+    fn association(&self) -> Option<Self::Association<'_>> {
+        (!self.parameters.association.is_empty()).then(|| {
+            SaftAssociationFunctional::new(
+                &self.params,
+                &self.parameters.association,
+                self.association_version,
+            )
+        })
     }
 }
 
@@ -201,5 +201,4 @@ pub enum GcPcSaftFunctionalContribution<'a> {
     Fmt(FMTContribution<'a, GcPcSaftFunctionalParameters>),
     Chain(ChainFunctional<'a>),
     Attractive(AttractiveFunctional<'a>),
-    Association(YuWuAssociationFunctional<'a, GcPcSaftFunctionalParameters>),
 }

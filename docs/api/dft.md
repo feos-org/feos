@@ -58,6 +58,7 @@ Implementations of Helmholtz energy functionals for DFT.
     :toctree: generated/
 
     FMTVersion
+    AssociationVersion
     DFTSolver
     DFTSolverLog
 ```

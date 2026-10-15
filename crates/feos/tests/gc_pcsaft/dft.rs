@@ -1,9 +1,11 @@
 #![allow(clippy::excessive_precision)]
 #![cfg(feature = "dft")]
 use approx::assert_relative_eq;
-use feos::gc_pcsaft::{GcPcSaft, GcPcSaftFunctional, GcPcSaftParameters};
+use feos::association::AssociationVersion;
+use feos::gc_pcsaft::{GcPcSaft, GcPcSaftFunctional, GcPcSaftOptions, GcPcSaftParameters};
+use feos::hard_sphere::FMTVersion;
 use feos_core::parameter::{ChemicalRecord, Identifier, IdentifierOption, SegmentRecord};
-use feos_core::{PhaseEquilibrium, State, Verbosity};
+use feos_core::{FeosResult, PhaseEquilibrium, ReferenceSystem, State};
 use feos_dft::adsorption::{ExternalPotential, Pore1D, PoreSpecification};
 use feos_dft::interface::Interface;
 use feos_dft::{DFTSolver, Geometry};
@@ -134,7 +136,7 @@ fn test_bulk_association() -> Result<(), Box<dyn Error>> {
     for (s, x) in &p_func {
         println!("{s:26}: {x:21.16}");
     }
-    assert_relative_eq!(p_eos[4].1, p_func[4].1, max_relative = 1e-14);
+    assert_relative_eq!(p_eos[4].1, p_func[5].1, max_relative = 1e-14);
     Ok(())
 }
 
@@ -213,9 +215,6 @@ fn test_dft_assoc() -> Result<(), Box<dyn Error>> {
         vle.liquid().density,
     );
 
-    let solver = DFTSolver::new(Some(Verbosity::Iter))
-        .picard_iteration(None, None, Some(1e-5), Some(0.05))
-        .anderson_mixing(None, None, None, None, None);
     let bulk = State::new_npt(&func, t, 5.0 * BAR, (), None)?;
     Pore1D::new(
         &func,
@@ -230,30 +229,115 @@ fn test_dft_assoc() -> Result<(), Box<dyn Error>> {
     )
     .initialize(&bulk, None, PoreSpecification::ChemicalPotential)
     .unwrap()
-    .solve(Some(&solver))?;
+    .solve(None)?;
     Ok(())
 }
 
 #[test]
-#[allow(non_snake_case)]
-fn test_dft_newton() -> Result<(), Box<dyn Error>> {
-    let params = GcPcSaftParameters::from_json_segments_hetero(
-        &["propane"],
-        "../../parameters/pcsaft/gc_substances.json",
-        "../../parameters/pcsaft/sauer2014_hetero.json",
-        None,
-        IdentifierOption::Name,
-    )
-    .unwrap();
-    let func = GcPcSaftFunctional::new(params);
-    let t = 200.0 * KELVIN;
-    let w = 150.0 * ANGSTROM;
-    let points = 512;
-    let tc = State::critical_point(&&func, (), None, None, Default::default())?.temperature;
-    let vle = PhaseEquilibrium::pure(&&func, t, None, Default::default())?;
-    let solver = DFTSolver::new(Some(Verbosity::Iter))
-        .picard_iteration(None, Some(10), None, None)
-        .newton(None, None, None, None);
-    Interface::planar_from_tanh(&vle, points, w, tc).solve(Some(&solver))?;
+fn test_association_functional() -> Result<(), Box<dyn Error>> {
+    let pentanol = || {
+        GcPcSaftParameters::from_json_segments_hetero(
+            &["1-pentanol"],
+            "../../parameters/pcsaft/gc_substances.json",
+            "../../parameters/pcsaft/sauer2014_hetero.json",
+            None,
+            IdentifierOption::Name,
+        )
+    };
+    // two associating groups on one molecule
+    let ethylene_glycol = || {
+        let segment_records =
+            SegmentRecord::from_json("../../parameters/pcsaft/sauer2014_hetero.json")?;
+        let ethylene_glycol = ChemicalRecord::new(
+            Identifier::default(),
+            vec!["OH".into(), "CH2".into(), "CH2".into(), "OH".into()],
+            None,
+        );
+        GcPcSaftParameters::from_segments_hetero(vec![ethylene_glycol], &segment_records, None)
+    };
+
+    // Reference values (reduced units) for the Yu-Wu version, calculated with the former
+    // implementation of the Yu-Wu functional as functional contribution (the new implementation
+    // agreed to 1e-12): surface tension, and N, dN/dmu, dN/dT, dN/dp in the pore.
+    let systems: [(_, &dyn Fn() -> FeosResult<_>, _, _, _); 2] = [
+        (
+            "1-pentanol",
+            &pentanol,
+            300.0 * KELVIN,
+            2.23879815382352518e1,
+            [
+                3.79517038993460662e-2,
+                1.12082220343449285e-5,
+                -7.40545931214335926e-5,
+                2.01872580071947930e-3,
+            ],
+        ),
+        (
+            "ethylene glycol",
+            &ethylene_glycol,
+            350.0 * KELVIN,
+            4.56795358271755347e1,
+            [
+                6.89972501429023111e-2,
+                2.10123263597187854e-5,
+                -9.96347544445204218e-5,
+                2.11674973524123315e-3,
+            ],
+        ),
+    ];
+    // tight tolerance, so that the comparison is not limited by the convergence of the profiles
+    let solver = DFTSolver::new(None).newton(None, None, Some(1e-13));
+    for (name, parameters, t, gamma_ref, pore_ref) in systems {
+        for version in [
+            AssociationVersion::YuWu,
+            AssociationVersion::Wda,
+            AssociationVersion::ISaft,
+        ] {
+            let func = &GcPcSaftFunctional::with_options(
+                parameters()?,
+                FMTVersion::WhiteBear,
+                version,
+                GcPcSaftOptions::default(),
+            );
+
+            // planar interface
+            let vle = PhaseEquilibrium::pure(&func, t, None, Default::default())?;
+            let interface =
+                Interface::planar_from_tanh(&vle, 1024, 100.0 * ANGSTROM, 600.0 * KELVIN)
+                    .solve(Some(&solver))?;
+            let gamma = interface.surface_tension.unwrap().to_reduced();
+
+            // slit pore
+            let bulk = State::new_npt(&func, t, 5.0 * BAR, (), None)?;
+            let mut pore = Pore1D::new(
+                &func,
+                Geometry::Cartesian,
+                20.0 * ANGSTROM,
+                ExternalPotential::LJ93 {
+                    epsilon_k_ss: 10.0,
+                    sigma_ss: 3.0,
+                    rho_s: 0.08,
+                },
+                None,
+            )
+            .initialize(&bulk, None, PoreSpecification::ChemicalPotential)?
+            .solve(Some(&solver))?;
+            let profile = &mut pore.profile;
+            let n = [
+                profile.moles().to_reduced()[0],
+                profile.dn_dmu()?.to_reduced()[(0, 0)],
+                profile.dn_dt_p(&bulk)?.to_reduced()[0],
+                profile.dn_dp(&bulk)?.to_reduced()[0],
+            ];
+            println!("{name} {version:?}: surface tension {gamma}, pore {n:?}");
+
+            if version == AssociationVersion::YuWu {
+                assert_relative_eq!(gamma, gamma_ref, max_relative = 1e-10);
+                for (n, n_ref) in n.into_iter().zip(pore_ref) {
+                    assert_relative_eq!(n, n_ref, max_relative = 1e-10);
+                }
+            }
+        }
+    }
     Ok(())
 }

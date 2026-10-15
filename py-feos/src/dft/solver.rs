@@ -29,7 +29,7 @@ impl PyDFTSolver {
         Self(DFTSolver::new(verbosity.map(|v| v.into())))
     }
 
-    /// The default solver.
+    /// The default solver (Newton solver for the logarithm of the density profile).
     ///
     /// Returns
     /// -------
@@ -120,11 +120,11 @@ impl PyDFTSolver {
 
     /// Add Newton solver to the solver object.
     ///
+    /// The logarithms of the density profile (and of the fractions of non-bonded association
+    /// sites) are iterated with step size control and line search.
+    ///
     /// Parameters
     /// ----------
-    /// log: bool, optional
-    ///     Iterate the logarithm of the density profile
-    ///     Defaults to False.
     /// max_iter: int, optional
     ///     The maximum number of iterations.
     ///     Defaults to 50.
@@ -139,17 +139,16 @@ impl PyDFTSolver {
     /// -------
     /// DFTSolver
     #[pyo3(
-        text_signature = "($self, log=None, max_iter=None, max_iter_gmres=None, tol=None)",
-        signature = (log=None, max_iter=None, max_iter_gmres=None, tol=None)
+        text_signature = "($self, max_iter=None, max_iter_gmres=None, tol=None)",
+        signature = (max_iter=None, max_iter_gmres=None, tol=None)
     )]
     fn newton(
         &self,
-        log: Option<bool>,
         max_iter: Option<usize>,
         max_iter_gmres: Option<usize>,
         tol: Option<f64>,
     ) -> Self {
-        Self(self.0.clone().newton(log, max_iter, max_iter_gmres, tol))
+        Self(self.0.clone().newton(max_iter, max_iter_gmres, tol))
     }
 
     fn _repr_markdown_(&self) -> String {

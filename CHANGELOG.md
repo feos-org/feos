@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the `Grid` and `PoreProfile` classes as an entry points to DFT in various coordinate systems in Python. [#376](https://github.com/feos-org/feos/pull/376)
 - `PoreProfile.solver_log` now stores a timing profile of the different solver steps. [#385](https://github.com/feos-org/feos/pull/385)
 - Added `Interface::curved` to calculate cylindrical and spherical interfaces from a planar interface. [#387](https://github.com/feos-org/feos/pull/387)
+- Added `drho_dn` and `drho_dt_n` to DFT profiles to calculate derivatives of density profiles at constant number of particles. [#403](https://github.com/feos-org/feos/pull/403)
+- Added the association functionals of Yu and Wu, WDA, and iSAFT with the fractions of non-bonded sites as additional variables of the density profile. The version is selected with `AssociationVersion` (default iSAFT). [#403](https://github.com/feos-org/feos/pull/403)
+- Added `non_bonded_fractions` to DFT profiles to access the fractions of non-bonded association sites. [#403](https://github.com/feos-org/feos/pull/403)
 
 ### Changed
 - Changed data type of initial temperatures or pressure for phase equilibrium calculations (`TemperatureOrPressure::Other`) from `D` to `f64`. [#369](https://github.com/feos-org/feos/pull/369)
@@ -20,11 +23,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed `PlanarInterface` to `Interface` and its constructors `from_tanh` and `from_pdgt` to `planar_from_tanh` and `planar_from_pdgt`. [#387](https://github.com/feos-org/feos/pull/387)
 - Replaced `PlanarInterface.from_density_profile` in Python with the `Interface(grid, vle, density)` constructor in analogy to `PoreProfile`. [#387](https://github.com/feos-org/feos/pull/387)
 - `drho_dp`, `dn_dp`, `drho_dt`, and `dn_dt` of DFT profiles now take the bulk state as an argument (methods instead of properties in Python). [#387](https://github.com/feos-org/feos/pull/387)
+- Renamed `drho_dt` and `dn_dt` of DFT profiles to `drho_dt_p` and `dn_dt_p` (derivatives at constant pressure and bulk composition). [#403](https://github.com/feos-org/feos/pull/403)
+- The Newton solver is now the default solver for DFT (previously Anderson mixing). It always iterates the logarithms of the density profiles (and of the fractions of non-bonded sites), so the `log` argument of `DFTSolver.newton` is removed. Jacobian-vector products are calculated exactly from the linearized residual, and the step size is controlled by a line search. [#403](https://github.com/feos-org/feos/pull/403)
 
 ### Removed
 - Removed the `DFTSpecification` trait in favor of only using the `DFTSpecification` enum (renamed from `DFTSpecifications`). [#371](https://github.com/feos-org/feos/pull/371)
 - Removed the `Pore2D` and `Pore3D` interfaces including the (limited) calculation of external potentials for complex pore grometries. [#376](https://github.com/feos-org/feos/pull/376)
 - Removed the free energy-averaged external (FEA) potential. [#376](https://github.com/feos-org/feos/pull/376)
+- Removed predictive density gradient theory (pDGT) including `Interface::planar_from_pdgt`. Interfaces are initialized with `Interface::planar_from_tanh`. [#403](https://github.com/feos-org/feos/pull/403)
+- Removed the association functional of Yu and Wu as functional contribution (`YuWuAssociationFunctional`). Association in DFT is now handled by `SaftAssociationFunctional` with the fractions of non-bonded sites as additional variables. [#403](https://github.com/feos-org/feos/pull/403)
 
 ### Fixed
 - The Newton solver for cDFT now correctly handles specifications other than the chemical potential. [#384](https://github.com/feos-org/feos/pull/384)

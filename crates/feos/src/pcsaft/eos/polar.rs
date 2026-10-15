@@ -153,7 +153,11 @@ fn triplet_integral_ijk<D: DualNum<Primitive = f64> + Copy>(
         .sum()
 }
 
-fn triplet_integral_ijk_dq<D: DualNum<Primitive = f64> + Copy>(mijk: f64, etas: &[D], c: &[[f64; 2]]) -> D {
+fn triplet_integral_ijk_dq<D: DualNum<Primitive = f64> + Copy>(
+    mijk: f64,
+    etas: &[D],
+    c: &[[f64; 2]],
+) -> D {
     (0..c.len())
         .map(|i| etas[i] * (c[i][0] + mijk * c[i][1]))
         .sum()

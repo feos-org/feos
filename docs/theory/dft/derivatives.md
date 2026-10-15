@@ -1,82 +1,73 @@
 # Derivatives of density profiles
 For converged density profiles equilibrium properties can be calculated as partial derivatives of thermodynamic potentials analogous to classical (bulk) thermodynamics. The difference is that the derivatives have to be along a path of valid density profiles (solutions of the [Euler-Lagrange equation](euler_lagrange_equation.md)).
 
-The density profiles are calculated implicitly from the Euler-Lagrange equation, which can be written simplified as
+## Implicit differentiation
+The density profiles and the fractions of non-bonded sites are defined implicitly as the root of the residual $\mathcal{R}\left(\mathbf{r};\left[x(\mathbf{r})\right]\right)$ that is introduced in the section on the [Newton solver](solver.md), with the unknowns $x(\mathbf{r})=\left(\ln\rho_\alpha(\mathbf{r}),\ln X_A(\mathbf{r})\right)$. If the residual depends explicitly on a parameter $\theta$ (e.g., a chemical potential, the pressure, or the temperature), the solution $x(\mathbf{r};\theta)$ fulfills
+
+$$\mathcal{R}\left(\mathbf{r};\left[x(\mathbf{r};\theta)\right],\theta\right)=0$$
+
+for every $\theta$. Then, the total derivative with respect to $\theta$ has to vanish as well, which leads to
 
 $$
-\Omega_{\rho_i}(T,\lbrace\mu_k\rbrace,[\lbrace\rho_k(\mathbf{r})\rbrace])=F_{\rho_i}(T,[\lbrace\rho_k(\mathbf{r})\rbrace])-\mu_i+V_i^\mathrm{ext}(\mathbf{r})=0
-$$ (eqn:euler_lagrange)
+\frac{\mathrm{d}\mathcal{R}\left(\mathbf{r};\left[x(\mathbf{r})\right]\right)}{\mathrm{d}\theta}=\int\frac{\delta\mathcal{R}\left(\mathbf{r};\left[x(\mathbf{r})\right]\right)}{\delta x(\mathbf{r}')}\frac{\partial x(\mathbf{r}')}{\partial\theta}\mathrm{d}\mathbf{r}'+\frac{\partial\mathcal{R}\left(\mathbf{r};\left[x(\mathbf{r})\right]\right)}{\partial\theta}=0
+$$ (eqn:implicit_derivative)
 
-Incorporating bond integrals can be done similar to the section on the [Newton solver](solver.md) but will not be discussed in this section. The derivatives of the density profiles can then be calculated from the total differential of eq. {eq}`eqn:euler_lagrange`, leading to
+Eq. {eq}`eqn:implicit_derivative` is a linear integral equation for the derivatives $\frac{\partial x(\mathbf{r})}{\partial\theta}$ with the same Jacobian as the Newton step. It is solved with GMRES and the linearization of the residual, exactly as described for the [Newton solver](solver.md), only with a different right-hand side. The derivatives of the logarithms of the fractions of non-bonded sites are obtained along the way, and the derivatives of the density profiles follow as
 
-$$\mathrm{d}\Omega_{\rho_i}(\mathbf{r})=\left(\frac{\partial\Omega_{\rho_i}(\mathbf{r})}{\partial T}\right)_{\mu_k,\rho_k}\mathrm{d}T+\sum_j\left(\frac{\partial\Omega_{\rho_i}(\mathbf{r})}{\partial\mu_j}\right)_{T,\mu_{k\neq j},\rho_k}\mathrm{d}\mu_j+\int\sum_j\left(\frac{\delta\Omega_{\rho_i}(\mathbf{r})}{\delta\rho_j(\mathbf{r}')}\right)_{T,\mu_k,\rho_{k\neq j}}\delta\rho_j(\mathbf{r}')\mathrm{d}\mathbf{r}'=0$$
+$$\frac{\partial\rho_\alpha(\mathbf{r})}{\partial\theta}=\rho_\alpha(\mathbf{r})\frac{\partial\ln\rho_\alpha(\mathbf{r})}{\partial\theta}$$
 
-Using eq. {eq}`eqn:euler_lagrange` and the shortened notation for derivatives of functionals in their natural variables, e.g., $F_T=\left(\frac{\partial F}{\partial T}\right)_{\rho_k}$, the expression can be simplified to
-
-$$
-F_{T\rho_i}(\mathbf{r})\mathrm{d}T-\mathrm{d}\mu_i+\int\sum_j F_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\delta\rho_j(\mathbf{r}')\mathrm{d}\mathbf{r}'=0
-$$ (eqn:gibbs_duhem)
-
-Similar to the Gibbs-Duhem relation for bulk phases, eq. {eq}`eqn:gibbs_duhem` shows how temperature, chemical potentials and the density profiles in an inhomogeneous system cannot be varied independently. The derivatives of the density profiles with respect to the intensive variables can be directly identified as
-
-$$\int\sum_j F_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\left(\frac{\partial\rho_j(\mathbf{r}')}{\partial T}\right)_{\mu_k}\mathrm{d}\mathbf{r}'=-F_{T\rho_i}(\mathbf{r})$$
-
-and
+## Specified chemical potentials
+Written out with the [full expression](euler_lagrange_equation.md) of the Euler-Lagrange equation, the residual is
 
 $$
-\int\sum_j F_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\left(\frac{\partial\rho_j(\mathbf{r}')}{\partial\mu_k}\right)_{T}\mathrm{d}\mathbf{r}'=\delta_{ik}
-$$ (eqn:drho_dmu)
+\mathcal{R}\left(\mathbf{r};\left[x(\mathbf{r})\right]\right)=\begin{pmatrix}\ln f_\alpha-\frac{\beta}{m_\alpha}\left(\hat F_{\rho_\alpha}^\mathrm{res}(\mathbf{r})+V_\alpha^\mathrm{ext}(\mathbf{r})\right)+\sum_{\alpha'}\ln I_{\alpha\alpha'}(\mathbf{r})-\ln\rho_\alpha(\mathbf{r})\\-\ln\left(1+S_A(\mathbf{r})\right)-\ln X_A(\mathbf{r})\end{pmatrix}
+$$ (eqn:residual)
 
-Both of these expressions are implicit (linear) equations for the derivatives. They can be solved rapidly analogously to the implicit expression appearing in the [Newton solver](solver.md). In practice, it is useful to explicitly cancel out the (often unknown) thermal de Broglie wavelength $\Lambda_i$ from the expression where it has no influence. This is done by splitting the intrinsic Helmholtz energy into an ideal gas and a residual part.
+with the density rows $\mathcal{R}_\alpha$ and the rows of the mass action equations $\mathcal{R}_A$. The fugacities only enter the density rows, and they do so linearly. If the chemical potentials are specified, the fugacities $f_\alpha$ are constant and do not contribute to the Jacobian. They are related to the chemical potentials via $m_\alpha\ln f_\alpha=\beta\mu_i-\ln\Lambda_i^3$, where $i$ is the component that segment $\alpha$ belongs to. The partial derivative of the residual in eq. {eq}`eqn:implicit_derivative` for the derivatives with respect to the chemical potentials, which yield $\left(\frac{\partial\rho_\alpha(\mathbf{r})}{\partial\mu_k}\right)_{T,\mu_{j\neq k}}$, is therefore simply
 
-$$F=k_\mathrm{B}T\int\sum_im_i\rho_i(\mathbf{r})\left(\ln\left(\rho_i(\mathbf{r})\Lambda_i^3\right)-1\right)\mathrm{d}\mathbf{r}+\hat F^\mathrm{res}$$
+$$\left(\frac{\partial\mathcal{R}}{\partial\beta\mu_k}\right)_{T,\mu_{j\neq k}}=\begin{pmatrix}\left(\frac{\partial\ln f_\alpha}{\partial\beta\mu_k}\right)_{T,\mu_{j\neq k}}\\0\end{pmatrix}=\begin{pmatrix}\frac{\delta_{ik}}{m_\alpha}\\0\end{pmatrix}$$
 
-Then $F_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')=m_i\frac{k_\mathrm{B}T}{\rho_i(\mathbf{r})}\delta_{ij}\delta(\mathbf{r}-\mathbf{r}')+\hat F_{\rho_i\rho_j}^\mathrm{res}(\mathbf{r},\mathbf{r}')$ and eq. {eq}`eqn:drho_dmu` can be rewritten as
+Instead of the chemical potentials, the fugacities can also be expressed by the state of the bulk phase that is in equilibrium with the inhomogeneous system
 
-$$m_i\frac{k_\mathrm{B}T}{\rho_i(\mathbf{r})}\left(\frac{\partial\rho_i(\mathbf{r})}{\partial\mu_k}\right)_T+\int\sum_j\hat F_{\rho_i\rho_j}^\mathrm{res}(\mathbf{r},\mathbf{r}')\left(\frac{\partial\rho_j(\mathbf{r}')}{\partial\mu_k}\right)_{T}\mathrm{d}\mathbf{r}'=\delta_{ik}$$
+$$
+m_\alpha\ln f_\alpha=\ln\left(\frac{x_i^\mathrm{b}p\varphi_i}{k_\mathrm{B}T}\right)
+$$ (eqn:fugacity_bulk)
 
-In practice, the division by the density should be avoided for numerical reasons and the energetic properties are reduced with the factor $\beta=\frac{1}{k_\mathrm{B}T}$. The final expression is
+with the mole fraction $x_i^\mathrm{b}$ and the fugacity coefficient $\varphi_i$ of component $i$ in the bulk phase. With eq. {eq}`eqn:fugacity_bulk`, the derivatives with respect to the pressure and the temperature of the bulk phase at constant bulk composition can be calculated in the same way. For the pressure, the partial derivative of the residual
 
-$$m_i\left(\frac{\partial\rho_i(\mathbf{r})}{\partial\beta\mu_k}\right)_T+\rho_i(\mathbf{r})\int\sum_j\beta\hat F_{\rho_i\rho_j}^\mathrm{res}(\mathbf{r},\mathbf{r}')\left(\frac{\partial\rho_j(\mathbf{r}')}{\partial\beta\mu_k}\right)_{T}\mathrm{d}\mathbf{r}'=\rho_i(\mathbf{r})\delta_{ik}$$
+$$\left(\frac{\partial\mathcal{R}}{\partial\beta p}\right)_{T,x_k^\mathrm{b}}=\begin{pmatrix}\left(\frac{\partial\ln f_\alpha}{\partial\beta p}\right)_{T,x_k^\mathrm{b}}\\0\end{pmatrix}=\begin{pmatrix}\frac{v_i}{m_\alpha}\\0\end{pmatrix}$$
 
-For the temperature derivative, it is more convenient to express eq. {eq}`eqn:gibbs_duhem` in terms of the pressure of a bulk phase that is in equilibrium with the inhomogeneous system. In the following, only paths along **constant bulk composition** are considered. With this constraint, the total differential of the chemical potential simplifies to
+with the partial molar volume $v_i$ of the bulk phase yields $\left(\frac{\partial\rho_\alpha(\mathbf{r})}{\partial p}\right)_{T,x_k^\mathrm{b}}$. For the temperature, the residual depends on the temperature both through the fugacities and explicitly, and the partial derivative of the residual for $\left(\frac{\partial\rho_\alpha(\mathbf{r})}{\partial T}\right)_{p,x_k^\mathrm{b}}$ is
 
-$$\mathrm{d}\mu_i=-s_i\mathrm{d}T+v_i\mathrm{d}p$$
+$$\left(\frac{\partial\mathcal{R}}{\partial T}\right)_{p,x_k^\mathrm{b}}=\begin{pmatrix}\left(\frac{\partial\mathcal{R}_\alpha}{\partial T}\right)_{f_k}+\left(\frac{\partial\ln f_\alpha}{\partial T}\right)_{p,x_k^\mathrm{b}}\\\left(\frac{\partial\mathcal{R}_A}{\partial T}\right)_{f_k}\end{pmatrix}=\left(\frac{\partial\mathcal{R}}{\partial T}\right)_{f_k}+\begin{pmatrix}\frac{1}{m_\alpha}\left(\left(\frac{\partial\ln\varphi_i}{\partial T}\right)_{p,x_k^\mathrm{b}}-\frac{1}{T}\right)\\0\end{pmatrix}$$
 
-which can be used in eq. {eq}`eqn:gibbs_duhem` to give
+Here, the derivative $\left(\frac{\partial\mathcal{R}}{\partial T}\right)_{f_k}$ is obtained using automatic differentiation of the residual with the bulk chemical potential (fugacity) specification.
 
-$$\left(F_{T\rho_i}(\mathbf{r})+s_i\right)\mathrm{d}T+\int\sum_j F_{\rho_i\rho_j}(\mathbf{r},\mathbf{r}')\delta\rho_j(\mathbf{r}')\mathrm{d}\mathbf{r}'=v_i\mathrm{d}p$$
+## Specified number of particles
+Derivatives at constant numbers of particles are calculated by replacing the fugacities in eq. {eq}`eqn:residual` with
 
-Even though $s_i$ is readily available in $\text{FeO}_\text{s}$ it is useful at this point to rewrite the partial molar entropy as
+$$\ln f_\alpha=\ln N_i-\ln z_\alpha$$
 
-$$s_i=v_i\left(\frac{\partial p}{\partial T}\right)_{V,N_k}-F_{T\rho_i}^\mathrm{b}$$
+which is exactly what the specification of the number of particles does in the solver (see the section on [constrained DFT](particle_constraint.md)). A converged density profile is a solution for its chemical potentials and for its numbers of particles at the same time. Therefore, both kinds of derivatives can be calculated for every density profile, independent of the specification that was used to solve it. Because the configurational integrals $z_\alpha$ depend on the density profiles, the Jacobian differs from the one for specified chemical potentials, which is included automatically by the linearization of the residual. The partial derivative of the residual for the derivatives with respect to the numbers of particles, which yield $\left(\frac{\partial\rho_\alpha(\mathbf{r})}{\partial N_k}\right)_{T,N_{j\neq k}}$, is
 
-Then, the intrinsic Helmholtz energy can be split into an ideal gas and a residual part again, and the de Broglie wavelength cancels.
+$$\left(\frac{\partial\mathcal{R}}{\partial N_k}\right)_{T,N_{j\neq k}}=\begin{pmatrix}\left(\frac{\partial\ln f_\alpha}{\partial N_k}\right)_{T,N_{j\neq k}}\\0\end{pmatrix}=\begin{pmatrix}\frac{\delta_{ik}}{N_i}\\0\end{pmatrix}$$
 
-$$\begin{aligned}
-&\left(m_ik_\mathrm{B}\ln\left(\frac{\rho_i(\mathbf{r})}{\rho_i^\mathrm{b}}\right)+F_{T\rho_i}^\mathrm{res}(\mathbf{r})-F_{T\rho_i}^\mathrm{b,res}+v_i\left(\frac{\partial p}{\partial T}\right)_{V,N_k}\right)\mathrm{d}T\\
-&~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~+m_i\frac{k_\mathrm{B}T}{\rho_i(\mathbf{r})}\delta\rho_i(\mathbf{r})+\int\sum_j\hat F_{\rho_i\rho_j}^\mathrm{res}(\mathbf{r},\mathbf{r}')\delta\rho_j(\mathbf{r}')\mathrm{d}\mathbf{r}'=v_i\mathrm{d}p
-\end{aligned}$$
+For the temperature, the partial derivative of the residual for $\left(\frac{\partial\rho_\alpha(\mathbf{r})}{\partial T}\right)_{N_k}$ is $\left(\frac{\partial\mathcal{R}}{\partial T}\right)_{N_k}$, which is obtained using automatic differentiation of the residual with the specification of the number of particles. It contains the temperature dependence of the configurational integrals $z_\alpha$, and no bulk phase is required.
 
-Finally the expressions for the derivatives with respect to pressure
+## Derivatives of the number of particles
+The derivatives of the number of particles follow by integrating the derivatives of the density profiles
 
-$$m_i\left(\frac{\partial\rho_i(\mathbf{r})}{\partial\beta p}\right)_{T,x_k}+\rho_i(\mathbf{r})\int\sum_j\beta\hat F_{\rho_i\rho_j}^\mathrm{res}(\mathbf{r},\mathbf{r}')\left(\frac{\partial\rho_j(\mathbf{r}')}{\partial\beta p}\right)_{T,x_k}\mathrm{d}\mathbf{r}'=v_i\rho_i(\mathbf{r})$$
+$$\frac{\partial N_i}{\partial\theta}=\int\frac{\partial\rho_\alpha(\mathbf{r})}{\partial\theta}\mathrm{d}\mathbf{r}$$
 
-and temperature
+with any segment $\alpha$ of component $i$ (by construction, the integral is the same for all segments of a molecule).
 
-$$\begin{aligned}
-&m_i\left(\frac{\partial\rho_i(\mathbf{r})}{\partial T}\right)_{p,x_k}+\rho_i(\mathbf{r})\int\sum_j\beta\hat F_{\rho_i\rho_j}^\mathrm{res}(\mathbf{r},\mathbf{r}')\left(\frac{\partial\rho_j(\mathbf{r}')}{\partial T}\right)_{p,x_k}\mathrm{d}\mathbf{r}'\\
-&~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~=-\frac{\rho_i(\mathbf{r})}{k_\mathrm{B}T}\left(m_ik_\mathrm{B}\ln\left(\frac{\rho_i(\mathbf{r})}{\rho_i^\mathrm{b}}\right)+F_{T\rho_i}^\mathrm{res}(\mathbf{r})-F_{T\rho_i}^\mathrm{b,res}+v_i\left(\frac{\partial p}{\partial T}\right)_{V,N_k}\right)
-\end{aligned}$$
+## Summary
+All derivatives are obtained from eq. {eq}`eqn:implicit_derivative` with the Jacobian for the respective specification and the following partial derivatives of the residual.
 
-follow. All derivatives $x_i$ shown here can be calculated from the same linear equation
-
-$$m_ix_i(\mathbf{r})+\rho_i(\mathbf{r})\int\sum_j\beta\hat F_{\rho_i\rho_j}^\mathrm{res}(\mathbf{r},\mathbf{r}')x_j(\mathbf{r}')\mathrm{d}\mathbf{r}'=y_i(\mathbf{r})$$
-
-by just replacing the right hand side $y_i$.
-
-|derivative|right hand side|
-|-|-|
-|$\left(\frac{\partial\rho_i(\mathbf{r})}{\partial\beta\mu_k}\right)_T$|$\rho_i(\mathbf{r})\delta_{ik}$|
-|$\left(\frac{\partial\rho_i(\mathbf{r})}{\partial\beta p}\right)_{T,x_k}$|$\rho_i(\mathbf{r})v_i$|
-|$\left(\frac{\partial\rho_i(\mathbf{r})}{\partial T}\right)_{p,x_k}$|$-\frac{\rho_i(\mathbf{r})}{k_\mathrm{B}T}\left(m_ik_\mathrm{B}\ln\left(\frac{\rho_i(\mathbf{r})}{\rho_i^\mathrm{b}}\right)+F_{T\rho_i}^\mathrm{res}(\mathbf{r})-F_{T\rho_i}^\mathrm{b,res}+v_i\left(\frac{\partial p}{\partial T}\right)_{V,N_k}\right)$|
+|derivative|specification|$\frac{\partial\mathcal{R}_\alpha}{\partial\theta}$|$\frac{\partial\mathcal{R}_A}{\partial\theta}$|
+|:-:|:-:|:-:|:-:|
+|$\left(\frac{\partial\rho_\alpha(\mathbf{r})}{\partial\beta\mu_k}\right)_{T,\mu_{j\neq k}}$|chemical potential|$\frac{\delta_{ik}}{m_\alpha}$|$0$|
+|$\left(\frac{\partial\rho_\alpha(\mathbf{r})}{\partial\beta p}\right)_{T,x_k^\mathrm{b}}$|chemical potential|$\frac{v_i}{m_\alpha}$|$0$|
+|$\left(\frac{\partial\rho_\alpha(\mathbf{r})}{\partial T}\right)_{p,x_k^\mathrm{b}}$|chemical potential|$\left(\frac{\partial\mathcal{R}_\alpha}{\partial T}\right)_{f_k}+\frac{1}{m_\alpha}\left(\left(\frac{\partial\ln\varphi_i}{\partial T}\right)_{p,x_k^\mathrm{b}}-\frac{1}{T}\right)$|$\left(\frac{\partial\mathcal{R}_A}{\partial T}\right)_{f_k}$|
+|$\left(\frac{\partial\rho_\alpha(\mathbf{r})}{\partial N_k}\right)_{T,N_{j\neq k}}$|number of particles|$\frac{\delta_{ik}}{N_i}$|$0$|
+|$\left(\frac{\partial\rho_\alpha(\mathbf{r})}{\partial T}\right)_{N_k}$|number of particles|$\left(\frac{\partial\mathcal{R}_\alpha}{\partial T}\right)_{N_k}$|$\left(\frac{\partial\mathcal{R}_A}{\partial T}\right)_{N_k}$|
