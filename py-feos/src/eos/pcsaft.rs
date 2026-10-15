@@ -1,6 +1,6 @@
 use super::PyEquationOfState;
 #[cfg(feature = "dft")]
-use crate::dft::{PyFMTVersion, PyHelmholtzEnergyFunctional};
+use crate::dft::{PyAssociationVersion, PyFMTVersion, PyHelmholtzEnergyFunctional};
 use crate::ideal_gas::IdealGasModel;
 use crate::parameter::{PyGcParameters, PyParameters};
 use crate::residual::ResidualModel;
@@ -87,6 +87,8 @@ impl PyHelmholtzEnergyFunctional {
     ///     The set of PC-SAFT parameters.
     /// fmt_version: FMTVersion, optional
     ///     The specific variant of the FMT term. Defaults to FMTVersion.WhiteBear
+    /// association_version: AssociationVersion, optional
+    ///     The version of the association functional. Defaults to AssociationVersion.ISaft
     /// max_eta : float, optional
     ///     Maximum packing fraction. Defaults to 0.5.
     /// max_iter_cross_assoc : unsigned integer, optional
@@ -102,12 +104,13 @@ impl PyHelmholtzEnergyFunctional {
     #[cfg(feature = "pcsaft")]
     #[staticmethod]
     #[pyo3(
-        signature = (parameters, fmt_version=PyFMTVersion::WhiteBear, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, dq_variant="dq35"),
-        text_signature = r#"(parameters, fmt_version, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, dq_variant="dq35")"#
+        signature = (parameters, fmt_version=PyFMTVersion::WhiteBear, association_version=PyAssociationVersion::ISaft, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, dq_variant="dq35"),
+        text_signature = r#"(parameters, fmt_version=FMTVersion.WhiteBear, association_version=AssociationVersion.ISaft, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, dq_variant="dq35")"#
     )]
     fn pcsaft(
         parameters: crate::parameter::PyParameters,
         fmt_version: PyFMTVersion,
+        association_version: PyAssociationVersion,
         max_eta: f64,
         max_iter_cross_assoc: usize,
         tol_cross_assoc: f64,
@@ -131,6 +134,7 @@ impl PyHelmholtzEnergyFunctional {
         let func = ResidualModel::PcSaftFunctional(PcSaftFunctional::with_options(
             parameters.try_convert()?,
             fmt_version.into(),
+            association_version.into(),
             options,
         ));
         let ideal_gas = vec![IdealGasModel::NoModel; func.components()];

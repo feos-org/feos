@@ -1,7 +1,6 @@
 use crate::saftvrqmie::parameters::SaftVRQMiePars;
 use feos_core::FeosResult;
 use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
-use nalgebra::DVector;
 use ndarray::*;
 use num_dual::DualNum;
 use std::f64::consts::PI;
@@ -24,10 +23,13 @@ impl<'a> FunctionalContribution for NonAddHardSphereFunctional<'a> {
         "Non-additive hard-sphere functional"
     }
 
-    fn weight_functions<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
+    fn weight_functions<N: DualNum<Primitive = f64> + Copy>(
+        &self,
+        temperature: N,
+    ) -> WeightFunctionInfo<N> {
         let p = &self.parameters;
         let r = p.hs_diameter(temperature) * N::from(0.5);
-        WeightFunctionInfo::new(DVector::from_fn(r.len(), |i, _| i), false)
+        WeightFunctionInfo::new(r.len(), false)
             .add(
                 WeightFunction::new_scaled(r.clone(), WeightFunctionShape::Delta),
                 false,

@@ -1,3 +1,4 @@
+use crate::association::impl_association_variant;
 use crate::{OPT_IMPLS, implement};
 use quote::quote;
 use syn::DeriveInput;
@@ -10,13 +11,32 @@ pub(crate) fn expand_helmholtz_energy_functional(
     };
 
     let functional = impl_helmholtz_energy_functional(&input.ident, variants)?;
+    let association = impl_association(&input.vis, variants)?;
     let fluid_parameters = impl_fluid_parameters(&input.ident, variants)?;
     let pair_potential = impl_pair_potential(&input.ident, variants)?;
     Ok(quote! {
         #functional
+        #association
         #fluid_parameters
         #pair_potential
     })
+}
+
+/// The enum of the association functionals of all variants that implement `association`.
+fn impl_association(
+    vis: &syn::Visibility,
+    variants: &syn::punctuated::Punctuated<syn::Variant, syn::token::Comma>,
+) -> syn::Result<proc_macro2::TokenStream> {
+    let mut association_variants = Vec::new();
+    for v in variants.iter() {
+        if implement("association", v, &OPT_IMPLS)? {
+            let syn::Fields::Unnamed(syn::FieldsUnnamed { unnamed, .. }) = &v.fields else {
+                panic!("All variants must be tuple structs!")
+            };
+            association_variants.push((&v.ident, &unnamed.first().unwrap().ty));
+        }
+    }
+    Ok(impl_association_variant(vis, &association_variants))
 }
 
 pub(crate) fn impl_helmholtz_energy_functional(
@@ -54,9 +74,20 @@ pub(crate) fn impl_helmholtz_energy_functional(
         }
     }
 
+    let mut association = Vec::new();
+    for v in variants.iter() {
+        if implement("association", v, &OPT_IMPLS)? {
+            let name = &v.ident;
+            association.push(quote! {
+                Self::#name(functional) => functional.association().map(AssociationFunctionalVariant::#name)
+            });
+        }
+    }
+
     Ok(quote! {
         impl HelmholtzEnergyFunctionalDyn for #ident {
             type Contribution<'a> = FunctionalContributionVariant<'a>;
+            type Association<'a> = AssociationFunctionalVariant<'a>;
             fn molecule_shape(&self) -> feos_dft::MoleculeShape<'_> {
                 match self {
                     #(#molecule_shape,)*
@@ -71,6 +102,12 @@ pub(crate) fn impl_helmholtz_energy_functional(
                 match self {
                     #(#bond_lengths,)*
                     _ => petgraph::Graph::with_capacity(0, 0),
+                }
+            }
+            fn association(&self) -> Option<Self::Association<'_>> {
+                match self {
+                    #(#association,)*
+                    _ => None,
                 }
             }
         }

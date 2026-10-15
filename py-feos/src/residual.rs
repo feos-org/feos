@@ -67,13 +67,14 @@ pub enum ResidualModel {
         molar_weight,
         parameter_info,
         functional,
+        association,
         fluid_parameters,
         pair_potential
     )]
     PcSaftFunctional(feos::pcsaft::PcSaftFunctional),
 
     #[cfg(all(feature = "dft", feature = "gc_pcsaft"))]
-    #[implement(molar_weight, functional, fluid_parameters, bond_lengths)]
+    #[implement(molar_weight, functional, bond_lengths, association, fluid_parameters)]
     GcPcSaftFunctional(feos::gc_pcsaft::GcPcSaftFunctional),
 
     #[cfg(all(feature = "dft", feature = "pets"))]
