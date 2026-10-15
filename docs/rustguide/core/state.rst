@@ -102,7 +102,7 @@ The residual entropy is defined as
 
 We need the first derivative of the residual Helmholtz energy with respect to temperature.
 The first derivative can be computed using a dual number consisting of a real part and *one non-real part* which is a ``Dual64`` struct.
-Looking at the signature of the Helmholtz energy function, we see that it takes a ``StateHD<D>`` as input (not a ``State``), where ``D`` is a generalized dual number (``D: DualNum<f64>``):
+Looking at the signature of the Helmholtz energy function, we see that it takes a ``StateHD<D>`` as input (not a ``State``), where ``D`` is a generalized dual number (``D: DualNum<Primitive = f64>``):
 
 .. code-block:: rust
 
@@ -121,7 +121,7 @@ Looking at the signature of the Helmholtz energy function, we see that it takes 
     /// Properties are stored as generalized (hyper) dual numbers which allows
     /// for automatic differentiation.
     #[derive(Clone, Debug)]
-    pub struct StateHD<D: DualNum<f64>> {
+    pub struct StateHD<D: DualNum<Primitive = f64>> {
         /// temperature in Kelvin
         pub temperature: D,
         /// volume in Angstrom^3

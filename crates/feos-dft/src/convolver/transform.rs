@@ -24,7 +24,7 @@ impl SinCosTransform {
     }
 }
 
-pub(super) trait FourierTransform<T: DualNum<f64>>: Send + Sync {
+pub(super) trait FourierTransform<T: DualNum<Primitive = f64>>: Send + Sync {
     fn forward_transform(&self, f_r: ArrayView1<T>, f_k: ArrayViewMut1<T>, scalar: bool);
 
     fn back_transform(&self, f_k: ArrayViewMut1<T>, f_r: ArrayViewMut1<T>, scalar: bool);
@@ -34,7 +34,7 @@ pub(super) struct CartesianTransform<T> {
     dct: Arc<dyn TransformType2And3<T>>,
 }
 
-impl<T: DualNum<f64> + DctNum> CartesianTransform<T> {
+impl<T: DualNum<Primitive = f64> + DctNum> CartesianTransform<T> {
     #[expect(clippy::new_ret_no_self)]
     pub(super) fn new(axis: &Axis) -> (Box<dyn FourierTransform<T>>, Array1<f64>) {
         let (s, k) = Self::init(axis);
@@ -104,7 +104,7 @@ impl<T: DualNum<f64> + DctNum> CartesianTransform<T> {
     }
 }
 
-impl<T: DualNum<f64> + DctNum> FourierTransform<T> for CartesianTransform<T> {
+impl<T: DualNum<Primitive = f64> + DctNum> FourierTransform<T> for CartesianTransform<T> {
     fn forward_transform(&self, f_r: ArrayView1<T>, mut f_k: ArrayViewMut1<T>, scalar: bool) {
         if scalar {
             f_k.slice_mut(s![..-1]).assign(&f_r);
@@ -130,7 +130,7 @@ pub(super) struct SphericalTransform<T> {
     dct: Arc<dyn TransformType2And3<T>>,
 }
 
-impl<T: DualNum<f64> + DctNum> SphericalTransform<T> {
+impl<T: DualNum<Primitive = f64> + DctNum> SphericalTransform<T> {
     #[expect(clippy::new_ret_no_self)]
     pub(super) fn new(axis: &Axis) -> (Box<dyn FourierTransform<T>>, Array1<f64>) {
         let points = axis.grid.len();
@@ -189,7 +189,7 @@ impl<T: DualNum<f64> + DctNum> SphericalTransform<T> {
     }
 }
 
-impl<T: DualNum<f64> + DctNum> FourierTransform<T> for SphericalTransform<T> {
+impl<T: DualNum<Primitive = f64> + DctNum> FourierTransform<T> for SphericalTransform<T> {
     fn forward_transform(&self, f_r: ArrayView1<T>, mut f_k: ArrayViewMut1<T>, scalar: bool) {
         if scalar {
             self.sine_transform(&f_r * &self.r_grid, f_k.view_mut(), false);
@@ -231,7 +231,7 @@ pub(super) struct PolarTransform<T: DctNum> {
     l: f64,
 }
 
-impl<T: DualNum<f64> + DctNum> PolarTransform<T> {
+impl<T: DualNum<Primitive = f64> + DctNum> PolarTransform<T> {
     #[expect(clippy::new_ret_no_self)]
     pub(super) fn new(axis: &Axis) -> (Box<dyn FourierTransform<T>>, Array1<f64>) {
         let points = axis.grid.len();
@@ -318,7 +318,7 @@ impl<T: DualNum<f64> + DctNum> PolarTransform<T> {
     }
 }
 
-impl<T: DualNum<f64> + DctNum> FourierTransform<T> for PolarTransform<T> {
+impl<T: DualNum<Primitive = f64> + DctNum> FourierTransform<T> for PolarTransform<T> {
     fn forward_transform(&self, f_r: ArrayView1<T>, f_k: ArrayViewMut1<T>, scalar: bool) {
         self.transform(f_r, f_k, scalar, &self.r_grid, &self.k_grid, self.l);
     }
@@ -339,12 +339,13 @@ pub(super) struct NoTransform();
 
 impl NoTransform {
     #[expect(clippy::new_ret_no_self)]
-    pub(super) fn new<T: DualNum<f64>>() -> (Box<dyn FourierTransform<T>>, Array1<f64>) {
+    pub(super) fn new<T: DualNum<Primitive = f64>>() -> (Box<dyn FourierTransform<T>>, Array1<f64>)
+    {
         (Box::new(Self()), arr1(&[0.0]))
     }
 }
 
-impl<T: DualNum<f64>> FourierTransform<T> for NoTransform {
+impl<T: DualNum<Primitive = f64>> FourierTransform<T> for NoTransform {
     fn forward_transform(&self, f: ArrayView1<T>, mut f_k: ArrayViewMut1<T>, _: bool) {
         f_k.assign(&f);
     }

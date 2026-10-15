@@ -44,7 +44,13 @@ type GradResult<'py> = (
 );
 
 #[pyclass(name = "Property")]
-/// Blibalblub
+/// Parallel evaluation of phase equilibrium properties.
+///
+/// For every property `xyz`, the static method `Property.xyz(eos, input)`
+/// evaluates the property for an `EquationOfState`, and
+/// `Property.xyz_derivatives(model, parameter_names, parameters, input)`
+/// evaluates the property and its derivatives w.r.t. the model parameters
+/// listed in `parameter_names` for an `EquationOfStateAD`.
 pub struct PyPropertyAD;
 
 #[pymethods]
@@ -482,8 +488,8 @@ macro_rules! impl_evaluate_gradients {
             Bound<'py, PyArray1<bool>>,
         )
         where
-            $(R::Lifted<DualSVec<f64, f64, $p>>: Sync,)*
-            R::Lifted<DualSVec<f64, f64, $max>>: Sync
+            $(R::Lifted<DualSVec<f64, $p>>: Sync,)*
+            R::Lifted<DualSVec<f64, $max>>: Sync
         {
             let (value, grad, status) =
             if let Ok(pars) = parameters.extract::<PyReadonlyArray1<f64>>() {
