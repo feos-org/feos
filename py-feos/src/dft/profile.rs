@@ -184,18 +184,62 @@ macro_rules! impl_profile {
                 Ok(self.0.profile.dn_dmu().map_err(PyFeosError::from)?)
             }
 
+            /// Calculate the partial derivatives of the density profiles w.r.t. the bulk pressure
+            /// at constant temperature and bulk composition.
+            ///
+            /// Parameters
+            /// ----------
+            /// bulk : State
+            ///     The bulk state in equilibrium with the inhomogeneous system.
+            ///
+            /// Returns
+            /// -------
+            /// SIArray
             fn drho_dp(&mut self, bulk: &PyState) -> PyResult<<Density<ArrayD<f64>> as std::ops::Div<Pressure>>::Output> {
                 Ok(self.0.profile.drho_dp(&bulk.0).map_err(PyFeosError::from)?.into_dyn())
             }
 
+            /// Calculate the partial derivatives of the number of moles w.r.t. the bulk pressure
+            /// at constant temperature and bulk composition.
+            ///
+            /// Parameters
+            /// ----------
+            /// bulk : State
+            ///     The bulk state in equilibrium with the inhomogeneous system.
+            ///
+            /// Returns
+            /// -------
+            /// SIArray1
             fn dn_dp(&mut self, bulk: &PyState) -> PyResult<<Moles<DVector<f64>> as std::ops::Div<Pressure>>::Output> {
                 Ok(self.0.profile.dn_dp(&bulk.0).map_err(PyFeosError::from)?)
             }
 
+            /// Calculate the partial derivatives of the density profiles w.r.t. the temperature
+            /// at constant bulk pressure and composition.
+            ///
+            /// Parameters
+            /// ----------
+            /// bulk : State
+            ///     The bulk state in equilibrium with the inhomogeneous system.
+            ///
+            /// Returns
+            /// -------
+            /// SIArray
             fn drho_dt(&mut self, bulk: &PyState) -> PyResult<<Density<ArrayD<f64>> as std::ops::Div<Temperature>>::Output> {
                 Ok(self.0.profile.drho_dt(&bulk.0).map_err(PyFeosError::from)?.into_dyn())
             }
 
+            /// Calculate the partial derivatives of the number of moles w.r.t. the temperature
+            /// at constant bulk pressure and composition.
+            ///
+            /// Parameters
+            /// ----------
+            /// bulk : State
+            ///     The bulk state in equilibrium with the inhomogeneous system.
+            ///
+            /// Returns
+            /// -------
+            /// SIArray1
             fn dn_dt(&mut self, bulk: &PyState) -> PyResult<<Moles<DVector<f64>> as std::ops::Div<Temperature>>::Output> {
                 Ok(self.0.profile.dn_dt(&bulk.0).map_err(PyFeosError::from)?)
             }

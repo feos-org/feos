@@ -16,28 +16,27 @@ pip install git+https://github.com/feos-org/feos
 ````
 
 ````{tab-item} Rust
-In Rust, the `feos-dft` crate and each equation of state or DFT functional is a separate, optional module behind a feature flag.
-To use {math}`\text{FeO}_\text{s}` with all models (including Python bindings), use the `all_models` feature:
+In Rust, DFT and each equation of state or Helmholtz energy functional is a separate, optional module behind a feature flag.
+To use {math}`\text{FeO}_\text{s}` with all models, use the `all_models` feature:
 
-```toml
-[dependencies]
-feos-core = "0.4"
-feos = { version="0.4", features = ["all_models"] }
-quantity = "0.6"
+```
+cargo add feos --features all_models
 ```
 
-To access the generic implementations for properties and phase equilibria, the `feos-core` crate is also included as dependency. Finally, {math}`\text{FeO}_\text{s}` makes extensive use of SI units provided by the `quantity` crate.
+In the following example we use only the PC-SAFT equation of state and Helmholtz energy functionals:
 
-In the following example we use only the PC-SAFT equation of state and Helmholtz energy functionals (without Python bindings):
-
-```toml
-[dependencies]
-feos-core = "0.4"
-feos-dft = "0.4"
-feos = { version="0.4", features = ["dft", "pcsaft"] }
-quantity = "0.6"
+```
+cargo add feos --features "dft pcsaft"
 ```
 
-To access generic DFT functionalities like interfaces and adsorption isotherms, the `feos-dft` crate is added to the dependencies.
+The generic implementations for properties and phase equilibria (`feos-core`) and for DFT (`feos-dft`) are re-exported as `feos::core` and `feos::dft`, so no additional dependencies are required.
+
+{math}`\text{FeO}_\text{s}` makes extensive use of SI units provided by the `quantity` crate, which has to be added separately:
+
+```
+cargo add quantity
+```
+
+Make sure that the version of `quantity` matches the one used by `feos`. Otherwise, the units are not compatible.
 ````
 `````
