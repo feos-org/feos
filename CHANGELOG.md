@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Fixed
-- Fixed bug in `_density_iteration` which used the residual Helmholtz energy as the pressure and the pressure as derivative. [#395](https://github.com/feos-org/feos/pull/395)
+- Fixed bug in `_density_iteration` which used the residual Helmholtz energy as the pressure and the pressure as derivative. [#396](https://github.com/feos-org/feos/pull/396)
 
 ## [0.10.3] - 2026-10-14
 ### Fixed
