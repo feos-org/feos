@@ -130,9 +130,7 @@ where
             } else {
                 (1.1 * initial_density).min(maxdensity)
             };
-            let p_ = eos.p_dpdrho(temperature, rho, molefracs);
-            p = p_.0;
-            dp_drho = p_.1;
+            (_, p, dp_drho) = eos.p_dpdrho(temperature, rho, molefracs);
         }
 
         let mut error = p - pressure;
