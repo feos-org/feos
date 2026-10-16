@@ -48,9 +48,9 @@ pub struct PcSaft {
     params: PcSaftPars,
     options: PcSaftOptions,
     hard_chain: bool,
-    dipole: bool,
-    quadrupole: bool,
-    dipole_quadrupole: bool,
+    dipole: Option<Dipole>,
+    quadrupole: Option<Quadrupole>,
+    dipole_quadrupole: Option<DipoleQuadrupole>,
     association: Option<Association>,
 }
 
@@ -63,9 +63,10 @@ impl PcSaft {
         let params = PcSaftPars::new(&parameters);
         let hard_chain = params.m.iter().any(|m| (m - 1.0).abs() > 1e-15);
 
-        let dipole = params.ndipole > 0;
-        let quadrupole = params.nquadpole > 0;
-        let dipole_quadrupole = params.ndipole > 0 && params.nquadpole > 0;
+        let dipole = (params.ndipole > 0).then(|| Dipole::new(&params));
+        let quadrupole = (params.nquadpole > 0).then(|| Quadrupole::new(&params));
+        let dipole_quadrupole = (params.ndipole > 0 && params.nquadpole > 0)
+            .then(|| DipoleQuadrupole::new(&params, options.dq_variant));
 
         let association = (!parameters.association.is_empty())
             .then(|| Association::new(options.max_iter_cross_assoc, options.tol_cross_assoc));
@@ -137,26 +138,22 @@ impl PcSaft {
             "Dispersion",
             Dispersion.helmholtz_energy_density(&self.params, state, zeta[3]),
         );
-        if self.dipole {
+        if let Some(dipole) = &self.dipole {
             f(
                 "Dipole",
-                Dipole.helmholtz_energy_density(&self.params, state),
+                dipole.helmholtz_energy_density(&self.params, state, zeta[3]),
             )
         }
-        if self.quadrupole {
+        if let Some(quadrupole) = &self.quadrupole {
             f(
                 "Quadrupole",
-                Quadrupole.helmholtz_energy_density(&self.params, state),
+                quadrupole.helmholtz_energy_density(&self.params, state, zeta[3]),
             )
         }
-        if self.dipole_quadrupole {
+        if let Some(dipole_quadrupole) = &self.dipole_quadrupole {
             f(
                 "DipoleQuadrupole",
-                DipoleQuadrupole.helmholtz_energy_density(
-                    &self.params,
-                    state,
-                    self.options.dq_variant,
-                ),
+                dipole_quadrupole.helmholtz_energy_density(&self.params, state, zeta[3]),
             )
         }
         if let Some(association) = self.association.as_ref() {
