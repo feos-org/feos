@@ -64,6 +64,14 @@ impl<I, R: ResidualDyn> ResidualDyn for EquationOfState<Vec<I>, R> {
         self.residual
             .reduced_helmholtz_energy_density_contributions(state)
     }
+
+    fn reduced_residual_helmholtz_energy_density<D: DualNum<f64> + Copy>(
+        &self,
+        state: &StateHD<D>,
+    ) -> D {
+        self.residual
+            .reduced_residual_helmholtz_energy_density(state)
+    }
 }
 
 impl<I: Clone, R: Subset> Subset for EquationOfState<Vec<I>, R> {

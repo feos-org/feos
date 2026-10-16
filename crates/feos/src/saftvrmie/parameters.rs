@@ -244,7 +244,7 @@ fn beta_u_mie<D: DualNum<f64> + Copy>(r: D, la: f64, lr: f64, sigma: f64, c_eps_
 
 impl HardSphereProperties for SaftVRMiePars {
     fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<'_, N> {
-        MonomerShape::NonSpherical(self.m.map(N::from))
+        MonomerShape::NonSpherical(&self.m)
     }
 
     fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {

@@ -48,9 +48,9 @@ pub struct PcSaft {
     params: PcSaftPars,
     options: PcSaftOptions,
     hard_chain: bool,
-    dipole: bool,
-    quadrupole: bool,
-    dipole_quadrupole: bool,
+    dipole: Option<Dipole>,
+    quadrupole: Option<Quadrupole>,
+    dipole_quadrupole: Option<DipoleQuadrupole>,
     association: Option<Association>,
 }
 
@@ -63,9 +63,10 @@ impl PcSaft {
         let params = PcSaftPars::new(&parameters);
         let hard_chain = params.m.iter().any(|m| (m - 1.0).abs() > 1e-15);
 
-        let dipole = params.ndipole > 0;
-        let quadrupole = params.nquadpole > 0;
-        let dipole_quadrupole = params.ndipole > 0 && params.nquadpole > 0;
+        let dipole = (params.ndipole > 0).then(|| Dipole::new(&params));
+        let quadrupole = (params.nquadpole > 0).then(|| Quadrupole::new(&params));
+        let dipole_quadrupole = (params.ndipole > 0 && params.nquadpole > 0)
+            .then(|| DipoleQuadrupole::new(&params, options.dq_variant));
 
         let association = (!parameters.association.is_empty())
             .then(|| Association::new(options.max_iter_cross_assoc, options.tol_cross_assoc));
@@ -101,46 +102,62 @@ impl ResidualDyn for PcSaft {
         state: &StateHD<D>,
     ) -> Vec<(&'static str, D)> {
         let mut v = Vec::with_capacity(7);
-        let d = self.params.hs_diameter(state.temperature);
+        self.for_each_contribution(state, |name, a| v.push((name, a)));
+        v
+    }
 
-        v.push((
-            "Hard Sphere",
-            HardSphere.helmholtz_energy_density(&self.params, state),
-        ));
+    fn reduced_residual_helmholtz_energy_density<D: DualNum<f64> + Copy>(
+        &self,
+        state: &StateHD<D>,
+    ) -> D {
+        let mut a = D::zero();
+        self.for_each_contribution(state, |_, a_i| a += a_i);
+        a
+    }
+}
+
+impl PcSaft {
+    /// Evaluate every Helmholtz energy contribution and pass it to `f`
+    /// together with its name.
+    #[inline]
+    fn for_each_contribution<D: DualNum<f64> + Copy>(
+        &self,
+        state: &StateHD<D>,
+        mut f: impl FnMut(&'static str, D),
+    ) {
+        let (a_hs, zeta, d) =
+            HardSphere.helmholtz_energy_density_and_properties(&self.params, state);
+        f("Hard Sphere", a_hs);
         if self.hard_chain {
-            v.push((
+            f(
                 "Hard Chain",
-                HardChain.helmholtz_energy_density(&self.params, state),
-            ))
+                HardChain.helmholtz_energy_density(&self.params, state, &d, zeta),
+            )
         }
-        v.push((
+        f(
             "Dispersion",
-            Dispersion.helmholtz_energy_density(&self.params, state),
-        ));
-        if self.dipole {
-            v.push((
+            Dispersion.helmholtz_energy_density(&self.params, state, zeta[3]),
+        );
+        if let Some(dipole) = &self.dipole {
+            f(
                 "Dipole",
-                Dipole.helmholtz_energy_density(&self.params, state),
-            ))
+                dipole.helmholtz_energy_density(&self.params, state, zeta[3]),
+            )
         }
-        if self.quadrupole {
-            v.push((
+        if let Some(quadrupole) = &self.quadrupole {
+            f(
                 "Quadrupole",
-                Quadrupole.helmholtz_energy_density(&self.params, state),
-            ))
+                quadrupole.helmholtz_energy_density(&self.params, state, zeta[3]),
+            )
         }
-        if self.dipole_quadrupole {
-            v.push((
+        if let Some(dipole_quadrupole) = &self.dipole_quadrupole {
+            f(
                 "DipoleQuadrupole",
-                DipoleQuadrupole.helmholtz_energy_density(
-                    &self.params,
-                    state,
-                    self.options.dq_variant,
-                ),
-            ))
+                dipole_quadrupole.helmholtz_energy_density(&self.params, state, zeta[3]),
+            )
         }
         if let Some(association) = self.association.as_ref() {
-            v.push((
+            f(
                 "Association",
                 association.helmholtz_energy_density(
                     &self.params,
@@ -148,9 +165,8 @@ impl ResidualDyn for PcSaft {
                     state,
                     &d,
                 ),
-            ))
+            )
         }
-        v
     }
 }
 
@@ -168,7 +184,7 @@ impl Molarweight for PcSaft {
 
 impl HardSphereProperties for PcSaftPars {
     fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<'_, N> {
-        MonomerShape::NonSpherical(self.m.map(N::from))
+        MonomerShape::NonSpherical(&self.m)
     }
 
     fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {

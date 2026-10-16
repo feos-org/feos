@@ -949,6 +949,9 @@ fn log_iteration(
     x2: &[f64],
     newton: bool,
 ) {
+    if verbosity < Verbosity::Iter {
+        return;
+    }
     let error = error.map_or_else(|| format!("{:14}", ""), |e| format!("{:<14.8e}", e.abs()));
     log_iter!(
         verbosity,
