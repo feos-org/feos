@@ -42,6 +42,12 @@ fn impl_residual(
             Self::#name(residual) => residual.reduced_helmholtz_energy_density_contributions(state)
         }
     });
+    let reduced_residual_helmholtz_energy_density = variants.iter().map(|v| {
+        let name = &v.ident;
+        quote! {
+            Self::#name(residual) => residual.reduced_residual_helmholtz_energy_density(state)
+        }
+    });
     // let subset = variants.iter().map(|v| {
     //     let name = &v.ident;
     //     quote! {
@@ -64,6 +70,11 @@ fn impl_residual(
             fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> Vec<(&'static str, D)> {
                 match self {
                     #(#reduced_helmholtz_energy_density_contributions,)*
+                }
+            }
+            fn reduced_residual_helmholtz_energy_density<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> D {
+                match self {
+                    #(#reduced_residual_helmholtz_energy_density,)*
                 }
             }
             // fn subset(&self, component_list: &[usize]) -> Self {

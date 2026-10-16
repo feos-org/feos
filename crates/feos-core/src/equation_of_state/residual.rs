@@ -70,6 +70,19 @@ pub trait ResidualDyn {
         &self,
         state: &StateHD<D>,
     ) -> Vec<(&'static str, D)>;
+
+    /// Evaluate the residual reduced Helmholtz energy density $\beta f^\mathrm{res}$.
+    ///
+    /// The default sums [ResidualDyn::reduced_helmholtz_energy_density_contributions].
+    /// Override it to avoid allocating the contributions in performance critical code.
+    fn reduced_residual_helmholtz_energy_density<D: DualNum<f64> + Copy>(
+        &self,
+        state: &StateHD<D>,
+    ) -> D {
+        self.reduced_helmholtz_energy_density_contributions(state)
+            .iter()
+            .fold(D::zero(), |acc, (_, a)| acc + a)
+    }
 }
 
 impl<C: Deref<Target = T> + Clone, T: ResidualDyn, D: DualNum<f64> + Copy> Residual<Dyn, D> for C {
@@ -92,6 +105,9 @@ impl<C: Deref<Target = T> + Clone, T: ResidualDyn, D: DualNum<f64> + Copy> Resid
         state: &StateHD<D, Dyn>,
     ) -> Vec<(&'static str, D)> {
         ResidualDyn::reduced_helmholtz_energy_density_contributions(self.deref(), state)
+    }
+    fn reduced_residual_helmholtz_energy_density(&self, state: &StateHD<D, Dyn>) -> D {
+        ResidualDyn::reduced_residual_helmholtz_energy_density(self.deref(), state)
     }
 }
 

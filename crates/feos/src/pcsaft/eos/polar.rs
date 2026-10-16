@@ -424,7 +424,7 @@ impl DipoleQuadrupole {
 mod tests {
     use super::*;
     use crate::pcsaft::PcSaftParameters;
-    use crate::pcsaft::eos::dispersion::Dispersion;
+    use crate::pcsaft::eos::dispersion::tests::a_disp;
     use crate::pcsaft::parameters::utils::{
         carbon_dioxide_parameters, dme_co2_parameters, dme_parameters,
     };
@@ -564,7 +564,7 @@ mod tests {
         let n = n_dme + n_co2;
         let s = StateHD::new(t, v / n, &(dvector![n_dme, n_co2] / n));
         // let a_dpqp = dpqp.helmholtz_energy_density(&s)*v;
-        let a_disp = Dispersion.helmholtz_energy_density(&mix, &s) * v;
+        let a_disp = a_disp(&mix, &s) * v;
         let a_qp = Quadrupole.helmholtz_energy_density(&mix, &s) * v;
         let a_dp = Dipole.helmholtz_energy_density(&mix, &s) * v;
         assert_relative_eq!(a_disp, -1.6283622072860044, epsilon = 1e-6);
