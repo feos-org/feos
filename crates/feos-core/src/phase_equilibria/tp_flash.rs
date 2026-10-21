@@ -372,9 +372,9 @@ where
 
             self.rachford_rice_inplace(feed_state, &k)?;
             if let Some(k_vec) = k_vec
-                && i >= iterations - 3
+                && i + 4 >= iterations
             {
-                k_vec[i + 3 - iterations] = k.map(|ki| if ki > 0.0 { ki.ln() } else { 0.0 });
+                k_vec[i + 4 - iterations] = k.map(|ki| if ki > 0.0 { ki.ln() } else { 0.0 });
             }
         }
         Ok(false)
@@ -443,14 +443,16 @@ where
 
     // Total molar Gibbs energy excluding the constant contribution RT sum_i x_i ln(\Lambda_i^3)
     fn molar_gibbs_energy(&self) -> MolarEnergy {
-        self.states
-            .iter()
-            .fold(MolarEnergy::from_reduced(0.0), |acc, s| {
+        self.states.iter().zip(self.phase_fractions).fold(
+            MolarEnergy::from_reduced(0.0),
+            |acc, (s, phi)| {
                 let ln_rho_m1 = s.partial_density().to_reduced().map(|r| r.ln() - 1.0);
-                acc + s.residual_molar_helmholtz_energy()
+                acc + (s.residual_molar_helmholtz_energy()
                     + s.pressure(Contributions::Total) * s.molar_volume
-                    + RGAS * s.temperature * s.molefracs.dot(&ln_rho_m1)
-            })
+                    + RGAS * s.temperature * s.molefracs.dot(&ln_rho_m1))
+                    * phi
+            },
+        )
     }
 }
 
