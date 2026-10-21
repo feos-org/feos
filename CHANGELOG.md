@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.10.4] - 2026-10-21
 ### Fixed
 - Fixed bug in `_density_iteration` which used the residual Helmholtz energy as the pressure and the pressure as derivative. [#396](https://github.com/feos-org/feos/pull/396)
 - Fixed missing mole fraction factor in `State::thermodynamic_factor`. [#400](https://github.com/feos-org/feos/pull/400)
