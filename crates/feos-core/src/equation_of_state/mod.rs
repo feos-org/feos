@@ -57,20 +57,12 @@ impl<I, R: ResidualDyn> ResidualDyn for EquationOfState<Vec<I>, R> {
         self.residual.compute_max_density(molefracs)
     }
 
-    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
+    fn for_each_contribution<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
-    ) -> Vec<(&'static str, D)> {
-        self.residual
-            .reduced_helmholtz_energy_density_contributions(state)
-    }
-
-    fn reduced_residual_helmholtz_energy_density<D: DualNum<f64> + Copy>(
-        &self,
-        state: &StateHD<D>,
-    ) -> D {
-        self.residual
-            .reduced_residual_helmholtz_energy_density(state)
+        f: impl FnMut(&'static str, D),
+    ) {
+        self.residual.for_each_contribution(state, f)
     }
 }
 
@@ -107,17 +99,8 @@ impl<I: Clone, R: Residual<Const<N>, D>, D: DualNum<f64> + Copy, const N: usize>
         self.residual.compute_max_density(molefracs)
     }
 
-    fn reduced_helmholtz_energy_density_contributions(
-        &self,
-        state: &StateHD<D, Const<N>>,
-    ) -> Vec<(&'static str, D)> {
-        self.residual
-            .reduced_helmholtz_energy_density_contributions(state)
-    }
-
-    fn reduced_residual_helmholtz_energy_density(&self, state: &StateHD<D, Const<N>>) -> D {
-        self.residual
-            .reduced_residual_helmholtz_energy_density(state)
+    fn for_each_contribution(&self, state: &StateHD<D, Const<N>>, f: impl FnMut(&'static str, D)) {
+        self.residual.for_each_contribution(state, f)
     }
 }
 

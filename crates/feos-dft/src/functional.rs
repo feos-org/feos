@@ -228,17 +228,19 @@ pub trait HelmholtzEnergyFunctional: Residual {
         i
     }
 
-    fn evaluate_bulk<D: DualNum<f64> + Copy>(&self, state: &StateHD<D>) -> Vec<(&'static str, D)> {
-        let mut res: Vec<_> = self
-            .contributions()
-            .map(|c| (c.name(), c.bulk_helmholtz_energy_density(state)))
-            .collect();
-        res.push((
+    fn evaluate_bulk<D: DualNum<f64> + Copy>(
+        &self,
+        state: &StateHD<D>,
+        mut f: impl FnMut(&'static str, D),
+    ) {
+        for c in self.contributions() {
+            f(c.name(), c.bulk_helmholtz_energy_density(state))
+        }
+        f(
             "Ideal chain",
             self.ideal_chain_contribution()
                 .bulk_helmholtz_energy_density(&state.partial_density),
-        ));
-        res
+        )
     }
 }
 

@@ -97,29 +97,6 @@ impl ResidualDyn for PcSaft {
         (msigma3.map(D::from).dot(molefracs) * FRAC_PI_6).recip() * self.options.max_eta
     }
 
-    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
-        &self,
-        state: &StateHD<D>,
-    ) -> Vec<(&'static str, D)> {
-        let mut v = Vec::with_capacity(7);
-        self.for_each_contribution(state, |name, a| v.push((name, a)));
-        v
-    }
-
-    fn reduced_residual_helmholtz_energy_density<D: DualNum<f64> + Copy>(
-        &self,
-        state: &StateHD<D>,
-    ) -> D {
-        let mut a = D::zero();
-        self.for_each_contribution(state, |_, a_i| a += a_i);
-        a
-    }
-}
-
-impl PcSaft {
-    /// Evaluate every Helmholtz energy contribution and pass it to `f`
-    /// together with its name.
-    #[inline]
     fn for_each_contribution<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,

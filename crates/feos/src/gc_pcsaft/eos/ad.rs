@@ -248,17 +248,11 @@ impl<D: DualNum<f64> + Copy, const N: usize> Residual<Const<N>, D> for GcPcSaftA
         ((msigma3 * molefracs).into_scalar() * FRAC_PI_6).recip() * MAX_ETA
     }
 
-    fn reduced_helmholtz_energy_density_contributions(
+    fn for_each_contribution(
         &self,
         state: &StateHD<D, Const<N>>,
-    ) -> Vec<(&'static str, D)> {
-        vec![(
-            "gc-PC-SAFT",
-            self.reduced_residual_helmholtz_energy_density(state),
-        )]
-    }
-
-    fn reduced_residual_helmholtz_energy_density(&self, state: &StateHD<D, Const<N>>) -> D {
+        mut f: impl FnMut(&'static str, D),
+    ) {
         let GcPcSaftADParameters { groups, bonds } = &self.0;
         let density = &state.partial_density;
 
@@ -412,7 +406,7 @@ impl<D: DualNum<f64> + Copy, const N: usize> Residual<Const<N>, D> for GcPcSaftA
             dipole = phi2
         }
 
-        hs + hc + disp + dipole
+        f("gc-PC-SAFT", hs + hc + disp + dipole)
     }
 }
 

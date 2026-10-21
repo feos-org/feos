@@ -75,20 +75,23 @@ impl ResidualDyn for UVTheory {
         (sigma3.map(D::from).dot(molefracs) * FRAC_PI_6).recip() * self.options.max_eta
     }
 
-    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
+    fn for_each_contribution<D: DualNum<f64> + Copy>(
         &self,
         state: &feos_core::StateHD<D>,
-    ) -> Vec<(&'static str, D)> {
-        match &self.options.perturbation {
-            Perturbation::BarkerHenderson => {
-                BarkerHenderson.residual_helmholtz_energy_contributions(&self.params, state)
-            }
-            Perturbation::WeeksChandlerAndersen => {
-                WeeksChandlerAndersen.residual_helmholtz_energy_contributions(&self.params, state)
-            }
-            Perturbation::WeeksChandlerAndersenB3 => {
-                WeeksChandlerAndersenB3.residual_helmholtz_energy_contributions(&self.params, state)
-            }
+        mut f: impl FnMut(&'static str, D),
+    ) {
+        let contributions =
+            match &self.options.perturbation {
+                Perturbation::BarkerHenderson => {
+                    BarkerHenderson.residual_helmholtz_energy_contributions(&self.params, state)
+                }
+                Perturbation::WeeksChandlerAndersen => WeeksChandlerAndersen
+                    .residual_helmholtz_energy_contributions(&self.params, state),
+                Perturbation::WeeksChandlerAndersenB3 => WeeksChandlerAndersenB3
+                    .residual_helmholtz_energy_contributions(&self.params, state),
+            };
+        for (name, a) in contributions {
+            f(name, a)
         }
     }
 }

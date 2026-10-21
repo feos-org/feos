@@ -86,11 +86,12 @@ impl ResidualDyn for PcSaftFunctional {
         (msigma3.map(D::from).dot(molefracs) * FRAC_PI_6).recip() * self.options.max_eta
     }
 
-    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
+    fn for_each_contribution<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
-    ) -> Vec<(&'static str, D)> {
-        self.evaluate_bulk(state)
+        f: impl FnMut(&'static str, D),
+    ) {
+        self.evaluate_bulk(state, f)
     }
 }
 

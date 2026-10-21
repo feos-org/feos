@@ -123,10 +123,11 @@ macro_rules! impl_residual {
                 panic!("compute_max_density: input data type not understood")
             }
 
-            fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy + >(
+            fn for_each_contribution<D: DualNum<f64> + Copy>(
                     &self,
                     state: &StateHD<D>,
-                ) -> Vec<(&'static str, D)> {
+                    mut f: impl FnMut(&'static str, D),
+                ) {
                 // result to write to
                 let mut a = D::zero();
 
@@ -141,7 +142,7 @@ macro_rules! impl_residual {
                                 .unwrap();
                             <$hd_ty>::from(py_result.extract::<$py_hd_id>().unwrap())
                         });
-                        return vec![("Python", a)]
+                        return f("Python", a)
                     }
                 )*
                 panic!("helmholtz_energy: input data type not understood")

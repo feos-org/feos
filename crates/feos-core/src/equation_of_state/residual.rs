@@ -65,24 +65,12 @@ pub trait ResidualDyn {
     fn compute_max_density<D: DualNum<f64> + Copy>(&self, molefracs: &DVector<D>) -> D;
 
     /// Evaluate the reduced Helmholtz energy density of each individual contribution
-    /// and return them together with a string representation of the contribution.
-    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
+    /// and pass it to `f` together with a string representation of the contribution.
+    fn for_each_contribution<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
-    ) -> Vec<(&'static str, D)>;
-
-    /// Evaluate the residual reduced Helmholtz energy density $\beta f^\mathrm{res}$.
-    ///
-    /// The default sums [ResidualDyn::reduced_helmholtz_energy_density_contributions].
-    /// Override it to avoid allocating the contributions in performance critical code.
-    fn reduced_residual_helmholtz_energy_density<D: DualNum<f64> + Copy>(
-        &self,
-        state: &StateHD<D>,
-    ) -> D {
-        self.reduced_helmholtz_energy_density_contributions(state)
-            .iter()
-            .fold(D::zero(), |acc, (_, a)| acc + a)
-    }
+        f: impl FnMut(&'static str, D),
+    );
 }
 
 impl<C: Deref<Target = T> + Clone, T: ResidualDyn, D: DualNum<f64> + Copy> Residual<Dyn, D> for C {
@@ -100,14 +88,8 @@ impl<C: Deref<Target = T> + Clone, T: ResidualDyn, D: DualNum<f64> + Copy> Resid
     fn compute_max_density(&self, molefracs: &DVector<D>) -> D {
         ResidualDyn::compute_max_density(self.deref(), molefracs)
     }
-    fn reduced_helmholtz_energy_density_contributions(
-        &self,
-        state: &StateHD<D, Dyn>,
-    ) -> Vec<(&'static str, D)> {
-        ResidualDyn::reduced_helmholtz_energy_density_contributions(self.deref(), state)
-    }
-    fn reduced_residual_helmholtz_energy_density(&self, state: &StateHD<D, Dyn>) -> D {
-        ResidualDyn::reduced_residual_helmholtz_energy_density(self.deref(), state)
+    fn for_each_contribution(&self, state: &StateHD<D, Dyn>, f: impl FnMut(&'static str, D)) {
+        ResidualDyn::for_each_contribution(self.deref(), state, f)
     }
 }
 
@@ -147,17 +129,25 @@ where
     fn compute_max_density(&self, molefracs: &OVector<D, N>) -> D;
 
     /// Evaluate the reduced Helmholtz energy density of each individual contribution
+    /// and pass it to `f` together with a string representation of the contribution.
+    fn for_each_contribution(&self, state: &StateHD<D, N>, f: impl FnMut(&'static str, D));
+
+    /// Evaluate the reduced Helmholtz energy density of each individual contribution
     /// and return them together with a string representation of the contribution.
     fn reduced_helmholtz_energy_density_contributions(
         &self,
         state: &StateHD<D, N>,
-    ) -> Vec<(&'static str, D)>;
+    ) -> Vec<(&'static str, D)> {
+        let mut v = Vec::new();
+        self.for_each_contribution(state, |name, a| v.push((name, a)));
+        v
+    }
 
     /// Evaluate the residual reduced Helmholtz energy density $\beta f^\mathrm{res}$.
     fn reduced_residual_helmholtz_energy_density(&self, state: &StateHD<D, N>) -> D {
-        self.reduced_helmholtz_energy_density_contributions(state)
-            .iter()
-            .fold(D::zero(), |acc, (_, a)| acc + a)
+        let mut a = D::zero();
+        self.for_each_contribution(state, |_, a_i| a += a_i);
+        a
     }
 
     /// Evaluate the Helmholtz energy of each individual contribution and return them
@@ -169,10 +159,9 @@ where
         moles: &OVector<D, N>,
     ) -> Vec<(&'static str, D)> {
         let state = StateHD::new(temperature, volume, moles);
-        self.reduced_helmholtz_energy_density_contributions(&state)
-            .into_iter()
-            .map(|(n, f)| (n, f * temperature * volume))
-            .collect()
+        let mut v = Vec::new();
+        self.for_each_contribution(&state, |name, a| v.push((name, a * temperature * volume)));
+        v
     }
 
     /// Evaluate the residual Helmholtz energy $A^\mathrm{res}$.
@@ -522,10 +511,10 @@ impl ResidualDyn for NoResidual {
         D::one()
     }
 
-    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
+    fn for_each_contribution<D: DualNum<f64> + Copy>(
         &self,
         _: &StateHD<D>,
-    ) -> Vec<(&'static str, D)> {
-        vec![]
+        _: impl FnMut(&'static str, D),
+    ) {
     }
 }

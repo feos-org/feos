@@ -154,28 +154,27 @@ impl ResidualDyn for SaftVRQMie {
         (msigma3.map(D::from).dot(molefracs) * FRAC_PI_6).recip() * self.options.max_eta
     }
 
-    fn reduced_helmholtz_energy_density_contributions<D: num_dual::DualNum<f64> + Copy>(
+    fn for_each_contribution<D: num_dual::DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
-    ) -> Vec<(&'static str, D)> {
-        let mut v = Vec::with_capacity(7);
+        mut f: impl FnMut(&'static str, D),
+    ) {
         let properties = TemperatureDependentProperties::new(&self.params, state.temperature);
 
-        v.push((
+        f(
             "Hard Sphere",
             HardSphere.helmholtz_energy_density(&self.params, state, &properties),
-        ));
-        v.push((
+        );
+        f(
             "Dispersion",
             Dispersion.helmholtz_energy_density(&self.params, state, &properties),
-        ));
+        );
         if self.non_additive_hard_sphere {
-            v.push((
+            f(
                 "Non additive Hard Sphere",
                 NonAddHardSphere.helmholtz_energy_density(&self.params, state, &properties),
-            ))
+            )
         }
-        v
     }
 }
 
