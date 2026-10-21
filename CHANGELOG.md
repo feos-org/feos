@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Fixed
 - Fixed bug in `_density_iteration` which used the residual Helmholtz energy as the pressure and the pressure as derivative. [#396](https://github.com/feos-org/feos/pull/396)
+- Fixed missing mole fraction factor in `State::thermodynamic_factor`. [#400](https://github.com/feos-org/feos/pull/400)
+- Fixed `State::henrys_law_constant` for mixed solvents. [#400](https://github.com/feos-org/feos/pull/400)
+- Fixed the acceleration in `PhaseEquilibrium::tp_flash` (Gibbs energy acceptance criterion not weighted by phase fractions and incomplete K-value history). [#400](https://github.com/feos-org/feos/pull/400)
 
 ## [0.10.3] - 2026-10-14
 ### Fixed

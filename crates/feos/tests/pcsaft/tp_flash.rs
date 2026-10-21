@@ -102,3 +102,26 @@ fn test_tp_flash_zero_component() -> FeosResult<()> {
     );
     Ok(())
 }
+
+#[test]
+fn test_tp_flash_acceleration() -> FeosResult<()> {
+    // With working acceleration, this LLE converges in ~36 steps (previously ~180).
+    let eos = PcSaft::new(PcSaftParameters::from_json(
+        vec!["methanol", "hexane"],
+        "../../parameters/pcsaft/esper2023.json",
+        Some("../../parameters/pcsaft/rehner2023_binary.json"),
+        IdentifierOption::Name,
+    )?);
+    let options = SolverOptions::new().max_iter(15).tol(1e-12);
+    let vle = PhaseEquilibrium::tp_flash(
+        &&eos,
+        280.0 * KELVIN,
+        BAR,
+        &dvector![0.5, 0.5],
+        None,
+        options,
+        None,
+    )?;
+    assert!((vle.vapor().molefracs[0] - vle.liquid().molefracs[0]).abs() > 0.1);
+    Ok(())
+}
