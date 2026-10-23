@@ -107,9 +107,9 @@ impl<E: Residual> PhaseDiagram<E, 2> {
 
         let min_pressure = vle.as_ref().unwrap().vapor().pressure(Contributions::Total);
         let p_c = sc.pressure(Contributions::Total);
-        let max_pressure =
-            min_pressure + (p_c - min_pressure) * ((n_p - 2) as f64 / (n_p - 1) as f64);
-        let pressures = Pressure::linspace(min_pressure, max_pressure, n_p);
+        // the first point (min_pressure) is already part of the temperature sweep
+        let dp = (p_c - min_pressure) / ((n_p + 1) as f64);
+        let pressures = Pressure::linspace(min_pressure + dp, p_c - dp, n_p);
 
         for pi in &pressures {
             let t_init = vle.as_ref().map(|vle| vle.vapor().temperature);

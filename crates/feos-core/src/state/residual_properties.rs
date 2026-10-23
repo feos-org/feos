@@ -560,7 +560,7 @@ where
         component: usize,
     ) -> Vec<(&'static str, MolarEnergy<D>)> {
         let t = Dual::from_re(self.temperature.into_reduced());
-        let v = Dual::from_re(self.temperature.into_reduced());
+        let v = Dual::from_re(self.density.into_reduced().recip());
         let mut x = self.molefracs.map(Dual::from_re);
         x[component].eps = D::one();
         let contributions = self.eos.lift().helmholtz_energy_contributions(t, v, &x);

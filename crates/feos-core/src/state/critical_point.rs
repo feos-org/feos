@@ -570,7 +570,7 @@ where
         &temperature,
         &molefracs,
     );
-    let (_, da) = first_derivative(a, D::one());
+    let (_, da) = first_derivative(a, density.recip());
     let p_calc = -da + density * temperature;
     SVector::from([c1, c2, -p_calc + pressure])
 }

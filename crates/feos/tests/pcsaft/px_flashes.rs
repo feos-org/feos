@@ -2,8 +2,8 @@ use approx::assert_relative_eq;
 use feos::ideal_gas::Joback;
 use feos::pcsaft::PcSaftBinary;
 use feos_core::{
-    Contributions, EquationOfState, FeosResult, IdealGasAD, PhaseEquilibrium, ReferenceSystem,
-    SolverOptions, Verbosity, ad::ParametersAD,
+    Contributions, DensityInitialization, EquationOfState, FeosResult, IdealGasAD,
+    PhaseEquilibrium, ReferenceSystem, SolverOptions, State, Verbosity, ad::ParametersAD,
 };
 use nalgebra::U1;
 use num_dual::{DualStruct, DualVec};
@@ -140,5 +140,55 @@ fn test_ps_flash() -> FeosResult<()> {
     println!("{dt_h}");
     assert_relative_eq!(dt, dt_h, max_relative = 1e-4);
 
+    Ok(())
+}
+
+#[test]
+fn test_new_nph_warm_start_derivative() -> FeosResult<()> {
+    let params = [
+        [1.5, 3.4, 180.0, 2.2, 0.03, 2500., 2.0, 1.0],
+        [4.5, 3.6, 250.0, 1.2, 0.015, 1500., 1.0, 2.0],
+    ];
+    let kij = 0.15;
+    let joback = [
+        Joback([380., 0.0, 0.0, 0.0, 0.0]),
+        Joback([210., 0.0, 0.0, 0.0, 0.0]),
+    ];
+    let eos = EquationOfState::new(joback.clone(), PcSaftBinary::new(params, kij));
+    let (p, t, x) = (5.0 * BAR, 600.0 * KELVIN, 0.3);
+    let h = State::new_npt(&eos, t, p, x, Some(DensityInitialization::Vapor))?
+        .molar_enthalpy(Contributions::Total);
+
+    let mut flat_params: Vec<f64> = params[0].to_vec();
+    flat_params.extend_from_slice(&params[1]);
+    flat_params.push(kij);
+    let pcsaft_ad = PcSaftBinary::<f64, 8>::seed_derivatives(&flat_params, ["k_ij"]);
+    let joback_ad = joback.each_ref().map(|j| j.lift());
+    let eos_ad = EquationOfState::new(joback_ad, pcsaft_ad);
+
+    let dkij = 1e-7;
+    let eos_h = EquationOfState::new(joback.clone(), PcSaftBinary::new(params, kij + dkij));
+    let t_h = State::new_nph(&eos_h, p, h, x, Some(DensityInitialization::Vapor), Some(t))?;
+    let dt_h = (t_h.temperature - t).into_reduced() / dkij;
+
+    // starting from the converged temperature, the derivative must not be lost
+    for t0 in [500.0 * KELVIN, t] {
+        let s = State::new_nph(
+            &eos_ad,
+            Pressure::from_inner(&p),
+            MolarEnergy::from_inner(&h),
+            DualVec::from_inner(&x),
+            Some(DensityInitialization::Vapor),
+            Some(Temperature::from_inner(&t0)),
+        )?;
+        let [[dt]] = s
+            .temperature
+            .into_reduced()
+            .eps
+            .unwrap_generic(U1, U1)
+            .data
+            .0;
+        assert_relative_eq!(dt, dt_h, max_relative = 1e-4);
+    }
     Ok(())
 }

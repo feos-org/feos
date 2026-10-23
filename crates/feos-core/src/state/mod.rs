@@ -620,16 +620,15 @@ where
     let maxiter = 50;
 
     for _ in 0..maxiter {
-        let (fx, dfx, mut state) = f(x0)?;
+        let (fx, dfx, _) = f(x0)?;
         let x = x0 - fx / dfx;
         if is_close(x.re(), x0.re(), atol, rtol) {
             // Ensure that at least NDERIV iterations are performed (for implicit AD)
             for _ in 0..D::NDERIV {
-                let (fx, dfx, s) = f(x0)?;
+                let (fx, dfx, _) = f(x0)?;
                 x0 -= fx / dfx;
-                state = s;
             }
-            return Ok(state);
+            return Ok(f(x0)?.2);
         }
         x0 = x;
     }
