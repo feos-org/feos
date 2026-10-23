@@ -76,6 +76,11 @@ macro_rules! impl_profile {
             }
 
             #[getter]
+            fn get_non_bonded_fractions<'py>(&self, py: Python<'py>) -> Bound<'py, PyArrayDyn<f64>> {
+                self.0.profile.non_bonded_fractions.view().into_dyn().to_pyarray(py)
+            }
+
+            #[getter]
             fn get_moles(&self) -> Moles<DVector<f64>> {
                 self.0.profile.moles()
             }

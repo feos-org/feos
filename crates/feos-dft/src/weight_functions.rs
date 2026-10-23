@@ -29,7 +29,7 @@ impl<T: DualNum<Primitive = f64> + Copy> WeightFunction<T> {
     /// Create a new weight function with weight constant = 1
     pub fn new_scaled(kernel_radius: DVector<T>, shape: WeightFunctionShape) -> Self {
         let unscaled = Self::new_unscaled(kernel_radius, shape);
-        let weight_constants = unscaled.scalar_weight_constants(T::zero());
+        let weight_constants = unscaled.scalar_weight_constants();
         let weight_constants = DVector::from(weight_constants.to_vec());
         Self {
             prefactor: weight_constants.map(|w| w.recip()),
@@ -138,18 +138,8 @@ impl<T: DualNum<Primitive = f64> + Copy> WeightFunction<T> {
 
     /// Scalar weights for the bulk convolver (for the bulk convolver only the prefactor
     /// of the normalized weight functions are required)
-    pub fn scalar_weight_constants(&self, k: T) -> Array1<T> {
-        let k = arr0(k);
-        self.fft_scalar_weight_functions(&k, &None)
-    }
-
-    /// Vector weights for the bulk convolver (for the bulk convolver only the prefactor
-    /// of the normalized weight functions are required)
-    pub fn vector_weight_constants(&self, k: T) -> Array1<T> {
-        let k_abs = arr0(k);
-        let k = arr1(&[k]);
-        self.fft_vector_weight_functions(&k_abs, &k, &None)
-            .index_axis_move(Axis(0), 0)
+    pub fn scalar_weight_constants(&self) -> Array1<T> {
+        self.fft_scalar_weight_functions(&arr0(T::zero()), &None)
     }
 }
 
@@ -170,8 +160,8 @@ pub enum WeightFunctionShape {
 
 /// Information about weight functions
 pub struct WeightFunctionInfo<T> {
-    /// Index of the component that each individual segment belongs to.
-    pub(crate) component_index: DVector<usize>,
+    /// Number of segments.
+    pub(crate) segments: usize,
     /// Flag if local density is required in the functional
     pub(crate) local_density: bool,
     /// Container for scalar component-wise weighted densities
@@ -188,7 +178,7 @@ impl<T> WeightFunctionInfo<T> {
     /// Calculates the total number of weighted densities for each functional
     /// from multiple weight functions depending on dimension.
     pub fn n_weighted_densities(&self, dimensions: usize) -> usize {
-        let segments = self.component_index.len();
+        let segments = self.segments;
         (if self.local_density { segments } else { 0 })
             + self.scalar_component_weighted_densities.len() * segments
             + self.vector_component_weighted_densities.len() * segments * dimensions
@@ -199,9 +189,9 @@ impl<T> WeightFunctionInfo<T> {
 
 impl<T> WeightFunctionInfo<T> {
     /// Initializing empty `WeightFunctionInfo`.
-    pub fn new(component_index: DVector<usize>, local_density: bool) -> Self {
+    pub fn new(segments: usize, local_density: bool) -> Self {
         Self {
-            component_index,
+            segments,
             local_density,
             scalar_component_weighted_densities: Vec::new(),
             vector_component_weighted_densities: Vec::new(),
@@ -213,7 +203,7 @@ impl<T> WeightFunctionInfo<T> {
     /// Adds and sorts [WeightFunction] depending on information
     /// about {FMT, component} & {scalar-valued, vector-valued}.
     pub fn add(mut self, weight_function: WeightFunction<T>, fmt: bool) -> Self {
-        let segments = self.component_index.len();
+        let segments = self.segments;
 
         // Check size of `kernel_radius`
         if segments != weight_function.kernel_radius.len() {
@@ -278,10 +268,11 @@ impl<T> WeightFunctionInfo<T> {
 }
 
 impl<T: DualNum<Primitive = f64> + Copy> WeightFunctionInfo<T> {
-    /// calculates the matrix of weight constants for this set of weighted densities
-    pub fn weight_constants(&self, k: T, dimensions: usize) -> Array2<T> {
-        let segments = self.component_index.len();
-        let n_wd = self.n_weighted_densities(dimensions);
+    /// Matrix of weight constants for this set of weighted densities in a homogeneous system
+    /// (vector weighted densities vanish).
+    pub fn weight_constants(&self) -> Array2<T> {
+        let segments = self.segments;
+        let n_wd = self.n_weighted_densities(0);
         let mut weight_constants = Array::zeros([n_wd, segments]);
         let mut j = 0;
         if self.local_density {
@@ -295,31 +286,14 @@ impl<T: DualNum<Primitive = f64> + Copy> WeightFunctionInfo<T> {
             weight_constants
                 .slice_mut(s![j..j + segments, ..])
                 .into_diag()
-                .assign(&w.scalar_weight_constants(k));
+                .assign(&w.scalar_weight_constants());
             j += segments;
-        }
-        if dimensions == 1 {
-            for w in &self.vector_component_weighted_densities {
-                weight_constants
-                    .slice_mut(s![j..j + segments, ..])
-                    .into_diag()
-                    .assign(&w.vector_weight_constants(k));
-                j += segments;
-            }
         }
         for w in &self.scalar_fmt_weighted_densities {
             weight_constants
                 .slice_mut(s![j, ..])
-                .assign(&w.scalar_weight_constants(k));
+                .assign(&w.scalar_weight_constants());
             j += 1;
-        }
-        if dimensions == 1 {
-            for w in &self.vector_fmt_weighted_densities {
-                weight_constants
-                    .slice_mut(s![j, ..])
-                    .assign(&w.vector_weight_constants(k));
-                j += 1;
-            }
         }
         weight_constants
     }

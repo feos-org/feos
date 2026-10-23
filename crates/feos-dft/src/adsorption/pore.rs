@@ -5,7 +5,7 @@ use crate::functional_contribution::FunctionalContribution;
 use crate::geometry::{Axis, Geometry, Grid};
 use crate::profile::{DFTProfile, InitialDensity};
 use crate::solver::DFTSolver;
-use crate::{DFTSpecification, WeightFunctionInfo};
+use crate::{DFTSpecification, NoAssociation, WeightFunctionInfo};
 use feos_core::{Contributions, FeosResult, ReferenceSystem, ResidualDyn, State, StateHD};
 use nalgebra::{DVector, dvector};
 use ndarray::prelude::*;
@@ -242,22 +242,8 @@ where
     }
 
     pub fn into_dyn(self) -> PoreProfile<IxDyn, F> {
-        // initialize convolver
-        let t = self.profile.temperature.to_reduced();
-        let weight_functions = self.profile.functional.weight_functions(t);
-        let convolver = ConvolverFFT::plan(&self.profile.grid, &weight_functions);
-
         PoreProfile {
-            profile: DFTProfile {
-                grid: self.profile.grid,
-                convolver,
-                functional: self.profile.functional,
-                temperature: self.profile.temperature,
-                density: self.profile.density.into_dyn(),
-                specification: self.profile.specification,
-                external_potential: self.profile.external_potential.into_dyn(),
-                solver_log: self.profile.solver_log,
-            },
+            profile: self.profile.into_dyn(),
             bulk: self.bulk,
             grand_potential: self.grand_potential,
             interfacial_tension: self.interfacial_tension,
@@ -335,6 +321,7 @@ impl HelmholtzEnergyFunctionalDyn for Helium {
         = HeliumContribution
     where
         Self: 'a;
+    type Association<'a> = NoAssociation;
 
     fn contributions<'a>(&'a self) -> impl Iterator<Item = Self::Contribution<'a>> {
         std::iter::empty()

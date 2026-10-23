@@ -12,7 +12,6 @@ This section explains the implementation of the core expressions from classical 
    derivatives
    enthalpy_of_adsorption
    ideal_gas
-   pdgt
 ```
 
 It is currently still under construction. You can help by [contributing](https://github.com/feos-org/feos/issues/70).

@@ -1,28 +1,31 @@
-use crate::Convolver;
 use crate::{DFTProfile, HelmholtzEnergyFunctional};
-use feos_core::{FeosError, FeosResult, ReferenceSystem, Verbosity, log_iter, log_result};
+use feos_core::{FeosError, FeosResult, Verbosity, log_iter, log_result};
 use indexmap::IndexMap;
 use nalgebra::{DMatrix, DVector};
-use ndarray::RemoveAxis;
 use ndarray::prelude::*;
 use quantity::{MILLI, SECOND, Time};
 use std::collections::VecDeque;
 use std::fmt;
-use std::ops::AddAssign;
 use std::time::{Duration, Instant};
+
+mod euler_lagrange;
+mod newton;
+mod tape;
+
+pub(crate) use newton::{NonlinearSystem, newton_krylov, solve_linearized};
+pub use tape::{Evaluate, LocalFunction, Tape};
+pub(crate) use tape::{flatten, unflatten};
+
+/// Damping coefficient of the successive substitution for X in the Picard iteration. In the bulk,
+/// the error is reduced by the factor 1 - alpha (2 - X) ≈ X/2 per step, for a contact-shell kernel
+/// at least by about 0.4.
+const ASSOCIATION_DAMPING: f64 = 0.5;
 
 const DEFAULT_PARAMS_PICARD: PicardIteration = PicardIteration {
     log: false,
     max_iter: 500,
     tol: 1e-11,
     damping_coefficient: None,
-};
-const DEFAULT_PARAMS_ANDERSON_LOG: AndersonMixing = AndersonMixing {
-    log: true,
-    max_iter: 50,
-    tol: 1e-5,
-    damping_coefficient: 0.15,
-    mmax: 100,
 };
 const DEFAULT_PARAMS_ANDERSON: AndersonMixing = AndersonMixing {
     log: false,
@@ -32,7 +35,6 @@ const DEFAULT_PARAMS_ANDERSON: AndersonMixing = AndersonMixing {
     mmax: 100,
 };
 const DEFAULT_PARAMS_NEWTON: Newton = Newton {
-    log: false,
     max_iter: 50,
     max_iter_gmres: 200,
     tol: 1e-11,
@@ -57,7 +59,6 @@ struct AndersonMixing {
 
 #[derive(Clone, Copy, Debug)]
 struct Newton {
-    log: bool,
     max_iter: usize,
     max_iter_gmres: usize,
     tol: f64,
@@ -80,10 +81,7 @@ pub struct DFTSolver {
 impl Default for DFTSolver {
     fn default() -> Self {
         Self {
-            algorithms: vec![
-                DFTAlgorithm::AndersonMixing(DEFAULT_PARAMS_ANDERSON_LOG),
-                DFTAlgorithm::AndersonMixing(DEFAULT_PARAMS_ANDERSON),
-            ],
+            algorithms: vec![DFTAlgorithm::Newton(DEFAULT_PARAMS_NEWTON)],
             verbosity: Default::default(),
         }
     }
@@ -133,13 +131,11 @@ impl DFTSolver {
 
     pub fn newton(
         mut self,
-        log: Option<bool>,
         max_iter: Option<usize>,
         max_iter_gmres: Option<usize>,
         tol: Option<f64>,
     ) -> Self {
         let mut params = DEFAULT_PARAMS_NEWTON;
-        params.log = log.unwrap_or(params.log);
         params.max_iter = max_iter.unwrap_or(params.max_iter);
         params.max_iter_gmres = max_iter_gmres.unwrap_or(params.max_iter_gmres);
         params.tol = tol.unwrap_or(params.tol);
@@ -156,6 +152,12 @@ pub struct DFTSolverLog {
     time: Vec<Duration>,
     solver: Vec<&'static str>,
     profile: IndexMap<&'static str, Duration>,
+}
+
+impl Default for DFTSolverLog {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl DFTSolverLog {
@@ -260,9 +262,11 @@ where
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
     pub(crate) fn call_solver(
-        &mut self,
+        &self,
         rho: &mut Array<f64, D::Larger>,
+        non_bonded_fractions: &mut Array<f64, D::Larger>,
         solver: &DFTSolver,
+        solver_log: &mut DFTSolverLog,
         debug: bool,
     ) -> FeosResult<()> {
         log_iter!(
@@ -273,13 +277,27 @@ where
         let mut iterations = 0;
         for algorithm in &solver.algorithms {
             let (conv, iter) = match algorithm {
-                DFTAlgorithm::PicardIteration(picard) => {
-                    self.solve_picard(*picard, rho, solver.verbosity)
-                }
-                DFTAlgorithm::AndersonMixing(anderson) => {
-                    self.solve_anderson(*anderson, rho, solver.verbosity)
-                }
-                DFTAlgorithm::Newton(newton) => self.solve_newton(*newton, rho, solver.verbosity),
+                DFTAlgorithm::PicardIteration(picard) => self.solve_picard(
+                    *picard,
+                    rho,
+                    non_bonded_fractions,
+                    solver_log,
+                    solver.verbosity,
+                ),
+                DFTAlgorithm::AndersonMixing(anderson) => self.solve_anderson(
+                    *anderson,
+                    rho,
+                    non_bonded_fractions,
+                    solver_log,
+                    solver.verbosity,
+                ),
+                DFTAlgorithm::Newton(newton) => self.solve_newton(
+                    *newton,
+                    rho,
+                    non_bonded_fractions,
+                    solver_log,
+                    solver.verbosity,
+                ),
             }?;
             converged = conv;
             iterations += iter;
@@ -299,9 +317,11 @@ where
     }
 
     fn solve_picard(
-        &mut self,
+        &self,
         picard: PicardIteration,
         rho: &mut Array<f64, D::Larger>,
+        non_bonded_fractions: &mut Array<f64, D::Larger>,
+        solver_log: &mut DFTSolverLog,
         verbosity: Verbosity,
     ) -> FeosResult<(bool, usize)> {
         let solver = if picard.log {
@@ -312,18 +332,36 @@ where
 
         for k in 0..picard.max_iter {
             // calculate residual
-            let (res, res_norm, _) = self.euler_lagrange_equation(&*rho, picard.log)?;
-            self.solver_log.add_residual(solver, k, res_norm, verbosity);
+            let residual =
+                self.euler_lagrange_equation(rho, non_bonded_fractions, picard.log, solver_log)?;
+            solver_log.add_residual(solver, k, residual.norm, verbosity);
 
             // check for convergence
-            if res_norm < picard.tol {
+            if residual.norm < picard.tol {
                 return Ok((true, k));
             }
 
-            // apply line search or constant damping
-            let damping_coefficient = picard
-                .damping_coefficient
-                .map_or_else(|| self.line_search(rho, &res, res_norm, picard.log), Ok)?;
+            // apply line search (on the density residual at fixed X) or constant damping
+            let res = residual.density;
+            let damping_coefficient = picard.damping_coefficient.map_or_else(
+                || {
+                    self.line_search(
+                        rho,
+                        non_bonded_fractions,
+                        &res,
+                        residual.density_norm,
+                        picard.log,
+                        solver_log,
+                    )
+                },
+                Ok,
+            )?;
+
+            // update the fractions of non-bonded association sites (damped successive
+            // substitution, ln X <- ln X + alpha (ln X_projected - ln X))
+            *non_bonded_fractions *= &residual
+                .mass_action
+                .mapv(|r| (ASSOCIATION_DAMPING * r).exp());
 
             // update solution
             if picard.log {
@@ -336,11 +374,13 @@ where
     }
 
     fn line_search(
-        &mut self,
+        &self,
         rho: &Array<f64, D::Larger>,
+        non_bonded_fractions: &Array<f64, D::Larger>,
         delta_rho: &Array<f64, D::Larger>,
         res0: f64,
         logarithm: bool,
+        solver_log: &mut DFTSolverLog,
     ) -> FeosResult<f64> {
         let mut alpha = 2.0;
 
@@ -354,9 +394,12 @@ where
             } else {
                 rho + alpha * delta_rho
             };
-            let Ok((_, res2, _)) = self.euler_lagrange_equation(&rho_new, logarithm) else {
+            let Ok(residual) =
+                self.euler_lagrange_equation(&rho_new, non_bonded_fractions, logarithm, solver_log)
+            else {
                 continue;
             };
+            let res2 = residual.density_norm;
             if res2 > res0 {
                 continue;
             }
@@ -367,9 +410,12 @@ where
             } else {
                 rho + 0.5 * alpha * delta_rho
             };
-            let Ok((_, res1, _)) = self.euler_lagrange_equation(&rho_new, logarithm) else {
+            let Ok(residual) =
+                self.euler_lagrange_equation(&rho_new, non_bonded_fractions, logarithm, solver_log)
+            else {
                 continue;
             };
+            let res1 = residual.density_norm;
 
             // estimate minimum
             let mut alpha_opt = if res2 - 2.0 * res1 + res0 != 0.0 {
@@ -394,9 +440,11 @@ where
     }
 
     fn solve_anderson(
-        &mut self,
+        &self,
         anderson: AndersonMixing,
         rho: &mut Array<f64, D::Larger>,
+        non_bonded_fractions: &mut Array<f64, D::Larger>,
+        solver_log: &mut DFTSolverLog,
         verbosity: Verbosity,
     ) -> FeosResult<(bool, usize)> {
         let solver = if anderson.log {
@@ -407,39 +455,43 @@ where
 
         let mut resm = VecDeque::with_capacity(anderson.mmax);
         let mut rhom = VecDeque::with_capacity(anderson.mmax);
+        let mut xm = VecDeque::with_capacity(anderson.mmax);
 
         for k in 0..anderson.max_iter {
             // drop old values
             if resm.len() == anderson.mmax {
                 resm.pop_front();
                 rhom.pop_front();
+                xm.pop_front();
             }
             let m = resm.len() + 1;
 
             // calculate residual
-            let (res, res_norm, _) = self.euler_lagrange_equation(&*rho, anderson.log)?;
-            self.solver_log.add_residual(solver, k, res_norm, verbosity);
+            let residual =
+                self.euler_lagrange_equation(rho, non_bonded_fractions, anderson.log, solver_log)?;
+            solver_log.add_residual(solver, k, residual.norm, verbosity);
 
             // check for convergence
-            if res_norm < anderson.tol {
+            if residual.norm < anderson.tol {
                 return Ok((true, k));
             }
 
-            // save residual and x value
-            resm.push_back((res, res_norm));
+            // save residuals and unknowns (the residual for ln X is that of successive substitution)
+            resm.push_back((residual.density, residual.mass_action));
             if anderson.log {
                 rhom.push_back(rho.mapv(f64::ln));
             } else {
                 rhom.push_back(rho.clone());
             }
+            xm.push_back(non_bonded_fractions.mapv(f64::ln));
 
             // calculate alpha
-            self.solver_log.time_function("Anderson mixing", || {
+            solver_log.time_function("Anderson mixing", || {
                 let r = DMatrix::from_fn(m + 1, m + 1, |i, j| match (i == m, j == m) {
                     (false, false) => {
-                        let (resi, _) = &resm[i];
-                        let (resj, _) = &resm[j];
-                        (resi * resj).sum()
+                        let (resi, resxi) = &resm[i];
+                        let (resj, resxj) = &resm[j];
+                        (resi * resj).sum() + (resxi * resxj).sum()
                     }
                     (true, true) => 0.0,
                     _ => 1.0,
@@ -452,16 +504,19 @@ where
 
                 // update solution
                 rho.fill(0.0);
+                non_bonded_fractions.fill(0.0);
                 for i in 0..m {
-                    let rhoi = &rhom[i];
-                    let (resi, _) = &resm[i];
-                    *rho += &(alpha[i] * (rhoi + &(anderson.damping_coefficient * resi)));
+                    let (resi, resxi) = &resm[i];
+                    *rho += &(alpha[i] * (&rhom[i] + &(anderson.damping_coefficient * resi)));
+                    *non_bonded_fractions +=
+                        &(alpha[i] * (&xm[i] + &(anderson.damping_coefficient * resxi)));
                 }
                 if anderson.log {
                     rho.mapv_inplace(f64::exp);
                 } else {
                     rho.mapv_inplace(f64::abs);
                 }
+                non_bonded_fractions.mapv_inplace(f64::exp);
                 Ok::<_, FeosError>(())
             })?;
         }
@@ -469,184 +524,28 @@ where
     }
 
     fn solve_newton(
-        &mut self,
+        &self,
         newton: Newton,
         rho: &mut Array<f64, D::Larger>,
+        non_bonded_fractions: &mut Array<f64, D::Larger>,
+        solver_log: &mut DFTSolverLog,
         verbosity: Verbosity,
     ) -> FeosResult<(bool, usize)> {
-        let solver = if newton.log { "Newton (log)" } else { "Newton" };
-        for k in 0..newton.max_iter {
-            // calculate initial residual
-            let (res, res_norm, projection) = self.euler_lagrange_equation(rho, newton.log)?;
-            self.solver_log.add_residual(solver, k, res_norm, verbosity);
+        let mut x = Self::stack_variables(rho, non_bonded_fractions);
 
-            // check convergence
-            if res_norm < newton.tol {
-                return Ok((true, k));
-            }
+        let result = newton_krylov(
+            self,
+            &mut x,
+            newton.max_iter,
+            newton.max_iter_gmres,
+            newton.tol,
+            solver_log,
+            verbosity,
+        );
 
-            // calculate second partial derivatives once
-            let second_partial_derivatives =
-                self.solver_log
-                    .time_function("second partial derivatives", || {
-                        self.functional.second_partial_derivatives(
-                            self.temperature.into_reduced(),
-                            rho,
-                            self.convolver.as_ref(),
-                        )
-                    })?;
-
-            // define rhs function
-            let rhs = |delta_rho: &_| {
-                let mut delta_functional_derivative = Self::delta_functional_derivative(
-                    delta_rho,
-                    &second_partial_derivatives,
-                    self.convolver.as_ref(),
-                );
-                delta_functional_derivative
-                    .outer_iter_mut()
-                    .zip(self.functional.m().iter())
-                    .for_each(|(mut q, &m)| q /= m);
-                let delta_i = self.functional.delta_bond_integrals(
-                    self.temperature.into_reduced(),
-                    &projection.exp_dfdrho,
-                    &delta_functional_derivative,
-                    self.convolver.as_ref(),
-                );
-                let mut delta_exp_dfdrho = delta_functional_derivative - delta_i;
-                let delta_z = -self.grid.integrate_reduced_comp(
-                    &(&delta_exp_dfdrho * &projection.exp_dfdrho * &projection.bonds),
-                );
-
-                let delta_fugacity = self.specification.delta_fugacity(&projection.z, &delta_z);
-                delta_exp_dfdrho
-                    .outer_iter_mut()
-                    .zip(delta_fugacity.iter())
-                    .for_each(|(mut z, &f)| {
-                        z -= f;
-                    });
-
-                let rho = if newton.log {
-                    &*rho
-                } else {
-                    &projection.density
-                };
-                delta_rho + delta_exp_dfdrho * rho
-            };
-
-            // update solution
-            let lhs = if newton.log { &*rho * res } else { res };
-            *rho += &Self::gmres(
-                rhs,
-                &lhs,
-                newton.max_iter_gmres,
-                newton.tol * 1e-2,
-                &mut self.solver_log,
-            )?;
-            rho.mapv_inplace(f64::abs);
-        }
-
-        Ok((false, newton.max_iter))
-    }
-
-    pub(crate) fn gmres<R>(
-        rhs: R,
-        r0: &Array<f64, D::Larger>,
-        max_iter: usize,
-        tol: f64,
-        solver_log: &mut DFTSolverLog,
-    ) -> FeosResult<Array<f64, D::Larger>>
-    where
-        R: Fn(&Array<f64, D::Larger>) -> Array<f64, D::Larger>,
-    {
-        // allocate vectors and arrays
-        let mut v = Vec::with_capacity(max_iter);
-        let mut h: Array2<f64> = Array::zeros([max_iter + 1; 2]);
-        let mut c: Array1<f64> = Array::zeros(max_iter + 1);
-        let mut s: Array1<f64> = Array::zeros(max_iter + 1);
-        let mut gamma: Array1<f64> = Array::zeros(max_iter + 1);
-
-        gamma[0] = (r0 * r0).sum().sqrt();
-        v.push(r0 / gamma[0]);
-
-        let mut iter = 0;
-        for j in 0..max_iter {
-            // calculate q=Av_j
-            let mut q = solver_log.time_function("Jacobian vector product (GMRES)", || rhs(&v[j]));
-
-            // calculate h_ij
-            v.iter()
-                .enumerate()
-                .for_each(|(i, v_i)| h[(i, j)] = (v_i * &q).sum());
-
-            // calculate w_j (stored in q)
-            v.iter()
-                .enumerate()
-                .for_each(|(i, v_i)| q -= &(h[(i, j)] * v_i));
-            h[(j + 1, j)] = (&q * &q).sum().sqrt();
-
-            // update h_ij and h_i+1j
-            if j > 0 {
-                for i in 0..=j - 1 {
-                    let temp = c[i + 1] * h[(i, j)] + s[i + 1] * h[(i + 1, j)];
-                    h[(i + 1, j)] = -s[i + 1] * h[(i, j)] + c[i + 1] * h[(i + 1, j)];
-                    h[(i, j)] = temp;
-                }
-            }
-
-            // update auxiliary variables
-            let beta = (h[(j, j)] * h[(j, j)] + h[(j + 1, j)] * h[(j + 1, j)]).sqrt();
-            s[j + 1] = h[(j + 1, j)] / beta;
-            c[j + 1] = h[(j, j)] / beta;
-            h[(j, j)] = beta;
-            gamma[j + 1] = -s[j + 1] * gamma[j];
-            gamma[j] *= c[j + 1];
-
-            // check for convergence
-            if gamma[j + 1].abs() >= tol && j + 1 < max_iter {
-                v.push(q / h[(j + 1, j)]);
-                iter += 1;
-            } else {
-                break;
-            }
-        }
-        // calculate solution vector
-        let mut x = Array::zeros(r0.raw_dim());
-        let mut y = Array::zeros(iter + 1);
-        for i in (0..=iter).rev() {
-            y[i] = (gamma[i] - (i + 1..=iter).map(|k| h[(i, k)] * y[k]).sum::<f64>()) / h[(i, i)];
-        }
-        v.iter().zip(y).for_each(|(v, y)| x += &(y * v));
-        Ok(x)
-    }
-
-    pub(crate) fn delta_functional_derivative(
-        delta_density: &Array<f64, D::Larger>,
-        second_partial_derivatives: &[Array<f64, <D::Larger as Dimension>::Larger>],
-        convolver: &dyn Convolver<f64, D>,
-    ) -> Array<f64, D::Larger> {
-        let delta_weighted_densities = convolver.weighted_densities(delta_density);
-        let delta_partial_derivatives: Vec<_> = second_partial_derivatives
-            .iter()
-            .zip(delta_weighted_densities)
-            .map(|(pd2, wd)| {
-                let mut delta_partial_derivatives =
-                    Array::zeros(pd2.raw_dim().remove_axis(Axis(0)));
-                let n = wd.shape()[0];
-                for i in 0..n {
-                    for j in 0..n {
-                        delta_partial_derivatives
-                            .index_axis_mut(Axis(0), i)
-                            .add_assign(
-                                &(&pd2.index_axis(Axis(0), i).index_axis(Axis(0), j)
-                                    * &wd.index_axis(Axis(0), j)),
-                            );
-                    }
-                }
-                delta_partial_derivatives
-            })
-            .collect();
-        convolver.functional_derivative(&delta_partial_derivatives)
+        *rho = self.density_rows(&x).mapv(f64::exp);
+        *non_bonded_fractions = self.association_rows(&x).mapv(f64::exp);
+        result
     }
 }
 
@@ -699,11 +598,7 @@ impl DFTSolver {
                     anderson.tol,
                 ),
                 DFTAlgorithm::Newton(newton) => (
-                    format!(
-                        "Newton ({}max_iter_gmres={})",
-                        if newton.log { "log, " } else { "" },
-                        newton.max_iter_gmres
-                    ),
+                    format!("Newton (max_iter_gmres={})", newton.max_iter_gmres),
                     newton.max_iter,
                     newton.tol,
                 ),

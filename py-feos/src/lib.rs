@@ -194,6 +194,8 @@ fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
     {
         m.add_class::<dft::PyHelmholtzEnergyFunctional>()?;
         m.add_class::<dft::PyFMTVersion>()?;
+        #[cfg(any(feature = "pcsaft", feature = "gc_pcsaft"))]
+        m.add_class::<dft::PyAssociationVersion>()?;
         m.add_class::<dft::PyGeometry>()?;
 
         // Solver

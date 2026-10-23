@@ -34,17 +34,12 @@ impl<F: HelmholtzEnergyFunctional> SurfaceTensionDiagram<F> {
                     Temperature::from_reduced(500.0),
                 ))
             } else {
-                // initialize with pDGT for single segments and tanh for mixtures and segment DFT
-                if vle.vapor().eos.component_index().len() == 1 {
-                    Interface::planar_from_pdgt(vle, n_grid)
-                } else {
-                    Ok(Interface::planar_from_tanh(
-                        vle,
-                        n_grid,
-                        l_grid.unwrap_or(Length::from_reduced(100.0)),
-                        critical_temperature.unwrap_or(Temperature::from_reduced(500.0)),
-                    ))
-                }
+                Ok(Interface::planar_from_tanh(
+                    vle,
+                    n_grid,
+                    l_grid.unwrap_or(Length::from_reduced(100.0)),
+                    critical_temperature.unwrap_or(Temperature::from_reduced(500.0)),
+                ))
                 .map(|mut profile| {
                     if let Some(init) = profiles.last()
                         && init.profile.density.shape() == profile.profile.density.shape()
