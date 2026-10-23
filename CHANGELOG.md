@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- Removed most heap allocations from the evaluation of the residual Helmholtz energy of PC-SAFT. [#397](https://github.com/feos-org/feos/pull/397)
+- `ResidualDyn::for_each_contribution` and `Residual::for_each_contribution`, which pass each Helmholtz energy contribution to a closure, are now the only methods a model has to implement to evaluate the Helmholtz energy. `Residual::reduced_residual_helmholtz_energy_density` and `Residual::reduced_helmholtz_energy_density_contributions` are provided methods built on top of it, and both methods were removed from `ResidualDyn`. [#397](https://github.com/feos-org/feos/pull/397)
+- `HelmholtzEnergyFunctional::evaluate_bulk` passes each contribution to a closure instead of returning a `Vec`. [#397](https://github.com/feos-org/feos/pull/397)
+- `MonomerShape::NonSpherical` holds a reference `&DVector<f64>` to the segment numbers instead of an owned `DVector<D>`. [#397](https://github.com/feos-org/feos/pull/397)
+- `StateHD::new_density` takes the partial densities by value. [#397](https://github.com/feos-org/feos/pull/397)
 
 ## [0.10.4] - 2026-10-21
 ### Fixed

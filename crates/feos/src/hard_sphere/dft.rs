@@ -326,11 +326,12 @@ impl ResidualDyn for FMTFunctional {
         molefracs.dot(&self.properties.sigma.map(D::from)).recip() * 1.2
     }
 
-    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
+    fn for_each_contribution<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
-    ) -> Vec<(&'static str, D)> {
-        self.evaluate_bulk(state)
+        f: impl FnMut(&'static str, D),
+    ) {
+        self.evaluate_bulk(state, f)
     }
 }
 

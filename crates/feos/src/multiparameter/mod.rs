@@ -88,20 +88,21 @@ impl ResidualDyn for MultiParameter {
         D::from(6.02214076e-7 * self.rhoc / 0.31)
     }
 
-    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
+    fn for_each_contribution<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
-    ) -> Vec<(&'static str, D)> {
+        mut f: impl FnMut(&'static str, D),
+    ) {
         let rho = state.partial_density.sum();
         let delta = rho / (6.02214076e-7 * self.rhoc);
         let tau = state.temperature.recip() * self.tc;
-        vec![(
+        f(
             "Multiparameter",
             self.terms
                 .iter()
                 .map(|r| r.evaluate(delta, tau) * rho)
                 .sum(),
-        )]
+        )
     }
 }
 

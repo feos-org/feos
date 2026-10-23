@@ -358,7 +358,7 @@ impl ElectrolytePcSaftPars {
 
 impl HardSphereProperties for ElectrolytePcSaftPars {
     fn monomer_shape<N: DualNum<f64>>(&self, _: N) -> MonomerShape<'_, N> {
-        MonomerShape::NonSpherical(self.m.map(N::from))
+        MonomerShape::NonSpherical(&self.m)
     }
 
     fn hs_diameter<D: DualNum<f64> + Copy>(&self, temperature: D) -> DVector<D> {

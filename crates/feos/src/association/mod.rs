@@ -4,7 +4,7 @@ use crate::hard_sphere::HardSphereProperties;
 use feos_core::parameter::{AssociationParameters, AssociationSite, BinaryParameters};
 use feos_core::{FeosError, FeosResult, StateHD};
 use nalgebra::{DMatrix, DVector};
-use num_dual::linalg::LU;
+use num_dual::linalg::LinAlgError;
 use num_dual::*;
 
 #[cfg(feature = "dft")]
@@ -208,9 +208,12 @@ impl Association {
         let delta_ab_re = delta_ab.map(|d| d.re());
         let delta_cc_re = delta_cc.map(|d| d.re());
         let rho_re = rho.map(|r| r.re());
+        let n = rho.len();
+        let (mut g, mut h) = (DVector::zeros(n), DMatrix::zeros(n, n));
         for k in 0..self.max_iter {
             if Self::newton_step_cross_association(
                 &mut x,
+                (&mut g, &mut h),
                 &delta_ab_re,
                 &delta_cc_re,
                 &rho_re,
@@ -225,8 +228,16 @@ impl Association {
 
         // calculate derivatives
         let mut x_dual = x.map(D::from);
+        let (mut g, mut h) = (DVector::zeros(n), DMatrix::zeros(n, n));
         for _ in 0..D::NDERIV {
-            Self::newton_step_cross_association(&mut x_dual, delta_ab, delta_cc, rho, self.tol)?;
+            Self::newton_step_cross_association(
+                &mut x_dual,
+                (&mut g, &mut h),
+                delta_ab,
+                delta_cc,
+                rho,
+                self.tol,
+            )?;
         }
 
         // save monomer fraction
@@ -236,65 +247,71 @@ impl Association {
 
         // Helmholtz energy density
         let f = |x: D| x.ln() - x * 0.5 + 0.5;
-        Ok(rho.dot(&x_dual.map(f)))
+        Ok(rho
+            .iter()
+            .zip(&x_dual)
+            .fold(D::zero(), |acc, (&rho, &x)| acc + rho * f(x)))
     }
 
+    /// One Newton step for the monomer fractions `x`. `g` and `h` are scratch
+    /// buffers for the gradient and the Hessian, reused across steps.
     fn newton_step_cross_association<D: DualNum<f64> + Copy>(
         x: &mut DVector<D>,
+        (g, h): (&mut DVector<D>, &mut DMatrix<D>),
         delta_ab: &DMatrix<D>,
         delta_cc: &DMatrix<D>,
         rho: &DVector<D>,
         tol: f64,
     ) -> FeosResult<bool> {
         let nassoc = x.len();
-        // gradient
-        let mut g = x.map(|x| x.recip());
-        // Hessian
-        let mut h: DMatrix<D> = DMatrix::zeros(nassoc, nassoc);
+        h.fill(D::zero());
 
-        // split arrays
+        // sites are ordered [A sites, B sites, C sites]
         let (a, b) = delta_ab.shape();
         let (c, _) = delta_cc.shape();
-        let (xa, xc) = x.rows_range_pair(..a + b, a + b..);
-        let (xa, xb) = xa.rows_range_pair(..a, a..);
-        let (rhoa, rhoc) = rho.rows_range_pair(..a + b, a + b..);
-        let (rhoa, rhob) = rhoa.rows_range_pair(..a, a..);
+        let (b0, c0) = (a, a + b);
 
         for i in 0..nassoc {
             // calculate gradients
-            let dnx = if i < a {
-                let d = delta_ab.row(i).transpose();
-                xb.component_mul(&rhob).dot(&d) + 1.0
-            } else if i < a + b {
-                let d = delta_ab.column(i - a);
-                xa.component_mul(&rhoa).dot(&d) + 1.0
+            let dnx = if i < b0 {
+                (0..b).fold(D::zero(), |acc, j| {
+                    acc + x[b0 + j] * rho[b0 + j] * delta_ab[(i, j)]
+                })
+            } else if i < c0 {
+                (0..a).fold(D::zero(), |acc, j| {
+                    acc + x[j] * rho[j] * delta_ab[(j, i - b0)]
+                })
             } else {
-                let d = delta_cc.column(i - a - b);
-                xc.component_mul(&rhoc).dot(&d) + 1.0
-            };
-            g[i] -= dnx;
+                (0..c).fold(D::zero(), |acc, j| {
+                    acc + x[c0 + j] * rho[c0 + j] * delta_cc[(j, i - c0)]
+                })
+            } + 1.0;
+            g[i] = x[i].recip() - dnx;
 
             // approximate hessian
             h[(i, i)] = -dnx / x[i];
-            if i < a {
+            if i < b0 {
                 for j in 0..b {
-                    h[(i, a + j)] = -delta_ab[(i, j)] * rhob[j];
+                    h[(i, b0 + j)] = -delta_ab[(i, j)] * rho[b0 + j];
                 }
-            } else if i < a + b {
+            } else if i < c0 {
                 for j in 0..a {
-                    h[(i, j)] = -delta_ab[(j, i - a)] * rhoa[j];
+                    h[(i, j)] = -delta_ab[(j, i - b0)] * rho[j];
                 }
             } else {
                 for j in 0..c {
-                    h[(i, a + b + j)] -= delta_cc[(i - a - b, j)] * rhoc[j];
+                    h[(i, c0 + j)] -= delta_cc[(i - c0, j)] * rho[c0 + j];
                 }
             }
         }
 
+        // check convergence (before g is overwritten by the Newton step)
+        let converged = g.iter().map(|g| g.re().powi(2)).sum::<f64>().sqrt() < tol;
+
         // Newton step
         // avoid stepping to negative values for x (see Michelsen 2006)
-        let delta_x = LU::new(h)?.solve(&g);
-        x.iter_mut().zip(&delta_x).for_each(|(x, &delta_x)| {
+        solve_in_place(h, g)?;
+        x.iter_mut().zip(g.iter()).for_each(|(x, &delta_x)| {
             if delta_x.re() < x.re() * 0.8 {
                 *x -= delta_x
             } else {
@@ -302,9 +319,56 @@ impl Association {
             }
         });
 
-        // check convergence
-        Ok(g.map(|g| g.re()).norm() < tol)
+        Ok(converged)
     }
+}
+
+/// Solve $Ax=b$ in place: `b` is overwritten with $x$ and `a` with its LU factors.
+///
+/// Gaussian elimination with partial pivoting, performing the same operations
+/// as [num_dual::linalg::LU] (row swaps are applied to `b` directly instead of
+/// being recorded in a permutation vector), but without allocating.
+fn solve_in_place<D: DualNum<f64> + Copy>(
+    a: &mut DMatrix<D>,
+    b: &mut DVector<D>,
+) -> Result<(), LinAlgError> {
+    let n = b.len();
+    for i in 0..n {
+        let mut max_a = 0.0;
+        let mut imax = i;
+        for k in i..n {
+            let abs_a = a[(k, i)].re().abs();
+            if abs_a > max_a {
+                max_a = abs_a;
+                imax = k;
+            }
+        }
+        if max_a == 0.0 {
+            return Err(LinAlgError());
+        }
+        if imax != i {
+            a.swap_rows(i, imax);
+            b.swap_rows(i, imax);
+        }
+        for j in i + 1..n {
+            a[(j, i)] = a[(j, i)] / a[(i, i)];
+            for k in i + 1..n {
+                a[(j, k)] = a[(j, k)] - a[(j, i)] * a[(i, k)];
+            }
+        }
+    }
+    for i in 0..n {
+        for k in 0..i {
+            b[i] = b[i] - a[(i, k)] * b[k];
+        }
+    }
+    for i in (0..n).rev() {
+        for k in i + 1..n {
+            b[i] = b[i] - a[(i, k)] * b[k];
+        }
+        b[i] /= a[(i, i)];
+    }
+    Ok(())
 }
 
 #[cfg(test)]

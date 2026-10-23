@@ -1,5 +1,4 @@
 use super::PcSaftPars;
-use crate::hard_sphere::HardSphereProperties;
 use feos_core::StateHD;
 use num_dual::DualNum;
 use std::f64::consts::PI;
@@ -62,22 +61,24 @@ pub const B2: [f64; 7] = [
 pub struct Dispersion;
 
 impl Dispersion {
+    /// `eta` is the packing fraction $\zeta_3$, shared with the other contributions.
     pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
         &self,
         parameters: &PcSaftPars,
         state: &StateHD<D>,
+        eta: D,
     ) -> D {
         // auxiliary variables
         let n = parameters.m.len();
         let p = parameters;
         let rho = &state.partial_density;
 
-        // packing fraction
-        let m = p.m.map(D::from);
-        let [eta] = parameters.zeta(state.temperature, &state.partial_density, [3]);
-
         // mean segment number
-        let m = state.molefracs.dot(&m);
+        let m = state
+            .molefracs
+            .iter()
+            .zip(&p.m)
+            .fold(D::zero(), |acc, (&x, &m)| acc + x * m);
 
         // inverse temperature
         let t_inv = state.temperature.recip();
@@ -118,13 +119,19 @@ impl Dispersion {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
+    use crate::hard_sphere::HardSphere;
     use crate::pcsaft::parameters::utils::{
         butane_parameters, propane_butane_parameters, propane_parameters,
     };
     use approx::assert_relative_eq;
     use nalgebra::dvector;
+
+    pub(crate) fn a_disp(p: &PcSaftPars, s: &StateHD<f64>) -> f64 {
+        let (_, zeta, _) = HardSphere.helmholtz_energy_density_and_properties(p, s);
+        Dispersion.helmholtz_energy_density(p, s, zeta[3])
+    }
 
     #[test]
     fn helmholtz_energy() {
@@ -133,7 +140,7 @@ mod tests {
         let v = 1000.0;
         let n = 1.0;
         let s = StateHD::new(t, v, &dvector![n]);
-        let a_rust = Dispersion.helmholtz_energy_density(params, &s) * v;
+        let a_rust = a_disp(params, &s) * v;
         assert_relative_eq!(a_rust, -1.0622531100351962, epsilon = 1e-10);
     }
 
@@ -146,12 +153,12 @@ mod tests {
         let v = 1000.0;
         let n = 1.0;
         let s = StateHD::new(t, v, &dvector![n]);
-        let a1 = Dispersion.helmholtz_energy_density(propane, &s);
-        let a2 = Dispersion.helmholtz_energy_density(butane, &s);
+        let a1 = a_disp(propane, &s);
+        let a2 = a_disp(butane, &s);
         let s1m = StateHD::new(t, v, &dvector![n, 0.0]);
-        let a1m = Dispersion.helmholtz_energy_density(mix, &s1m);
+        let a1m = a_disp(mix, &s1m);
         let s2m = StateHD::new(t, v, &dvector![0.0, n]);
-        let a2m = Dispersion.helmholtz_energy_density(mix, &s2m);
+        let a2m = a_disp(mix, &s2m);
         assert_relative_eq!(a1, a1m, epsilon = 1e-14);
         assert_relative_eq!(a2, a2m, epsilon = 1e-14);
     }

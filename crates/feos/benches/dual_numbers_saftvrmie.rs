@@ -23,7 +23,7 @@ fn state_saftvrmie(n: usize, eos: &SaftVRMie) -> State<&SaftVRMie> {
     State::new_nvt(
         &eos,
         temperature,
-        cp.volume().unwrap(),
+        10.0 * MOL / cp.density,
         &(molefracs * 10. * MOL),
     )
     .unwrap()

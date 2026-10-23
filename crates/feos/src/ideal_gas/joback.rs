@@ -382,16 +382,7 @@ pub mod test_ad {
             D::from(1.0)
         }
 
-        fn reduced_helmholtz_energy_density_contributions(
-            &self,
-            _: &StateHD<D, U1>,
-        ) -> Vec<(&'static str, D)> {
-            vec![]
-        }
-
-        fn reduced_residual_helmholtz_energy_density(&self, _: &StateHD<D, U1>) -> D {
-            D::from(0.0)
-        }
+        fn for_each_contribution(&self, _: &StateHD<D, U1>, _: impl FnMut(&'static str, D)) {}
     }
 
     #[test]
