@@ -365,7 +365,7 @@ where
     {
         let (f_res, mu_res, dmu_res) = N::hessian(
             |rho, &t| {
-                let state = StateHD::new_density(t, &rho);
+                let state = StateHD::new_density(t, rho);
                 self.lift()
                     .reduced_residual_helmholtz_energy_density(&state)
                     * t
@@ -408,7 +408,7 @@ where
     {
         let (_, _, f_res_t, mu_res_t) = N::partial_hessian(
             |rho, t, _: &()| {
-                let state = StateHD::new_density(t, &rho);
+                let state = StateHD::new_density(t, rho);
                 self.lift()
                     .reduced_residual_helmholtz_energy_density(&state)
                     * t
