@@ -23,7 +23,7 @@ pub struct Properties<D> {
     k0: [D; 4],
 }
 
-impl<D: DualNum<f64> + Copy + Zero> Properties<D> {
+impl<D: DualNum<Primitive = f64> + Copy + Zero> Properties<D> {
     pub(super) fn new(
         parameters: &SaftVRMiePars,
         state: &StateHD<D>,
@@ -99,7 +99,7 @@ pub(super) const PHI: [[f64; 7]; 6] = [
 ];
 
 /// First, second and third order perturbations for dispersive interactions
-pub fn helmholtz_energy_density_disp<D: DualNum<f64> + Copy>(
+pub fn helmholtz_energy_density_disp<D: DualNum<Primitive = f64> + Copy>(
     parameters: &SaftVRMiePars,
     properties: &Properties<D>,
     state: &StateHD<D>,
@@ -195,7 +195,7 @@ pub fn helmholtz_energy_density_disp<D: DualNum<f64> + Copy>(
 }
 
 /// Combine dispersion and chain contributions
-pub fn helmholtz_energy_density_disp_chain<D: DualNum<f64> + Copy>(
+pub fn helmholtz_energy_density_disp_chain<D: DualNum<Primitive = f64> + Copy>(
     parameters: &SaftVRMiePars,
     properties: &Properties<D>,
     state: &StateHD<D>,
@@ -334,7 +334,7 @@ pub fn helmholtz_energy_density_disp_chain<D: DualNum<f64> + Copy>(
 }
 
 #[inline]
-pub(super) fn zeta_eff<D: DualNum<f64> + Copy>(zeta: D, lambda: f64) -> D {
+pub(super) fn zeta_eff<D: DualNum<Primitive = f64> + Copy>(zeta: D, lambda: f64) -> D {
     let li = 1. / lambda;
     let li2 = li * li;
     let li3 = li * li2;
@@ -350,14 +350,14 @@ pub(super) fn zeta_eff<D: DualNum<f64> + Copy>(zeta: D, lambda: f64) -> D {
 
 /// Sutherland potential for mixtures (Eq. A 16) divided by 2 PI rho_s d_ij^3 epsilon_k_ij
 #[inline]
-fn a1s_ij<D: DualNum<f64> + Copy>(zeta_x: D, lambda: f64) -> D {
+fn a1s_ij<D: DualNum<Primitive = f64> + Copy>(zeta_x: D, lambda: f64) -> D {
     let zeta_eff = zeta_eff(zeta_x, lambda);
     -(-zeta_eff * 0.5 + 1.0) / ((-zeta_eff + 1.0).powi(3) * (lambda - 3.0))
 }
 
 /// Eq. A 12 of Lafitte divided by 2 PI rho_s d_ij^3 epsilon_k_ij
 #[inline]
-fn b_ij<D: DualNum<f64> + Copy>(zeta_x: D, x0: D, lambda: f64) -> D {
+fn b_ij<D: DualNum<Primitive = f64> + Copy>(zeta_x: D, x0: D, lambda: f64) -> D {
     let x0_3ml = x0.powf(3.0 - lambda);
     let i = -(x0_3ml - 1.0) / (lambda - 3.0);
     let j = -(x0.powf(4.0 - lambda) * (lambda - 3.0) - x0_3ml * (lambda - 4.0) - 1.0)
@@ -367,7 +367,7 @@ fn b_ij<D: DualNum<f64> + Copy>(zeta_x: D, x0: D, lambda: f64) -> D {
 
 /// Calculates x0^l (a1s_ij + b_ij) without prefactor C
 #[inline]
-fn a1s_b_ij<D: DualNum<f64> + Copy>(zeta_x: D, x0: D, lambda: f64) -> D {
+fn a1s_b_ij<D: DualNum<Primitive = f64> + Copy>(zeta_x: D, x0: D, lambda: f64) -> D {
     x0.powf(lambda) * (a1s_ij(zeta_x, lambda) + b_ij(zeta_x, x0, lambda))
 }
 

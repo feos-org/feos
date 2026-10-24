@@ -24,7 +24,7 @@ impl<'a> FunctionalContribution for NonAddHardSphereFunctional<'a> {
         "Non-additive hard-sphere functional"
     }
 
-    fn weight_functions<N: DualNum<f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
+    fn weight_functions<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
         let p = &self.parameters;
         let r = p.hs_diameter(temperature) * N::from(0.5);
         WeightFunctionInfo::new(DVector::from_fn(r.len(), |i, _| i), false)
@@ -50,7 +50,7 @@ impl<'a> FunctionalContribution for NonAddHardSphereFunctional<'a> {
             )
     }
 
-    fn helmholtz_energy_density<N: DualNum<f64> + Copy>(
+    fn helmholtz_energy_density<N: DualNum<Primitive = f64> + Copy>(
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
@@ -143,7 +143,7 @@ impl<'a> FunctionalContribution for NonAddHardSphereFunctional<'a> {
     }
 }
 
-pub fn non_additive_hs_energy_density<S, N: DualNum<f64> + Copy>(
+pub fn non_additive_hs_energy_density<S, N: DualNum<Primitive = f64> + Copy>(
     parameters: &SaftVRQMiePars,
     d_hs_ij: &Array2<N>,
     d_hs_add_ij: &Array2<N>,

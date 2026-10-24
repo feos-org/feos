@@ -12,7 +12,7 @@ const QE: f64 = 1.602176634e-19f64;
 const BOLTZMANN: f64 = 1.380649e-23;
 
 impl ElectrolytePcSaftPars {
-    pub fn bjerrum_length<D: DualNum<f64> + Copy>(
+    pub fn bjerrum_length<D: DualNum<Primitive = f64> + Copy>(
         &self,
         state: &StateHD<D>,
         epcsaft_variant: ElectrolytePcSaftVariants,
@@ -36,7 +36,7 @@ impl ElectrolytePcSaftPars {
 pub struct Ionic;
 
 impl Ionic {
-    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<Primitive = f64> + Copy>(
         &self,
         parameters: &ElectrolytePcSaftPars,
         state: &StateHD<D>,

@@ -9,7 +9,7 @@ use std::f64::consts::PI;
 pub struct NonAddHardSphere;
 
 impl NonAddHardSphere {
-    pub fn helmholtz_energy_density<D: DualNum<f64> + Copy>(
+    pub fn helmholtz_energy_density<D: DualNum<Primitive = f64> + Copy>(
         &self,
         parameters: &SaftVRQMiePars,
         state: &StateHD<D>,
@@ -27,7 +27,7 @@ impl NonAddHardSphere {
     }
 }
 
-pub fn reduced_non_additive_hs_energy<D: DualNum<f64> + Copy>(
+pub fn reduced_non_additive_hs_energy<D: DualNum<Primitive = f64> + Copy>(
     parameters: &SaftVRQMiePars,
     d_hs_ij: &DMatrix<D>,
     d_hs_add_ij: &DMatrix<D>,

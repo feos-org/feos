@@ -1,16 +1,19 @@
 use crate::adsorption::FluidParameters;
 use crate::functional::HelmholtzEnergyFunctional;
 use crate::geometry::{Axis, Grid};
-use crate::profile::{CUTOFF_RADIUS, DFTProfile, MAX_POTENTIAL};
+use crate::profile::DFTProfile;
 use crate::solver::DFTSolver;
 use feos_core::{Contributions, FeosResult, ReferenceSystem, State};
 use ndarray::Zip;
 use ndarray::prelude::*;
 use quantity::{Energy, Length, MolarEnergy, Moles};
 
+const CUTOFF_RADIUS: f64 = 14.0;
+
 /// Density profile and properties of a solute in a inhomogeneous bulk fluid.
 pub struct SolvationProfile<F: HelmholtzEnergyFunctional> {
     pub profile: DFTProfile<Ix3, F>,
+    pub bulk: State<F>,
     pub grand_potential: Option<Energy>,
     pub solvation_free_energy: Option<MolarEnergy>,
 }
@@ -18,7 +21,7 @@ pub struct SolvationProfile<F: HelmholtzEnergyFunctional> {
 impl<F: HelmholtzEnergyFunctional> SolvationProfile<F> {
     pub fn solve_inplace(&mut self, solver: Option<&DFTSolver>, debug: bool) -> FeosResult<()> {
         // Solve the profile
-        self.profile.solve(solver, debug)?;
+        self.profile.solve([&mut self.bulk], solver, debug)?;
 
         // calculate grand potential density
         let omega = self.profile.grand_potential()?;
@@ -26,7 +29,7 @@ impl<F: HelmholtzEnergyFunctional> SolvationProfile<F> {
 
         // calculate solvation free energy
         self.solvation_free_energy = Some(
-            (omega + self.profile.bulk.pressure(Contributions::Total) * self.profile.volume())
+            (omega + self.bulk.pressure(Contributions::Total) * self.profile.volume())
                 / Moles::from_reduced(1.0),
         );
 
@@ -40,7 +43,6 @@ impl<F: HelmholtzEnergyFunctional> SolvationProfile<F> {
 }
 
 impl<F: HelmholtzEnergyFunctional + FluidParameters> SolvationProfile<F> {
-    #[expect(clippy::too_many_arguments)]
     pub fn new(
         bulk: &State<F>,
         n_grid: [usize; 3],
@@ -49,7 +51,6 @@ impl<F: HelmholtzEnergyFunctional + FluidParameters> SolvationProfile<F> {
         epsilon_ss: Array1<f64>,
         system_size: Option<[Length; 3]>,
         cutoff_radius: Option<Length>,
-        potential_cutoff: Option<f64>,
     ) -> FeosResult<Self> {
         let dft: &F = &bulk.eos;
 
@@ -77,9 +78,6 @@ impl<F: HelmholtzEnergyFunctional + FluidParameters> SolvationProfile<F> {
 
         coordinates = coordinates + shift;
 
-        // temperature
-        let t = bulk.temperature.to_reduced();
-
         // calculate external potential
         let external_potential = external_potential_3d(
             dft,
@@ -88,21 +86,19 @@ impl<F: HelmholtzEnergyFunctional + FluidParameters> SolvationProfile<F> {
             sigma_ss,
             epsilon_ss,
             cutoff_radius,
-            potential_cutoff,
-            t,
         )?;
 
         let grid = Grid::Cartesian3(x, y, z);
 
         Ok(Self {
-            profile: DFTProfile::new(grid, bulk, Some(external_potential), None, Some(1)),
+            profile: DFTProfile::from_bulk(grid, bulk, Some(&external_potential)),
+            bulk: bulk.clone(),
             grand_potential: None,
             solvation_free_energy: None,
         })
     }
 }
 
-#[expect(clippy::too_many_arguments)]
 fn external_potential_3d<F: HelmholtzEnergyFunctional + FluidParameters>(
     functional: &F,
     axis: [&Axis; 3],
@@ -110,9 +106,7 @@ fn external_potential_3d<F: HelmholtzEnergyFunctional + FluidParameters>(
     sigma_ss: Array1<f64>,
     epsilon_ss: Array1<f64>,
     cutoff_radius: Option<Length>,
-    potential_cutoff: Option<f64>,
-    reduced_temperature: f64,
-) -> FeosResult<Array4<f64>> {
+) -> FeosResult<Energy<Array4<f64>>> {
     // allocate external potential
     let m = functional.m();
     let mut external_potential = Array4::zeros((
@@ -150,17 +144,9 @@ fn external_potential_3d<F: HelmholtzEnergyFunctional + FluidParameters>(
                 )
             })
             .sum::<f64>()
-            / reduced_temperature
     });
 
-    let potential_cutoff = potential_cutoff.unwrap_or(MAX_POTENTIAL);
-    external_potential.map_inplace(|x| {
-        if *x > potential_cutoff {
-            *x = potential_cutoff
-        }
-    });
-
-    Ok(external_potential)
+    Ok(Energy::from_reduced(external_potential))
 }
 
 /// Evaluate LJ12-6 potential between solid site "alpha" and fluid segment

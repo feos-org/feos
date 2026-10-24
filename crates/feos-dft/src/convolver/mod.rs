@@ -1,10 +1,8 @@
 use crate::geometry::{Axis, Geometry, Grid};
 use crate::weight_functions::*;
-use ndarray::linalg::Dot;
 use ndarray::prelude::*;
 use ndarray::{Axis as Axis_nd, RemoveAxis, Slice};
 use num_dual::*;
-use num_traits::Zero;
 use rustdct::DctNum;
 use std::ops::{AddAssign, MulAssign, SubAssign};
 use std::sync::Arc;
@@ -34,46 +32,6 @@ pub trait Convolver<T, D: Dimension>: Send + Sync {
         &self,
         partial_derivatives: &[Array<T, D::Larger>],
     ) -> Array<T, D::Larger>;
-}
-
-pub(crate) struct BulkConvolver<T> {
-    weight_constants: Vec<Array2<T>>,
-}
-
-impl<T: DualNum<f64> + Copy + Send + Sync> BulkConvolver<T> {
-    #[expect(clippy::new_ret_no_self)]
-    pub(crate) fn new(weight_functions: Vec<WeightFunctionInfo<T>>) -> Arc<dyn Convolver<T, Ix0>> {
-        let weight_constants = weight_functions
-            .into_iter()
-            .map(|w| w.weight_constants(Zero::zero(), 0))
-            .collect();
-        Arc::new(Self { weight_constants })
-    }
-}
-
-impl<T: DualNum<f64> + Copy + Send + Sync> Convolver<T, Ix0> for BulkConvolver<T>
-where
-    Array2<T>: Dot<Array1<T>, Output = Array1<T>>,
-{
-    fn convolve(&self, _: Array0<T>, _: &WeightFunction<T>) -> Array0<T> {
-        unreachable!()
-    }
-
-    fn weighted_densities(&self, density: &Array1<T>) -> Vec<Array1<T>> {
-        self.weight_constants
-            .iter()
-            .map(|w| w.dot(density))
-            .collect()
-    }
-
-    fn functional_derivative(&self, partial_derivatives: &[Array1<T>]) -> Array1<T> {
-        self.weight_constants
-            .iter()
-            .zip(partial_derivatives.iter())
-            .map(|(w, pd)| pd.dot(w))
-            .reduce(|a, b| a + b)
-            .unwrap()
-    }
 }
 
 /// Base structure to hold either information about the weight function through
@@ -125,23 +83,25 @@ pub struct ConvolverFFT<T, D: Dimension> {
     cartesian_transforms: Vec<CartesianTransform<T>>,
 }
 
-impl<T, D: Dimension + RemoveAxis + 'static> ConvolverFFT<T, D>
+impl<T, D: Dimension + 'static> ConvolverFFT<T, D>
 where
-    T: DctNum + DualNum<f64>,
+    T: DctNum + DualNum<Primitive = f64>,
     D::Larger: Dimension<Smaller = D>,
-    D::Smaller: Dimension<Larger = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
     /// Create the appropriate FFT convolver for the given grid.
     pub fn plan(
         grid: &Grid,
         weight_functions: &[WeightFunctionInfo<T>],
-        lanczos: Option<i32>,
     ) -> Arc<dyn Convolver<T, D>> {
+        // For consistency, we always use an exponent of 1.
+        let lanczos = Some(1);
         match grid {
+            Grid::Bulk => PeriodicConvolver::new_0d(weight_functions),
             Grid::Polar(r) => CurvilinearConvolver::new(r, &[], weight_functions, lanczos),
             Grid::Spherical(r) => CurvilinearConvolver::new(r, &[], weight_functions, lanczos),
             Grid::Cartesian1(z) => Self::new(Some(z), &[], weight_functions, lanczos),
+            Grid::Periodical1(z) => PeriodicConvolver::new_1d(z, weight_functions, lanczos),
             Grid::Cylindrical { r, z } => {
                 CurvilinearConvolver::new(r, &[z], weight_functions, lanczos)
             }
@@ -159,7 +119,7 @@ where
 
 impl<T, D: Dimension + 'static> ConvolverFFT<T, D>
 where
-    T: DctNum + DualNum<f64>,
+    T: DctNum + DualNum<Primitive = f64>,
     D::Larger: Dimension<Smaller = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
@@ -278,7 +238,7 @@ where
 
 impl<T, D: Dimension> ConvolverFFT<T, D>
 where
-    T: DctNum + DualNum<f64>,
+    T: DctNum + DualNum<Primitive = f64>,
     D::Larger: Dimension<Smaller = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
@@ -370,7 +330,7 @@ where
 
 impl<T, D: Dimension> Convolver<T, D> for ConvolverFFT<T, D>
 where
-    T: DctNum + DualNum<f64>,
+    T: DctNum + DualNum<Primitive = f64>,
     D::Larger: Dimension<Smaller = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
@@ -553,11 +513,10 @@ struct CurvilinearConvolver<T, D> {
     convolver_boundary: Arc<dyn Convolver<T, D>>,
 }
 
-impl<T, D: Dimension + RemoveAxis + 'static> CurvilinearConvolver<T, D>
+impl<T, D: Dimension + 'static> CurvilinearConvolver<T, D>
 where
-    T: DctNum + DualNum<f64>,
+    T: DctNum + DualNum<Primitive = f64>,
     D::Larger: Dimension<Smaller = D>,
-    D::Smaller: Dimension<Larger = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
     #[expect(clippy::new_ret_no_self)]
@@ -574,10 +533,9 @@ where
     }
 }
 
-impl<T, D: Dimension + RemoveAxis> Convolver<T, D> for CurvilinearConvolver<T, D>
+impl<T, D: Dimension> Convolver<T, D> for CurvilinearConvolver<T, D>
 where
-    T: DctNum + DualNum<f64>,
-    D::Smaller: Dimension<Larger = D>,
+    T: DctNum + DualNum<Primitive = f64>,
     D::Larger: Dimension<Smaller = D>,
 {
     fn convolve(
@@ -587,9 +545,9 @@ where
     ) -> Array<T, D> {
         // subtract boundary profile from full profile
         let profile_boundary = profile
-            .index_axis(Axis(0), profile.shape()[0] - 1)
+            .slice_axis(Axis(0), Slice::from(profile.shape()[0] - 1..))
             .into_owned();
-        for mut lane in profile.outer_iter_mut() {
+        for mut lane in profile.axis_chunks_iter_mut(Axis(0), 1) {
             lane.sub_assign(&profile_boundary);
         }
 
@@ -597,14 +555,12 @@ where
         let mut result = self.convolver.convolve(profile, weight_function);
 
         // convolve boundary profile
-        let profile_boundary = profile_boundary.insert_axis(Axis(0));
         let result_boundary = self
             .convolver_boundary
             .convolve(profile_boundary, weight_function);
 
         // Add boundary result back to full result
-        let result_boundary = result_boundary.index_axis(Axis(0), 0);
-        for mut lane in result.outer_iter_mut() {
+        for mut lane in result.axis_chunks_iter_mut(Axis(0), 1) {
             lane.add_assign(&result_boundary);
         }
         result

@@ -90,4 +90,5 @@ eos = feos.EquationOfState.pcsaft(pc_saft_parameters).joback(joback_parameters)
     StateVec
     PhaseEquilibrium
     PhaseDiagram
+    PhaseDiagramHetero
 ```
