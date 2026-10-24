@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Fixed
+- Fixed `State::critical_point_binary` at fixed pressure, which evaluated the pressure at the wrong volume and never converged. [#402](https://github.com/feos-org/feos/pull/402)
+- Fixed `PhaseEquilibrium::tp_flash` with an initial state returning the previous phase split if only the feed composition changes. [#402](https://github.com/feos-org/feos/pull/402)
+- Fixed implicit derivatives in `State::new_nph`, `new_nps`, `new_nth`, `new_nts`, and `new_nvu` being lost if the initial guess is already converged.
+- Fixed `State::residual_chemical_potential_contributions` passing the temperature as molar volume. [#402](https://github.com/feos-org/feos/pull/402)
+- Fixed duplicate point in `PhaseDiagram::dew_point_line`. [#402](https://github.com/feos-org/feos/pull/402)
 
 ## [0.10.4] - 2026-10-21
 ### Fixed

@@ -125,3 +125,33 @@ fn test_tp_flash_acceleration() -> FeosResult<()> {
     assert!((vle.vapor().molefracs[0] - vle.liquid().molefracs[0]).abs() > 0.1);
     Ok(())
 }
+
+#[test]
+fn test_tp_flash_initial_state_new_feed() -> FeosResult<()> {
+    let eos = PcSaft::new(PcSaftParameters::from_json(
+        vec!["propane", "n-butane", "pentane"],
+        "../../parameters/pcsaft/esper2023.json",
+        Some("../../parameters/pcsaft/rehner2023_binary.json"),
+        IdentifierOption::Name,
+    )?);
+    let (t, p) = (300.0 * KELVIN, 4.0 * BAR);
+    let options = SolverOptions::new().tol(1e-12);
+    let mut vle: Option<PhaseEquilibrium<_, 2>> = None;
+    for z1 in [0.4, 0.5, 0.6, 0.7] {
+        let z = dvector![z1, 0.5 * (1.0 - z1), 0.5 * (1.0 - z1)];
+        let cold = PhaseEquilibrium::tp_flash(&&eos, t, p, &z, None, options, None)?;
+        let warm = PhaseEquilibrium::tp_flash(&&eos, t, p, &z, vle.as_ref(), options, None)?;
+        assert_relative_eq!(
+            warm.vapor_phase_fraction(),
+            cold.vapor_phase_fraction(),
+            max_relative = 1e-8
+        );
+        assert_relative_eq!(
+            warm.liquid().molefracs[0],
+            cold.liquid().molefracs[0],
+            max_relative = 1e-8
+        );
+        vle = Some(warm);
+    }
+    Ok(())
+}

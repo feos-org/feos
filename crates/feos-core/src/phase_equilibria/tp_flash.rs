@@ -127,16 +127,17 @@ where
     ) -> FeosResult<PhaseEquilibrium<E, 2, N>> {
         // initialization
         if let Some(initial_state) = initial_state {
+            // the feed may have changed: split it with the old K values
             let mut init = initial_state.clone();
-            init.update_states(
-                self,
-                initial_state.vapor().molefracs.clone(),
-                initial_state.liquid().molefracs.clone(),
-                initial_state.vapor_phase_fraction(),
-            )?;
-            let vle = self.tp_flash_(init, options, non_volatile_components.clone());
-            if vle.is_ok() {
-                return vle;
+            let k = initial_state
+                .vapor()
+                .molefracs
+                .component_div(&initial_state.liquid().molefracs);
+            if init.rachford_rice_inplace(self, &k).is_ok() {
+                let vle = self.tp_flash_(init, options, non_volatile_components.clone());
+                if vle.is_ok() {
+                    return vle;
+                }
             }
         }
 

@@ -1,7 +1,7 @@
 use approx::assert_relative_eq;
 use feos::pcsaft::{PcSaft, PcSaftParameters};
-use feos_core::parameter::IdentifierOption;
 use feos_core::DensityInitialization::{Liquid, Vapor};
+use feos_core::parameter::IdentifierOption;
 use feos_core::{Contributions, PhaseEquilibrium, Residual, State};
 use nalgebra::dvector;
 use quantity::*;
@@ -81,5 +81,20 @@ fn test_henrys_law_constant_mixed_solvent() -> Result<(), Box<dyn Error>> {
     let vle = PhaseEquilibrium::bubble_point(&eos, t, &z, None, None, Default::default())?;
     let h_lim = vle.vapor().pressure(Contributions::Total) * vle.vapor().molefracs[0] / x1;
     assert_relative_eq!(h, h_lim, max_relative = 1e-6);
+    Ok(())
+}
+
+#[test]
+fn test_residual_chemical_potential_contributions() -> Result<(), Box<dyn Error>> {
+    let eos = esper2023(vec!["ethanol", "water"])?;
+    let s = State::new_npt(&&eos, 300.0 * KELVIN, BAR, dvector![0.3, 0.7], Some(Liquid))?;
+    let mu_res = s.residual_chemical_potential();
+    for i in 0..2 {
+        let mu_i = s
+            .residual_chemical_potential_contributions(i)
+            .into_iter()
+            .fold(0.0 * JOULE / MOL, |acc, (_, mu)| acc + mu);
+        assert_relative_eq!(mu_i, mu_res.get(i), max_relative = 1e-10);
+    }
     Ok(())
 }

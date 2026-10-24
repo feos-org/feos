@@ -1,7 +1,7 @@
 use approx::assert_relative_eq;
 use feos::pcsaft::{PcSaft, PcSaftParameters};
 use feos_core::parameter::IdentifierOption;
-use feos_core::{SolverOptions, State};
+use feos_core::{Contributions, SolverOptions, State};
 use nalgebra::dvector;
 use quantity::*;
 use std::error::Error;
@@ -73,5 +73,31 @@ fn test_critical_point_limits() -> Result<(), Box<dyn Error>> {
     assert_eq!(cp_pure[0].density, cp_1.density);
     assert_eq!(cp_pure[1].temperature, cp_2.temperature);
     assert_eq!(cp_pure[1].density, cp_2.density);
+    Ok(())
+}
+
+#[test]
+fn test_critical_point_binary_pressure() -> Result<(), Box<dyn Error>> {
+    let eos = PcSaft::new(PcSaftParameters::from_json(
+        vec!["methane", "propane"],
+        "../../parameters/pcsaft/esper2023.json",
+        Some("../../parameters/pcsaft/rehner2023_binary.json"),
+        IdentifierOption::Name,
+    )?);
+    let options = SolverOptions::default();
+    let cp_t = State::critical_point_binary(&&eos, 250.0 * KELVIN, None, None, None, options)?;
+    let p = cp_t.pressure(Contributions::Total);
+    let x = cp_t.molefracs[0];
+    let cp_p = State::critical_point_binary(
+        &&eos,
+        p,
+        Some(cp_t.temperature),
+        Some([x, 1.0 - x]),
+        Some(cp_t.density),
+        options,
+    )?;
+    assert_relative_eq!(cp_p.temperature, cp_t.temperature, max_relative = 1e-8);
+    assert_relative_eq!(cp_p.molefracs[0], x, max_relative = 1e-6);
+    assert_relative_eq!(cp_p.density, cp_t.density, max_relative = 1e-6);
     Ok(())
 }
