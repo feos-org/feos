@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.10.5] - 2026-10-24
 ### Fixed
 - Fixed `State::critical_point_binary` at fixed pressure, which evaluated the pressure at the wrong volume and never converged. [#402](https://github.com/feos-org/feos/pull/402)
 - Fixed `PhaseEquilibrium::tp_flash` with an initial state returning the previous phase split if only the feed composition changes. [#402](https://github.com/feos-org/feos/pull/402)
