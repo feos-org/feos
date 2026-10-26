@@ -72,26 +72,25 @@ impl ResidualDyn for SaftVRMie {
         (msigma3.map(D::from).dot(molefracs) * FRAC_PI_6).recip() * self.options.max_eta
     }
 
-    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
+    fn for_each_contribution<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
-    ) -> Vec<(&'static str, D)> {
-        let mut a = Vec::with_capacity(4);
-
+        mut f: impl FnMut(&'static str, D),
+    ) {
         let (a_hs, _, d) = HardSphere.helmholtz_energy_density_and_properties(&self.params, state);
-        a.push(("Hard Sphere", a_hs));
+        f("Hard Sphere", a_hs);
 
         let properties = Properties::new(&self.params, state, &d);
         if self.chain {
             let a_disp_chain =
                 helmholtz_energy_density_disp_chain(&self.params, &properties, state);
-            a.push(("Dispersion + Chain", a_disp_chain));
+            f("Dispersion + Chain", a_disp_chain);
         } else {
             let a_disp = helmholtz_energy_density_disp(&self.params, &properties, state);
-            a.push(("Dispersion", a_disp));
+            f("Dispersion", a_disp);
         }
         if let Some(assoc) = self.association.as_ref() {
-            a.push((
+            f(
                 "Association",
                 assoc.helmholtz_energy_density(
                     &self.params,
@@ -99,9 +98,8 @@ impl ResidualDyn for SaftVRMie {
                     state,
                     &d,
                 ),
-            ));
+            );
         }
-        a
     }
 }
 

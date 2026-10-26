@@ -113,9 +113,6 @@ fn bench_states<E: Residual>(c: &mut Criterion, group_name: &str, eos: &E) {
         group.bench_function("critical_point_binary_t", |b| {
             b.iter(|| critical_point_binary((eos, crit.temperature)))
         });
-        group.bench_function("critical_point_binary_p", |b| {
-            b.iter(|| critical_point_binary((eos, crit.pressure(Contributions::Total))))
-        });
     }
     if ncomponents != 1 {
         group.bench_function("tp_flash", |b| {

@@ -82,17 +82,16 @@ where
 {
     /// Create a new `StateHD` for given temperature, volume and composition.
     pub fn new(temperature: D, volume: D, moles: &OVector<D, N>) -> Self {
-        Self::new_density(temperature, &(moles / volume))
+        Self::new_density(temperature, moles / volume)
     }
 
     /// Create a new `StateHD` for given temperature and partial densities
-    pub fn new_density(temperature: D, partial_density: &OVector<D, N>) -> Self {
-        let molefracs = partial_density / partial_density.sum();
-
+    pub fn new_density(temperature: D, partial_density: OVector<D, N>) -> Self {
+        let molefracs = &partial_density / partial_density.sum();
         Self {
             temperature,
             molefracs,
-            partial_density: partial_density.clone(),
+            partial_density,
         }
     }
 

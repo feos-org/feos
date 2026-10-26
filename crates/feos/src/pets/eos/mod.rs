@@ -98,20 +98,19 @@ impl ResidualDyn for Pets {
             / FRAC_PI_6
     }
 
-    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
+    fn for_each_contribution<D: DualNum<f64> + Copy>(
         &self,
         state: &feos_core::StateHD<D>,
-    ) -> Vec<(&'static str, D)> {
-        vec![
-            (
-                "Hard Sphere",
-                HardSphere.helmholtz_energy_density(self, state),
-            ),
-            (
-                "Dispersion",
-                self.dispersion_helmholtz_energy_density(state),
-            ),
-        ]
+        mut f: impl FnMut(&'static str, D),
+    ) {
+        f(
+            "Hard Sphere",
+            HardSphere.helmholtz_energy_density(self, state),
+        );
+        f(
+            "Dispersion",
+            self.dispersion_helmholtz_energy_density(state),
+        )
     }
 }
 

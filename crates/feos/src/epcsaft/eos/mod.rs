@@ -105,29 +105,29 @@ impl ResidualDyn for ElectrolytePcSaft {
         (msigma3.map(D::from).dot(molefracs) * FRAC_PI_6).recip() * self.options.max_eta
     }
 
-    fn reduced_helmholtz_energy_density_contributions<D: DualNum<f64> + Copy>(
+    fn for_each_contribution<D: DualNum<f64> + Copy>(
         &self,
         state: &StateHD<D>,
-    ) -> Vec<(&'static str, D)> {
-        let mut v = Vec::with_capacity(7);
+        mut f: impl FnMut(&'static str, D),
+    ) {
         let d = self.params.hs_diameter(state.temperature);
 
-        v.push((
+        f(
             "Hard Sphere",
             HardSphere.helmholtz_energy_density(&self.params, state),
-        ));
+        );
         if self.hard_chain {
-            v.push((
+            f(
                 "Hard Chain",
                 HardChain.helmholtz_energy_density(&self.params, state),
-            ))
+            )
         }
-        v.push((
+        f(
             "Dispersion",
             Dispersion.helmholtz_energy_density(&self.params, state, &d),
-        ));
+        );
         if let Some(association) = self.association.as_ref() {
-            v.push((
+            f(
                 "Association",
                 association.helmholtz_energy_density(
                     &self.params,
@@ -135,10 +135,10 @@ impl ResidualDyn for ElectrolytePcSaft {
                     state,
                     &d,
                 ),
-            ))
+            )
         }
         if self.ionic {
-            v.push((
+            f(
                 "Ionic",
                 Ionic.helmholtz_energy_density(
                     &self.params,
@@ -146,15 +146,14 @@ impl ResidualDyn for ElectrolytePcSaft {
                     &d,
                     self.options.epcsaft_variant,
                 ),
-            ))
+            )
         };
         if self.born {
-            v.push((
+            f(
                 "Born",
                 Born.helmholtz_energy_density(&self.params, state, &d),
-            ))
+            )
         };
-        v
     }
 }
 

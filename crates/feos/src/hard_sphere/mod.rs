@@ -17,7 +17,7 @@ pub enum MonomerShape<'a, D> {
     Spherical(usize),
     /// For non-spherical molecules in a homosegmented approach, the
     /// chain length parameter $m$.
-    NonSpherical(DVector<D>),
+    NonSpherical(&'a DVector<f64>),
     /// For non-spherical molecules in a heterosegmented approach,
     /// the geometry factors for every segment and the component
     /// index for every segment.
@@ -50,7 +50,10 @@ pub trait HardSphereProperties {
                 let m = DVector::from_element(n, D::from(1.0));
                 [m.clone(), m.clone(), m.clone(), m]
             }
-            MonomerShape::NonSpherical(m) => [m.clone(), m.clone(), m.clone(), m],
+            MonomerShape::NonSpherical(m) => {
+                let m = m.map(D::from);
+                [m.clone(), m.clone(), m.clone(), m]
+            }
             MonomerShape::Heterosegmented(g, _) => g,
         }
     }
@@ -62,20 +65,56 @@ pub trait HardSphereProperties {
         partial_density: &DVector<D>,
         k: [i32; N],
     ) -> [D; N] {
-        let component_index = self.component_index();
-        let geometry_coefficients = self.geometry_coefficients(temperature);
         let diameter = self.hs_diameter(temperature);
-        let mut zeta = [D::zero(); N];
-        for i in 0..diameter.len() {
-            for (z, &k) in zeta.iter_mut().zip(k.iter()) {
-                *z += partial_density[component_index[i]]
-                    * diameter[i].powi(k)
-                    * (geometry_coefficients[k as usize][i] * FRAC_PI_6);
+        weighted_zeta(
+            self.monomer_shape(temperature),
+            &diameter,
+            partial_density,
+            k,
+        )
+    }
+}
+
+/// $\frac{\pi}{6}\sum_\alpha C_{k,\alpha} w_{i(\alpha)}d_\alpha^k$ for every requested $k$,
+/// where the weights $w_i$ are either partial densities or mole fractions.
+///
+/// Matches on the [MonomerShape] directly instead of materializing
+/// [HardSphereProperties::component_index] and
+/// [HardSphereProperties::geometry_coefficients], which would allocate.
+#[inline]
+fn weighted_zeta<D: DualNum<f64> + Copy, const N: usize>(
+    monomer_shape: MonomerShape<'_, D>,
+    diameter: &DVector<D>,
+    weights: &DVector<D>,
+    k: [i32; N],
+) -> [D; N] {
+    let mut zeta = [D::zero(); N];
+    match monomer_shape {
+        MonomerShape::Spherical(_) => {
+            for i in 0..diameter.len() {
+                for (z, &k) in zeta.iter_mut().zip(k.iter()) {
+                    *z += weights[i] * diameter[i].powi(k) * FRAC_PI_6;
+                }
             }
         }
-
-        zeta
+        MonomerShape::NonSpherical(m) => {
+            for i in 0..diameter.len() {
+                for (z, &k) in zeta.iter_mut().zip(k.iter()) {
+                    *z += weights[i] * diameter[i].powi(k) * (m[i] * FRAC_PI_6);
+                }
+            }
+        }
+        MonomerShape::Heterosegmented(g, component_index) => {
+            for i in 0..diameter.len() {
+                for (z, &k) in zeta.iter_mut().zip(k.iter()) {
+                    *z += weights[component_index[i]]
+                        * diameter[i].powi(k)
+                        * (g[k as usize][i] * FRAC_PI_6);
+                }
+            }
+        }
     }
+    zeta
 }
 
 /// Implementation of the BMCSL equation of state for hard-sphere mixtures.
@@ -103,17 +142,12 @@ impl HardSphere {
     ) -> (D, [D; 4], DVector<D>) {
         let p = parameters;
         let diameter = p.hs_diameter(state.temperature);
-
-        let component_index = p.component_index();
-        let geometry_coefficients = p.geometry_coefficients(state.temperature);
-        let mut zeta = [D::zero(); 4];
-        for i in 0..diameter.len() {
-            for (z, &k) in zeta.iter_mut().zip([0, 1, 2, 3].iter()) {
-                *z += state.molefracs[component_index[i]]
-                    * diameter[i].powi(k)
-                    * (geometry_coefficients[k as usize][i] * FRAC_PI_6);
-            }
-        }
+        let mut zeta = weighted_zeta(
+            p.monomer_shape(state.temperature),
+            &diameter,
+            &state.molefracs,
+            [0, 1, 2, 3],
+        );
         let zeta_23 = zeta[2] / zeta[3];
         let density = state.partial_density.sum();
         zeta.iter_mut().for_each(|z| *z *= density);

@@ -138,19 +138,12 @@ impl<D: DualNum<f64> + Copy> Residual<U1, D> for PcSaftPure<D, 8> {
         (m * sigma.powi(3) * FRAC_PI_6).recip() * MAX_ETA
     }
 
-    fn reduced_helmholtz_energy_density_contributions(
-        &self,
-        state: &StateHD<D, U1>,
-    ) -> Vec<(&'static str, D)> {
-        vec![(
-            "PC-SAFT (pure)",
-            self.reduced_residual_helmholtz_energy_density(state),
-        )]
-    }
-
-    fn reduced_residual_helmholtz_energy_density(&self, state: &StateHD<D, U1>) -> D {
+    fn for_each_contribution(&self, state: &StateHD<D, U1>, mut f: impl FnMut(&'static str, D)) {
         let density = state.partial_density.data.0[0][0];
-        helmholtz_energy_density(&self.0, state.temperature, density)
+        f(
+            "PC-SAFT (pure)",
+            helmholtz_energy_density(&self.0, state.temperature, density),
+        )
     }
 }
 
@@ -173,20 +166,14 @@ impl<D: DualNum<f64> + Copy> Residual<U1, D> for PcSaftPure<D, 4> {
         (m * sigma.powi(3) * FRAC_PI_6).recip() * MAX_ETA
     }
 
-    fn reduced_helmholtz_energy_density_contributions(
-        &self,
-        state: &StateHD<D, U1>,
-    ) -> Vec<(&'static str, D)> {
-        vec![(
-            "PC-SAFT (pure, non-assoc)",
-            self.reduced_residual_helmholtz_energy_density(state),
-        )]
-    }
-
-    fn reduced_residual_helmholtz_energy_density(&self, state: &StateHD<D, U1>) -> D {
+    fn for_each_contribution(&self, state: &StateHD<D, U1>, mut f: impl FnMut(&'static str, D)) {
         let density = state.partial_density.data.0[0][0];
         let [m, sigma, epsilon_k, mu] = self.0;
-        helmholtz_energy_density_non_assoc(m, sigma, epsilon_k, mu, state.temperature, density).0
+        f(
+            "PC-SAFT (pure, non-assoc)",
+            helmholtz_energy_density_non_assoc(m, sigma, epsilon_k, mu, state.temperature, density)
+                .0,
+        )
     }
 }
 

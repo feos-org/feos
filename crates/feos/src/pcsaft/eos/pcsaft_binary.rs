@@ -404,17 +404,7 @@ impl<D: DualNum<f64> + Copy> Residual<U2, D> for PcSaftBinary<D, 4> {
         ((m1 * sigma1.powi(3) * x1 + m2 * sigma2.powi(3) * x2) * FRAC_PI_6).recip() * MAX_ETA
     }
 
-    fn reduced_helmholtz_energy_density_contributions(
-        &self,
-        state: &StateHD<D, U2>,
-    ) -> Vec<(&'static str, D)> {
-        vec![(
-            "PC-SAFT (binary, non-assoc)",
-            self.reduced_residual_helmholtz_energy_density(state),
-        )]
-    }
-
-    fn reduced_residual_helmholtz_energy_density(&self, state: &StateHD<D, U2>) -> D {
+    fn for_each_contribution(&self, state: &StateHD<D, U2>, mut f: impl FnMut(&'static str, D)) {
         let ([p1, p2], kij) = self.0;
         let [m1, sigma1, epsilon_k1, mu1] = p1;
         let [m2, sigma2, epsilon_k2, mu2] = p2;
@@ -426,7 +416,10 @@ impl<D: DualNum<f64> + Copy> Residual<U2, D> for PcSaftBinary<D, 4> {
         let [rho1, rho2] = state.partial_density.data.0[0];
         let rho = [rho1, rho2];
 
-        helmholtz_energy_density(state.temperature, rho, m, sigma, epsilon_k, mu, kij, None)
+        f(
+            "PC-SAFT (binary, non-assoc)",
+            helmholtz_energy_density(state.temperature, rho, m, sigma, epsilon_k, mu, kij, None),
+        )
     }
 }
 
@@ -461,17 +454,7 @@ impl<D: DualNum<f64> + Copy> Residual<U2, D> for PcSaftBinary<D, 8> {
         ((m1 * sigma1.powi(3) * x1 + m2 * sigma2.powi(3) * x2) * FRAC_PI_6).recip() * MAX_ETA
     }
 
-    fn reduced_helmholtz_energy_density_contributions(
-        &self,
-        state: &StateHD<D, U2>,
-    ) -> Vec<(&'static str, D)> {
-        vec![(
-            "PC-SAFT (binary)",
-            self.reduced_residual_helmholtz_energy_density(state),
-        )]
-    }
-
-    fn reduced_residual_helmholtz_energy_density(&self, state: &StateHD<D, U2>) -> D {
+    fn for_each_contribution(&self, state: &StateHD<D, U2>, mut f: impl FnMut(&'static str, D)) {
         let ([p1, p2], kij) = self.0;
         let [
             m1,
@@ -505,15 +488,18 @@ impl<D: DualNum<f64> + Copy> Residual<U2, D> for PcSaftBinary<D, 8> {
         let [rho1, rho2] = state.partial_density.data.0[0];
         let rho = [rho1, rho2];
 
-        helmholtz_energy_density(
-            state.temperature,
-            rho,
-            m,
-            sigma,
-            epsilon_k,
-            mu,
-            kij,
-            assoc_params,
+        f(
+            "PC-SAFT (binary)",
+            helmholtz_energy_density(
+                state.temperature,
+                rho,
+                m,
+                sigma,
+                epsilon_k,
+                mu,
+                kij,
+                assoc_params,
+            ),
         )
     }
 }
