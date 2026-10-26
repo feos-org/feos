@@ -214,16 +214,16 @@ where
                 _ => unreachable!(),
             };
         }
-        let profile = PoreProfile::<D, _>::new(
-            grid.clone(),
-            &bulk,
-            external_potential,
-            None,
-            PoreSpecification::ChemicalPotential,
-        )
-        .solve(solver)?
-        .profile;
-        let mut old_density = Some(&profile.density);
+        let mut old_profile = Some(
+            PoreProfile::<D, _>::new(
+                grid.clone(),
+                &bulk,
+                external_potential,
+                None,
+                PoreSpecification::ChemicalPotential,
+            )
+            .solve(solver)?,
+        );
 
         for i in 0..pressure.len() {
             let mut bulk = State::new_npt(
@@ -240,27 +240,21 @@ where
                     .clone();
             }
 
-            let p = PoreProfile::new(
-                grid.clone(),
-                &bulk,
-                external_potential,
-                old_density,
-                PoreSpecification::ChemicalPotential,
-            );
-            let p2 = PoreProfile::new(
-                grid.clone(),
-                &bulk,
-                external_potential,
-                None,
-                PoreSpecification::ChemicalPotential,
-            );
-            profiles.push(p.solve(solver).or_else(|_| p2.solve(solver)));
-
-            old_density = if let Some(Ok(l)) = profiles.last() {
-                Some(&l.profile.density)
-            } else {
-                None
+            // continue from the previous profile (density, fractions of non-bonded sites, and
+            // convolvers), the profile initialized from the bulk is only created if needed
+            let new_profile = || {
+                PoreProfile::new(
+                    grid.clone(),
+                    &bulk,
+                    external_potential,
+                    None,
+                    PoreSpecification::ChemicalPotential,
+                )
             };
+            let p = old_profile.map_or_else(new_profile, |p| p.update_bulk(&bulk));
+            profiles.push(p.solve(solver).or_else(|_| new_profile().solve(solver)));
+
+            old_profile = profiles.last().and_then(|p| p.as_ref().ok()).cloned();
         }
 
         Ok(Adsorption::new(functional, profiles))

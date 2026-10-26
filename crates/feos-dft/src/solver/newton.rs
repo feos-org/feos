@@ -53,10 +53,10 @@ pub(crate) fn newton_krylov<D: Dimension, S: NonlinearSystem<D>>(
 ) -> FeosResult<(bool, usize)> {
     let solver = "Newton";
 
+    // the residual of the accepted step is reused, so the (more expensive) recording is only
+    // done if another Newton step is required
+    let mut res = system.residual(&mut Evaluate, x, solver_log)?;
     for k in 0..max_iter {
-        // residual and linearization
-        let mut record = Record::new();
-        let res = system.residual(&mut record, x, solver_log)?;
         let norm = system.convergence_norm(x, &res);
         if !norm.is_finite() {
             return Err(FeosError::IterationFailed(solver.into()));
@@ -66,6 +66,10 @@ pub(crate) fn newton_krylov<D: Dimension, S: NonlinearSystem<D>>(
             return Ok((true, k));
         }
         let norm0 = system.norm(&res);
+
+        // linearization
+        let mut record = Record::new();
+        system.residual(&mut record, x, solver_log)?;
 
         // inexact Newton: relative tolerance for the linear system, bounded by the absolute one
         // (the replays are timed as a whole by GMRES)
@@ -82,9 +86,10 @@ pub(crate) fn newton_krylov<D: Dimension, S: NonlinearSystem<D>>(
         let mut accepted = false;
         for _ in 0..NEWTON_MAX_LINE_SEARCH {
             *x = &x0 + &(alpha * &delta);
-            if let Ok(res) = system.residual(&mut Evaluate, x, solver_log) {
-                let norm = system.norm(&res);
+            if let Ok(res_new) = system.residual(&mut Evaluate, x, solver_log) {
+                let norm = system.norm(&res_new);
                 if norm.is_finite() && norm < (1.0 - 1e-4 * alpha) * norm0 {
+                    res = res_new;
                     accepted = true;
                     break;
                 }
