@@ -75,27 +75,6 @@ impl PyInterface {
         PyInterface(profile)
     }
 
-    /// Initialize a planar interface with a pDGT calculation.
-    ///
-    /// Parameters
-    /// ----------
-    /// vle : PhaseEquilibrium
-    ///     The bulk phase equilibrium.
-    /// n_grid : int
-    ///     The number of grid points.
-    ///
-    /// Returns
-    /// -------
-    /// Interface
-    ///
-    #[staticmethod]
-    #[pyo3(text_signature = "(vle, n_grid)")]
-    #[pyo3(signature = (vle, n_grid))]
-    fn planar_from_pdgt(vle: &PyPhaseEquilibrium, n_grid: usize) -> PyResult<Self> {
-        let profile = Interface::planar_from_pdgt(&vle.0, n_grid).map_err(PyFeosError::from)?;
-        Ok(Self(profile))
-    }
-
     /// Initialize a curved interface from a converged planar interface.
     ///
     /// The planar density profile is interpolated onto the new grid so that

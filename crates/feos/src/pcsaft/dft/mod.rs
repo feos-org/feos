@@ -1,6 +1,6 @@
 use super::PcSaftParameters;
 use super::parameters::PcSaftPars;
-use crate::association::{Association, YuWuAssociationFunctional};
+use crate::association::{AssociationVersion, SaftAssociationFunctional};
 use crate::hard_sphere::{FMTContribution, FMTVersion};
 use crate::pcsaft::eos::PcSaftOptions;
 use feos_core::{FeosResult, Molarweight, ReferenceSystem, ResidualDyn, StateHD, Subset};
@@ -20,47 +20,41 @@ use std::f64::consts::FRAC_PI_6;
 mod dispersion;
 mod hard_chain;
 mod polar;
-mod pure_saft_functional;
 use dispersion::AttractiveFunctional;
 use hard_chain::ChainFunctional;
-use pure_saft_functional::*;
 
 /// PC-SAFT Helmholtz energy functional.
 pub struct PcSaftFunctional {
     pub parameters: PcSaftParameters,
-    association: Option<Association>,
     params: PcSaftPars,
     fmt_version: FMTVersion,
+    association_version: AssociationVersion,
     options: PcSaftOptions,
 }
 
 impl PcSaftFunctional {
     pub fn new(parameters: PcSaftParameters) -> Self {
-        Self::with_options(parameters, FMTVersion::WhiteBear, PcSaftOptions::default())
-    }
-
-    pub fn new_full(parameters: PcSaftParameters, fmt_version: FMTVersion) -> Self {
-        Self::with_options(parameters, fmt_version, PcSaftOptions::default())
+        Self::with_options(
+            parameters,
+            FMTVersion::WhiteBear,
+            AssociationVersion::ISaft,
+            PcSaftOptions::default(),
+        )
     }
 
     pub fn with_options(
         parameters: PcSaftParameters,
         fmt_version: FMTVersion,
+        association_version: AssociationVersion,
         saft_options: PcSaftOptions,
     ) -> Self {
         let params = PcSaftPars::new(&parameters);
-        let association = (!parameters.association.is_empty()).then(|| {
-            Association::new(
-                saft_options.max_iter_cross_assoc,
-                saft_options.tol_cross_assoc,
-            )
-        });
         Self {
             parameters,
-            association,
             params,
             fmt_version,
             options: saft_options,
+            association_version,
         }
     }
 }
@@ -70,6 +64,7 @@ impl Subset for PcSaftFunctional {
         Self::with_options(
             self.parameters.subset(component_list),
             self.fmt_version,
+            self.association_version,
             self.options,
         )
     }
@@ -100,51 +95,40 @@ impl HelmholtzEnergyFunctionalDyn for PcSaftFunctional {
         = PcSaftFunctionalContribution<'a>
     where
         Self: 'a;
+    type Association<'a> = SaftAssociationFunctional<'a, PcSaftPars>;
 
     fn contributions<'a>(&'a self) -> impl Iterator<Item = PcSaftFunctionalContribution<'a>> {
-        let mut contributions = Vec::with_capacity(4);
+        let mut contributions = Vec::with_capacity(3);
 
-        let assoc =
-            YuWuAssociationFunctional::new(&self.params, &self.parameters, self.association);
+        // Hard sphere contribution
+        let hs = FMTContribution::new(&self.params, self.fmt_version);
+        contributions.push(hs.into());
 
-        if matches!(
-            self.fmt_version,
-            FMTVersion::WhiteBear | FMTVersion::AntiSymWhiteBear
-        ) && self.params.m.len() == 1
-        {
-            let fmt_assoc = PureFMTAssocFunctional::new(&self.params, assoc, self.fmt_version);
-            contributions.push(fmt_assoc.into());
-            if self.params.m.iter().any(|&mi| mi > 1.0) {
-                let chain = PureChainFunctional::new(&self.params);
-                contributions.push(chain.into());
-            }
-            let att = PureAttFunctional::new(&self.params);
-            contributions.push(att.into());
-        } else {
-            // Hard sphere contribution
-            let hs = FMTContribution::new(&self.params, self.fmt_version);
-            contributions.push(hs.into());
-
-            // Hard chains
-            if self.params.m.iter().any(|&mi| !mi.is_one()) {
-                let chain = ChainFunctional::new(&self.params);
-                contributions.push(chain.into());
-            }
-
-            // Dispersion
-            let att = AttractiveFunctional::new(&self.params);
-            contributions.push(att.into());
-
-            // Association
-            if let Some(assoc) = assoc {
-                contributions.push(assoc.into());
-            }
+        // Hard chains
+        if self.params.m.iter().any(|&mi| !mi.is_one()) {
+            let chain = ChainFunctional::new(&self.params);
+            contributions.push(chain.into());
         }
+
+        // Dispersion
+        let att = AttractiveFunctional::new(&self.params);
+        contributions.push(att.into());
+
         contributions.into_iter()
     }
 
     fn molecule_shape(&self) -> MoleculeShape<'_> {
         MoleculeShape::NonSpherical(&self.params.m)
+    }
+
+    fn association(&self) -> Option<Self::Association<'_>> {
+        (!self.parameters.association.is_empty()).then(|| {
+            SaftAssociationFunctional::new(
+                &self.params,
+                &self.parameters.association,
+                self.association_version,
+            )
+        })
     }
 }
 
@@ -182,11 +166,7 @@ impl PairPotential for PcSaftFunctional {
 #[derive(FunctionalContribution)]
 #[expect(private_interfaces)]
 pub enum PcSaftFunctionalContribution<'a> {
-    PureFMTAssoc(PureFMTAssocFunctional<'a>),
-    PureChain(PureChainFunctional<'a>),
-    PureAtt(PureAttFunctional<'a>),
     Fmt(FMTContribution<'a, PcSaftPars>),
     Chain(ChainFunctional<'a>),
     Attractive(AttractiveFunctional<'a>),
-    Association(YuWuAssociationFunctional<'a, PcSaftPars>),
 }

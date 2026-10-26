@@ -5,7 +5,7 @@ use crate::functional_contribution::FunctionalContribution;
 use crate::geometry::{Axis, Geometry, Grid};
 use crate::profile::{DFTProfile, InitialDensity};
 use crate::solver::DFTSolver;
-use crate::{DFTSpecification, WeightFunctionInfo};
+use crate::{DFTSpecification, NoAssociation, WeightFunctionInfo};
 use feos_core::{Contributions, FeosResult, ReferenceSystem, ResidualDyn, State, StateHD};
 use nalgebra::{DVector, dvector};
 use ndarray::prelude::*;
@@ -187,7 +187,7 @@ where
     ) -> FeosResult<MolarEnergy<DVector<f64>>> {
         let a = self.profile.dn_dmu()?;
         let a_unit = a.get2(0, 0);
-        let b = -self.profile.temperature * self.profile.dn_dt(&self.bulk)?;
+        let b = -self.profile.temperature * self.profile.dn_dt_p(&self.bulk)?;
         let b_unit = b.get(0);
 
         let h_ads = LU::new((a / a_unit).into_value())?.solve(&(b / b_unit).into_value());
@@ -242,22 +242,8 @@ where
     }
 
     pub fn into_dyn(self) -> PoreProfile<IxDyn, F> {
-        // initialize convolver
-        let t = self.profile.temperature.to_reduced();
-        let weight_functions = self.profile.functional.weight_functions(t);
-        let convolver = ConvolverFFT::plan(&self.profile.grid, &weight_functions);
-
         PoreProfile {
-            profile: DFTProfile {
-                grid: self.profile.grid,
-                convolver,
-                functional: self.profile.functional,
-                temperature: self.profile.temperature,
-                density: self.profile.density.into_dyn(),
-                specification: self.profile.specification,
-                external_potential: self.profile.external_potential.into_dyn(),
-                solver_log: self.profile.solver_log,
-            },
+            profile: self.profile.into_dyn(),
             bulk: self.bulk,
             grand_potential: self.grand_potential,
             interfacial_tension: self.interfacial_tension,
@@ -336,6 +322,7 @@ impl HelmholtzEnergyFunctionalDyn for Helium {
         = HeliumContribution
     where
         Self: 'a;
+    type Association<'a> = NoAssociation;
 
     fn contributions<'a>(&'a self) -> impl Iterator<Item = Self::Contribution<'a>> {
         std::iter::empty()

@@ -216,7 +216,7 @@ where
 
             // Initializing `FFTWeightFunctions` structure
             fft_weight_functions.push(FFTWeightFunctions::<_, D> {
-                segments: wf.component_index.len(),
+                segments: wf.segments,
                 local_density: wf.local_density,
                 scalar_component_weighted_densities: scal_comp,
                 vector_component_weighted_densities: vec_comp,

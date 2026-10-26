@@ -38,110 +38,56 @@ with
 
 $$\Delta\ln\rho_\alpha(\mathbf{r})=\hat{\mathcal{R}}_\alpha\left(\mathbf{r};\left[\rho(\mathbf{r})\right]\right)\equiv\ln\mathcal{P}_\alpha\left(\mathbf{r};\left[\rho(\mathbf{r})\right]\right)-\ln\rho_\alpha(\mathbf{r})$$
 
+For associating molecules, the projected density $\mathcal{P}_\alpha\left(\mathbf{r};\left[\rho(\mathbf{r}),X(\mathbf{r})\right]\right)$ also depends on the fractions of non-bonded sites. These are iterated using the mass action equations (eq. {eq}`eqn:mass_action`). In every iteration, the fractions of non-bonded sites are updated with a damped successive substitution
+
+$$\ln X_A^{(k+1)}(\mathbf{r})=\frac{1}{2}\left(\ln X_A^{(k)}(\mathbf{r})-\ln\left(1+S_A^{(k)}(\mathbf{r})\right)\right)$$
+
+before the density profiles are updated as described above. The iteration is converged if both the density residual and the residual of the mass action equations vanish.
 
 ## Newton algorithm
-A Newton iteration is a more refined approach to calculate the roots of the residual $\mathcal{R}$. From a Taylor expansion of the residual
-
-$$\mathcal{R}_\alpha\left(\mathbf{r};\left[\rho(\mathbf{r})+\Delta\rho(\mathbf{r})\right]\right)=\mathcal{R}_\alpha\left(\mathbf{r};\left[\rho(\mathbf{r})\right]\right)+\int\sum_\beta\frac{\delta\mathcal{R}_\alpha\left(\mathbf{r};\left[\rho(\mathbf{r})\right]\right)}{\delta\rho_\beta(\mathbf{r}')}\Delta\rho_\beta(\mathbf{r}')\mathrm{d}\mathbf{r}'+\ldots$$
-
-the Newton step is derived by setting the updated residual $\mathcal{R}_\alpha[\rho(\mathbf{r})+\Delta\rho(\mathbf{r})]$ to 0 and neglecting higher order terms.
+A Newton iteration is a more refined approach to calculate the roots of the residual. In $\text{FeO}_\text{s}$, the Newton solver uses the logarithmic form of both the Euler-Lagrange equation and the mass action equations. The unknowns are combined into $x(\mathbf{r})=\left(\ln\rho_\alpha(\mathbf{r}),\ln X_A(\mathbf{r})\right)$ and the residual is
 
 $$
-\mathcal{R}_\alpha\left(\mathbf{r};\left[\rho(\mathbf{r})\right]\right)=-\int\sum_\beta\frac{\delta\mathcal{R}_\alpha\left(\mathbf{r};\left[\rho(\mathbf{r})\right]\right)}{\delta\rho_\beta(\mathbf{r}')}\Delta\rho_\beta(\mathbf{r}')\mathrm{d}\mathbf{r}'
+\mathcal{R}\left(\mathbf{r};\left[x(\mathbf{r})\right]\right)=\begin{pmatrix}\ln\mathcal{P}_\alpha\left(\mathbf{r};\left[\rho(\mathbf{r}),X(\mathbf{r})\right]\right)-\ln\rho_\alpha(\mathbf{r})\\-\ln\left(1+S_A(\mathbf{r})\right)-\ln X_A(\mathbf{r})\end{pmatrix}
+$$
+
+From a Taylor expansion of the residual
+
+$$\mathcal{R}\left(\mathbf{r};\left[x(\mathbf{r})+\Delta x(\mathbf{r})\right]\right)=\mathcal{R}\left(\mathbf{r};\left[x(\mathbf{r})\right]\right)+\int\frac{\delta\mathcal{R}\left(\mathbf{r};\left[x(\mathbf{r})\right]\right)}{\delta x(\mathbf{r}')}\Delta x(\mathbf{r}')\mathrm{d}\mathbf{r}'+\ldots$$
+
+the Newton step is derived by setting the updated residual to 0 and neglecting higher order terms.
+
+$$
+\int\frac{\delta\mathcal{R}\left(\mathbf{r};\left[x(\mathbf{r})\right]\right)}{\delta x(\mathbf{r}')}\Delta x(\mathbf{r}')\mathrm{d}\mathbf{r}'=-\mathcal{R}\left(\mathbf{r};\left[x(\mathbf{r})\right]\right)
 $$ (eqn:newton)
 
-The linear integral equation has to be solved for the step $\Delta\rho(\mathbf{r})$. Explicitly evaluating the functional derivatives of the residuals is not feasible due to their high dimensionality. Instead, a matrix-free linear solver like GMRES can be used. For GMRES only the action of the linear system on the variable is required (an evaluation of the right-hand side in the equation above for a given $\Delta\rho$). This action can be approximated numerically via
+The linear integral equation has to be solved for the step $\Delta x(\mathbf{r})$. In the following, the left-hand side is abbreviated with the Jacobian $J$, an integral operator whose action on a profile $v(\mathbf{r})$ with the same structure as $\Delta x(\mathbf{r})$ is
 
-$$\int\sum_\beta\frac{\delta\mathcal{R}_\alpha\left(\mathbf{r};\left[\rho(\mathbf{r})\right]\right)}{\delta\rho_\beta(\mathbf{r}')}\Delta\rho_\beta(\mathbf{r}')\mathrm{d}\mathbf{r}'\approx\frac{\mathcal{R}_\alpha\left(\mathbf{r};\left[\rho(\mathbf{r})+s\Delta\rho(\mathbf{r})\right]\right)-\mathcal{R}_\alpha\left(\mathbf{r};\left[\rho(\mathbf{r})\right]\right)}{s}$$
+$$\left(Jv\right)(\mathbf{r})\equiv\int\frac{\delta\mathcal{R}\left(\mathbf{r};\left[x(\mathbf{r})\right]\right)}{\delta x(\mathbf{r}')}v(\mathbf{r}')\mathrm{d}\mathbf{r}'$$
 
-However this approach requires the choice of an appropriate step size $s$ (something that we want to avoid in $\text{FeO}_\text{s}$) and also an evaluation of the full residual in every step of the linear solver. The solver can be sped up by doing parts of the functional derivative analytically beforehand. Using the definition of the residual in the rhs of eq. {eq}`eqn:newton` and, for now, assuming a constant fugacity $f_\alpha$ (i.e., fixed bulk densities) leads to
+Explicitly evaluating the functional derivatives of the residual is not feasible due to their high dimensionality. Instead, we apply the Newton-Krylov method that uses the matrix-free linear solver GMRES, which only requires the action of the Jacobian on a profile $v(\mathbf{r})$, i.e., the Jacobian-vector product (JVP) $Jv$. The JVP is calculated exactly by linearizing the residual. All operations that are required to evaluate the residual are either linear (convolutions, integrals, sums) or local nonlinear functions (e.g., exponentials, logarithms, products, and the Helmholtz energy densities and contact values as functions of the weighted densities). When the residual is evaluated at the beginning of a Newton step, the derivatives of all local functions are stored. The JVP is then obtained by repeating the same sequence of operations with $v$, where every linear operation is applied as before and every local function is replaced by its stored derivative. This only requires convolutions and local products and no additional evaluation of the model. The bond integrals and the fugacities for the different specifications (see the section on [constrained DFT](particle_constraint.md)) are included in the same way. Details of GMRES, including the pseudocode that the implementation in $\text{FeO}_\text{s}$ is based on, are given on [Wikipedia](https://de.wikipedia.org/wiki/GMRES-Verfahren) (German).
 
-$$
-\begin{aligned}
-q_\alpha(\mathbf{r})&\equiv-\int\sum_\beta\frac{\delta\mathcal{R}_\alpha\left(\mathbf{r};\left[\rho(\mathbf{r})\right]\right)}{\delta\rho_\beta(\mathbf{r}')}\Delta\rho_\beta(\mathbf{r}')\mathrm{d}\mathbf{r}'\\
-&=\int\sum_\beta\frac{\delta}{\delta\rho_\beta(\mathbf{r}')}\left(\rho_\alpha(\mathbf{r})-f_\alpha e^{-\frac{\beta}{m_\alpha}\left(\hat F_{\rho_\alpha}^\mathrm{res}(\mathbf{r})+V_\alpha^\mathrm{ext}(\mathbf{r})\right)}\prod_{\alpha'}I_{\alpha\alpha'}(\mathbf{r})\right)\Delta\rho_\beta(\mathbf{r}')\mathrm{d}\mathbf{r}'
-\end{aligned}
-$$
+For the density rows, the functional derivatives of the residual with respect to the logarithmic densities are
 
-The functional derivative can be simplified using $\hat F_{\rho_\alpha\rho_\beta}^\mathrm{res}(\mathbf{r},\mathbf{r}')=\frac{\delta \hat F_{\rho_\alpha}^\mathrm{res}(\mathbf{r})}{\delta\rho_\beta(\mathbf{r}')}=\frac{\delta^2\hat F^\mathrm{res}}{\delta\rho_\alpha(\mathbf{r})\delta\rho_\beta(\mathbf{r}')}$
+$$\frac{\delta\mathcal{R}_\alpha\left(\mathbf{r};\left[x(\mathbf{r})\right]\right)}{\delta\ln\rho_\beta(\mathbf{r}')}=-\delta_{\alpha\beta}\delta(\mathbf{r}-\mathbf{r}')+\frac{\delta\ln\mathcal{P}_\alpha\left(\mathbf{r};\left[\rho(\mathbf{r}),X(\mathbf{r})\right]\right)}{\delta\ln\rho_\beta(\mathbf{r}')}$$
 
-$$
-\begin{aligned}
-q_\alpha(\mathbf{r})&=\int\sum_\beta\left(\delta_{\alpha\beta}\delta(\mathbf{r}-\mathbf{r}')+\left(\frac{\beta}{m_\alpha}\hat F_{\rho_\alpha\rho_\beta}^\mathrm{res}(\mathbf{r},\mathbf{r}')-\sum_{\alpha'}\frac{1}{I_{\alpha\alpha'}(\mathbf{r})}\frac{\delta I_{\alpha\alpha'}(\mathbf{r})}{\delta\rho_\beta(\mathbf{r}')}\right)\right.\\
-&~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\left.\times f_\alpha e^{-\frac{\beta}{m_\alpha}\left(\hat F_{\rho_\alpha}^\mathrm{res}(\mathbf{r})+V_\alpha^\mathrm{ext}(\mathbf{r})\right)}\prod_{\alpha'}I_{\alpha\alpha'}(\mathbf{r})\right)\Delta\rho_\beta(\mathbf{r}')\mathrm{d}\mathbf{r}'\\
-&=\Delta\rho_\alpha(\mathbf{r})+\left(\frac{\beta}{m_\alpha}\underbrace{\int\sum_\beta\hat F_{\rho_\alpha\rho_\beta}^\mathrm{res}(\mathbf{r},\mathbf{r}')\Delta\rho_\beta(\mathbf{r}')\mathrm{d}\mathbf{r}'}_{\Delta\hat F_{\rho_\alpha}^\mathrm{res}(\mathbf{r})}-\sum_{\alpha'}\frac{1}{I_{\alpha\alpha'}(\mathbf{r})}\underbrace{\int\sum_\beta\frac{\delta I_{\alpha\alpha'}(\mathbf{r})}{\delta\rho_\beta(\mathbf{r}')}\Delta\rho_\beta(\mathbf{r}')\mathrm{d}\mathbf{r}'}_{\Delta I_{\alpha\alpha'}(\mathbf{r})}\right)\\
-&~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\times f_\alpha e^{-\frac{\beta}{m_\alpha}\left(\hat F_{\rho_\alpha}^\mathrm{res}(\mathbf{r})+V_\alpha^\mathrm{ext}(\mathbf{r})\right)}\prod_{\alpha'}I_{\alpha\alpha'}(\mathbf{r})
-\end{aligned}
-$$
+Neglecting the second term (and the dependence on $X_A$) leads to $\Delta\ln\rho_\alpha(\mathbf{r})=\hat{\mathcal{R}}_\alpha\left(\mathbf{r};\left[\rho(\mathbf{r})\right]\right)$, which is the search direction of the logarithmic Picard iteration. This observation implies that the Picard iteration is an approximation of the Newton solver that neglects the residual contribution to the Jacobian. Only using the ideal gas contribution to the Jacobian is a reasonable approximation for low densities and therefore, the Picard iteration converges quickly (with a large damping coefficient $\nu$) for low densities.
 
-and finally
+The Newton solver converges exceptionally fast compared to a simple Picard iteration. The faster convergence comes at the cost of requiring multiple steps for solving the linear subsystem. To keep this cost low, the linear system is only solved approximately (inexact Newton method), i.e., GMRES stops as soon as
 
-$$
-q_\alpha(\mathbf{r})=\Delta\rho_\alpha(\mathbf{r})+\left(\frac{\beta}{m_\alpha}\Delta\hat F_{\rho_\alpha}^\mathrm{res}(\mathbf{r})-\sum_{\alpha'}\frac{\Delta I_{\alpha\alpha'}(\mathbf{r})}{I_{\alpha\alpha'}(\mathbf{r})}\right)\mathcal{P}_\alpha\left(\mathbf{r};\left[\rho(\mathbf{r})\right]\right)
-$$ (eqn:newton_rhs)
+$$\left\|J\Delta x^{(k)}+\mathcal{R}\left[x^{(k)}\right]\right\|_2\leq\max\left(10^{-3}\left\|\mathcal{R}\left[x^{(k)}\right]\right\|_2,10^{-2}\,\mathrm{tol}\right)$$
 
-Neglecting the second term in eq. {eq}`eqn:newton_rhs` leads to $\Delta\rho_\alpha(\mathbf{r})=\mathcal{R}_\alpha\left(\mathbf{r};\left[\rho(\mathbf{r})\right]\right)$ which is the search direction of the Picard iteration. This observation implies that the Picard iteration is an approximation of the Newton solver that neglects the residual contribution to the Jacobian. Only using the ideal gas contribution to the Jacobian is a reasonable approximation for low densities and therefore, the Picard iteration converges quickly (with a large damping coefficient $\nu$) for low densities.
+where $\mathcal{R}\left[x^{(k)}\right]$ is short for the residual of iteration $k$ and $\mathrm{tol}$ is the tolerance of the Newton iteration. Far from the solution, the linear system is solved only roughly, close to the solution, it is solved more accurately. In addition, the step size is controlled. The new solution is
 
-The second functional derivative of the residual Helmholtz energy can be rewritten in terms of the weight functions.
+$$x^{(k+1)}(\mathbf{r})=x^{(k)}(\mathbf{r})+\lambda\Delta x^{(k)}(\mathbf{r})$$
 
-$$\hat F_{\rho_\alpha\rho_\beta}^\mathrm{res}(\mathbf{r},\mathbf{r}')=\int\frac{\delta\hat f^\mathrm{res}(\mathbf{r}'')}{\delta\rho_\alpha(\mathbf{r})\delta\rho_\beta(\mathbf{r}')}\mathrm{d}\mathbf{r}''=\int\sum_{\alpha\beta}\hat f^\mathrm{res}_{\alpha\beta}(\mathbf{r}'')\frac{\delta n_\alpha(\mathbf{r}'')}{\delta\rho_\alpha(\mathbf{r})}\frac{\delta n_\beta(\mathbf{r}'')}{\delta\rho_\beta(\mathbf{r}')}\mathrm{d}\mathbf{r}''$$
+where the step size starts from
 
-Here $\hat f^\mathrm{res}_{\alpha\beta}=\frac{\partial^2\hat f^\mathrm{res}}{\partial n_\alpha\partial n_\beta}$ is the second partial derivative of the reduced Helmholtz energy density with respect to the weighted densities $n_\alpha$ and $n_\beta$. The definition of the weighted densities $n_\alpha(\mathbf{r})=\sum_i\int\rho_i(\mathbf{r}')\omega_\alpha^i(\mathbf{r}-\mathbf{r}')\mathrm{d}\mathbf{r}'$ is used to simplify the expression further.
+$$\lambda=\min\left(1,\frac{10}{\max_\mathbf{r}\left|\Delta x^{(k)}(\mathbf{r})\right|}\right)$$
 
-$$\hat F_{\rho_\alpha\rho_\beta}^\mathrm{res}(\mathbf{r},\mathbf{r}')=\int\sum_{\alpha\beta}\hat f^\mathrm{res}_{\alpha\beta}(\mathbf{r}'')\omega_\alpha^i(\mathbf{r}''-\mathbf{r})\omega_\beta^j(\mathbf{r}''-\mathbf{r}')\mathrm{d}\mathbf{r}''$$
+so that no logarithm changes by more than 10, and is halved (backtracking line search) until the norm of the residual decreases sufficiently (Armijo condition)
 
-With the weighted-density variation $\Delta n_\beta(\mathbf{r}'')=\sum_j\int\Delta\rho_j(\mathbf{r}')\omega_\beta^j(\mathbf{r}''-\mathbf{r}')\mathrm{d}\mathbf{r}'$, $\Delta\hat F_{\rho_\alpha}^\mathrm{res}(\mathbf{r})$ can be rewritten as
-
-$$
-\begin{aligned}
-\Delta\hat F_{\rho_\alpha}^\mathrm{res}(\mathbf{r})&=\int\sum_{\alpha,\beta}\hat f^\mathrm{res}_{\alpha\beta}(\mathbf{r}'')\omega_\alpha^i(\mathbf{r}''-\mathbf{r})\Delta n_\beta(\mathbf{r}'')\mathrm{d}\mathbf{r}''\\
-&=\int\sum_\alpha\sum_\beta \hat f^\mathrm{res}_{\alpha\beta}(\mathbf{r}'')\Delta n_\beta(\mathbf{r}'')\omega_\alpha^i(\mathbf{r}''-\mathbf{r})\mathrm{d}\mathbf{r}''\\
-&=\int\sum_\alpha \Delta\hat f^\mathrm{res}_\alpha(\mathbf{r}'')\omega_\alpha^i(\mathbf{r}''-\mathbf{r})\mathrm{d}\mathbf{r}''
-\end{aligned}
-$$ (eqn:newton_F)
-
-To simplify the expression for $\Delta I_{\alpha\alpha'}(\mathbf{r})$, the recursive definition of the bond integrals is used.
-
-$$
-\begin{aligned}
-\Delta I_{\alpha\alpha'}(\mathbf{r})&=\iint\sum_\beta\frac{\delta}{\delta\rho_\beta(\mathbf{r}'')}\left(e^{-\frac{\beta}{m_{\alpha'}}\left(\hat F_{\rho_{\alpha'}}^\mathrm{res}(\mathbf{r}')+V_{\alpha'}^\mathrm{ext}(\mathbf{r}')\right)}\left(\prod_{\alpha''\neq\alpha}I_{\alpha'\alpha''}(\mathbf{r}')\right)\omega_\mathrm{chain}^{\alpha\alpha'}(\mathbf{r}-\mathbf{r}')\right)\\
-&~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\times\Delta\rho_\beta(\mathbf{r}'')\mathrm{d}\mathbf{r}'\mathrm{d}\mathbf{r}''\\
-&=\iint\sum_\beta\left(-\frac{\beta}{m_{\alpha'}}\hat F_{\rho_{\alpha'}\rho_\beta}^\mathrm{res}(\mathbf{r}',\mathbf{r}'')+\sum_{\alpha''\neq\alpha}\frac{1}{I_{\alpha'\alpha''}(\mathbf{r}')}\frac{\delta I_{\alpha'\alpha''}(\mathbf{r}')}{\delta\rho_\beta(\mathbf{r}'')}\right)e^{-\frac{\beta}{m_{\alpha'}}\left(\hat F_{\rho_{\alpha'}}^\mathrm{res}(\mathbf{r}')+V_{\alpha'}^\mathrm{ext}(\mathbf{r}')\right)}\\
-&~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\times\left(\prod_{\alpha''\neq\alpha}I_{\alpha'\alpha''}(\mathbf{r}')\right)\omega_\mathrm{chain}^{\alpha\alpha'}(\mathbf{r}-\mathbf{r}')\Delta\rho_\beta(\mathbf{r}'')\mathrm{d}\mathbf{r}'\mathrm{d}\mathbf{r}''
-\end{aligned}
-$$
-
-Here, the definition of $\Delta\hat F_{\rho_\alpha}^\mathrm{res}(\mathbf{r})$ and $\Delta I_{\alpha\alpha'}(\mathbf{r})$ can be inserted leading to a recursive calculation of $\Delta I_{\alpha\alpha'}(\mathbf{r})$ similar to the original bond integrals.
-
-$$
-\begin{aligned}
-\Delta I_{\alpha\alpha'}(\mathbf{r})&=\int\left(-\frac{\beta}{m_{\alpha'}}\Delta\hat F_{\rho_{\alpha'}}^\mathrm{res}(\mathbf{r}')+\sum_{\alpha''\neq\alpha}\frac{\Delta I_{\alpha'\alpha''}(\mathbf{r}')}{I_{\alpha'\alpha''}(\mathbf{r}')}\right)\\
-&\qquad\times e^{-\frac{\beta}{m_{\alpha'}}\left(\hat F_{\rho_{\alpha'}}^\mathrm{res}(\mathbf{r}')+V_{\alpha'}^\mathrm{ext}(\mathbf{r}')\right)}\left(\prod_{\alpha''\neq\alpha}I_{\alpha'\alpha''}(\mathbf{r}')\right)\omega_\mathrm{chain}^{\alpha\alpha'}(\mathbf{r}-\mathbf{r}')\mathrm{d}\mathbf{r}'
-\end{aligned}
-$$ (eqn:newton_I)
-
-If the number of particles is specified instead of the bulk densities (see the section on [constrained DFT](particle_constraint.md)), the fugacities depend on the density profiles through the configurational integrals $z_\alpha$. Then, the functional derivative of the fugacity has to be included in eq. {eq}`eqn:newton_rhs`, leading to
-
-$$
-q_\alpha(\mathbf{r})=\Delta\rho_\alpha(\mathbf{r})+\left(\frac{\beta}{m_\alpha}\Delta\hat F_{\rho_\alpha}^\mathrm{res}(\mathbf{r})-\sum_{\alpha'}\frac{\Delta I_{\alpha\alpha'}(\mathbf{r})}{I_{\alpha\alpha'}(\mathbf{r})}-\frac{\Delta f_\alpha}{f_\alpha}\right)\mathcal{P}_\alpha\left(\mathbf{r};\left[\rho(\mathbf{r})\right]\right)
-$$ (eqn:newton_rhs_f)
-
-with $\Delta f_\alpha=\int\sum_\beta\frac{\delta f_\alpha}{\delta\rho_\beta(\mathbf{r}')}\Delta\rho_\beta(\mathbf{r}')\mathrm{d}\mathbf{r}'$. The expression for $\Delta f_\alpha$ follows from the variation of the configurational integrals
-
-$$
-\Delta z_\alpha=-\int\left(\frac{\beta}{m_\alpha}\Delta\hat F_{\rho_\alpha}^\mathrm{res}(\mathbf{r})-\sum_{\alpha'}\frac{\Delta I_{\alpha\alpha'}(\mathbf{r})}{I_{\alpha\alpha'}(\mathbf{r})}\right)e^{-\frac{\beta}{m_\alpha}\left(\hat F_{\rho_\alpha}^\mathrm{res}(\mathbf{r})+V_\alpha^\mathrm{ext}(\mathbf{r})\right)}\prod_{\alpha'}I_{\alpha\alpha'}(\mathbf{r})\mathrm{d}\mathbf{r}
-$$ (eqn:newton_z)
-
-and depends on the specification.
-
-|specification|$f_\alpha$|$\frac{\Delta f_\alpha}{f_\alpha}$|
-|:-:|:-:|:-:|
-|fixed bulk densities $\rho_\alpha^\mathrm{b}$|$\rho_\alpha^\mathrm{b}e^{\frac{\beta}{m_\alpha}\sum_\gamma\hat F_{\rho_\gamma}^\mathrm{b,res}}$|$0$|
-|fixed particle numbers $N_\alpha^\mathrm{spec}$|$\frac{N_\alpha^\mathrm{spec}}{z_\alpha}$|$-\frac{\Delta z_\alpha}{z_\alpha}$|
-|fixed total particle number $N^\mathrm{spec}$|$\frac{N^\mathrm{spec}f_\alpha^0}{\sum_\beta f_\beta^0z_\beta}$|$-\frac{\sum_\beta f_\beta^0\Delta z_\beta}{\sum_\beta f_\beta^0z_\beta}$|
-
-In every iteration of GMRES, $q(\mathbf{r})$ needs to be evaluated from eqs. {eq}`eqn:newton_rhs_f`, {eq}`eqn:newton_F`, {eq}`eqn:newton_I` and {eq}`eqn:newton_z`. The operations required for that are analogous to the calculation of weighted densities and the functional derivative in the Euler-Lagrange equation itself. Details of GMRES, including the pseudocode that the implementation in $\text{FeO}_\text{s}$ is based on, are given on [Wikipedia](https://de.wikipedia.org/wiki/GMRES-Verfahren) (German).
-
-The Newton solver converges exceptionally fast compared to a simple Picard iteration. The faster convergence comes at the cost of requiring multiple steps for solving the linear subsystem. With the algorithm outlined here, the evaluation of the second partial derivatives of the Helmholtz energy density is only required once for every Newton step. The GMRES algorithm only uses the very efficient convolution integrals and no additional evaluation of the model.
+$$\left\|\mathcal{R}\left[x^{(k+1)}\right]\right\|<\left(1-10^{-4}\lambda\right)\left\|\mathcal{R}\left[x^{(k)}\right]\right\|$$
 
 ## Anderson mixing
+For historic reasons, $\text{FeO}_\text{s}$ contains an implementation of the Anderson mixing method that uses a history of previous solutions to approximate the system's Jacobian. While it might be a fast method for some systems, in general, the algorithm is significantly less stable than the default Newton solver.

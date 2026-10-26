@@ -10,7 +10,7 @@ use num_dual::*;
 #[cfg(feature = "dft")]
 mod dft;
 #[cfg(feature = "dft")]
-pub use dft::YuWuAssociationFunctional;
+pub use dft::{AssociationVersion, SaftAssociationFunctional};
 
 /// Calculation of association strength between association sites.
 ///

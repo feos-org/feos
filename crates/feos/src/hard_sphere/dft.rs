@@ -3,7 +3,7 @@ use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
 use feos_dft::{
     FunctionalContribution, HelmholtzEnergyFunctional, HelmholtzEnergyFunctionalDyn, MoleculeShape,
-    WeightFunction, WeightFunctionInfo, WeightFunctionShape,
+    NoAssociation, WeightFunction, WeightFunctionInfo, WeightFunctionShape,
 };
 use nalgebra::DVector;
 use ndarray::*;
@@ -83,103 +83,101 @@ impl<'p, P: HardSphereProperties + Send + Sync> FunctionalContribution for FMTCo
         }
     }
 
-    fn weight_functions<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
+    fn weight_functions<N: DualNum<Primitive = f64> + Copy>(
+        &self,
+        temperature: N,
+    ) -> WeightFunctionInfo<N> {
         let r = self.properties.hs_diameter(temperature) * N::from(0.5);
         let [c0, c1, c2, c3] = self.properties.geometry_coefficients(temperature);
         match (self.version, r.len()) {
-            (FMTVersion::WhiteBear | FMTVersion::AntiSymWhiteBear, 1) => WeightFunctionInfo::new(
-                self.properties.component_index().into_owned().into(),
-                false,
-            )
-            .extend(
-                vec![
-                    WeightFunctionShape::Delta,
-                    WeightFunctionShape::Theta,
-                    WeightFunctionShape::DeltaVec,
-                ]
-                .into_iter()
-                .zip([c2, c3.clone(), c3])
-                .map(|(s, c)| WeightFunction {
-                    prefactor: c,
-                    kernel_radius: r.clone(),
-                    shape: s,
-                })
-                .collect(),
-                false,
-            ),
-            (FMTVersion::WhiteBear | FMTVersion::AntiSymWhiteBear, _) => WeightFunctionInfo::new(
-                self.properties.component_index().into_owned().into(),
-                false,
-            )
-            .add(
-                WeightFunction {
-                    prefactor: c0.zip_map(&r, |c, r| r.powi(-2) * c / (4.0 * PI)),
-                    kernel_radius: r.clone(),
-                    shape: WeightFunctionShape::Delta,
-                },
-                true,
-            )
-            .add(
-                WeightFunction {
-                    prefactor: c1.zip_map(&r, |c, r| r.recip() * c / (4.0 * PI)),
-                    kernel_radius: r.clone(),
-                    shape: WeightFunctionShape::Delta,
-                },
-                true,
-            )
-            .add(
-                WeightFunction {
-                    prefactor: c2,
-                    kernel_radius: r.clone(),
-                    shape: WeightFunctionShape::Delta,
-                },
-                true,
-            )
-            .add(
-                WeightFunction {
-                    prefactor: c3.clone(),
-                    kernel_radius: r.clone(),
-                    shape: WeightFunctionShape::Theta,
-                },
-                true,
-            )
-            .add(
-                WeightFunction {
-                    prefactor: c3.zip_map(&r, |c, r| r.recip() * c / (4.0 * PI)),
-                    kernel_radius: r.clone(),
-                    shape: WeightFunctionShape::DeltaVec,
-                },
-                true,
-            )
-            .add(
-                WeightFunction {
-                    prefactor: c3,
-                    kernel_radius: r,
-                    shape: WeightFunctionShape::DeltaVec,
-                },
-                true,
-            ),
-            (FMTVersion::KierlikRosinberg, _) => WeightFunctionInfo::new(
-                self.properties.component_index().into_owned().into(),
-                false,
-            )
-            .extend(
-                vec![
-                    WeightFunctionShape::KR0,
-                    WeightFunctionShape::KR1,
-                    WeightFunctionShape::Delta,
-                    WeightFunctionShape::Theta,
-                ]
-                .into_iter()
-                .zip(self.properties.geometry_coefficients(temperature))
-                .map(|(s, c)| WeightFunction {
-                    prefactor: c,
-                    kernel_radius: r.clone(),
-                    shape: s,
-                })
-                .collect(),
-                true,
-            ),
+            (FMTVersion::WhiteBear | FMTVersion::AntiSymWhiteBear, 1) => {
+                WeightFunctionInfo::new(self.properties.component_index().len(), false).extend(
+                    vec![
+                        WeightFunctionShape::Delta,
+                        WeightFunctionShape::Theta,
+                        WeightFunctionShape::DeltaVec,
+                    ]
+                    .into_iter()
+                    .zip([c2, c3.clone(), c3])
+                    .map(|(s, c)| WeightFunction {
+                        prefactor: c,
+                        kernel_radius: r.clone(),
+                        shape: s,
+                    })
+                    .collect(),
+                    false,
+                )
+            }
+            (FMTVersion::WhiteBear | FMTVersion::AntiSymWhiteBear, _) => {
+                WeightFunctionInfo::new(self.properties.component_index().len(), false)
+                    .add(
+                        WeightFunction {
+                            prefactor: c0.zip_map(&r, |c, r| r.powi(-2) * c / (4.0 * PI)),
+                            kernel_radius: r.clone(),
+                            shape: WeightFunctionShape::Delta,
+                        },
+                        true,
+                    )
+                    .add(
+                        WeightFunction {
+                            prefactor: c1.zip_map(&r, |c, r| r.recip() * c / (4.0 * PI)),
+                            kernel_radius: r.clone(),
+                            shape: WeightFunctionShape::Delta,
+                        },
+                        true,
+                    )
+                    .add(
+                        WeightFunction {
+                            prefactor: c2,
+                            kernel_radius: r.clone(),
+                            shape: WeightFunctionShape::Delta,
+                        },
+                        true,
+                    )
+                    .add(
+                        WeightFunction {
+                            prefactor: c3.clone(),
+                            kernel_radius: r.clone(),
+                            shape: WeightFunctionShape::Theta,
+                        },
+                        true,
+                    )
+                    .add(
+                        WeightFunction {
+                            prefactor: c3.zip_map(&r, |c, r| r.recip() * c / (4.0 * PI)),
+                            kernel_radius: r.clone(),
+                            shape: WeightFunctionShape::DeltaVec,
+                        },
+                        true,
+                    )
+                    .add(
+                        WeightFunction {
+                            prefactor: c3,
+                            kernel_radius: r,
+                            shape: WeightFunctionShape::DeltaVec,
+                        },
+                        true,
+                    )
+            }
+            (FMTVersion::KierlikRosinberg, _) => {
+                WeightFunctionInfo::new(self.properties.component_index().len(), false).extend(
+                    vec![
+                        WeightFunctionShape::KR0,
+                        WeightFunctionShape::KR1,
+                        WeightFunctionShape::Delta,
+                        WeightFunctionShape::Theta,
+                    ]
+                    .into_iter()
+                    .zip(self.properties.geometry_coefficients(temperature))
+                    .map(|(s, c)| WeightFunction {
+                        prefactor: c,
+                        kernel_radius: r.clone(),
+                        shape: s,
+                    })
+                    .collect(),
+                    true,
+                )
+            }
         }
     }
 
@@ -341,6 +339,7 @@ impl HelmholtzEnergyFunctionalDyn for FMTFunctional {
         = FMTContribution<'a, HardSphereParameters>
     where
         Self: 'a;
+    type Association<'a> = NoAssociation;
 
     fn contributions<'a>(
         &'a self,
