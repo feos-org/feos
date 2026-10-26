@@ -286,7 +286,7 @@ fn test_association_functional() -> Result<(), Box<dyn Error>> {
         ),
     ];
     // tight tolerance, so that the comparison is not limited by the convergence of the profiles
-    let solver = DFTSolver::new(None).newton(None, None, Some(1e-13));
+    let solver = DFTSolver::new(None).newton(None, None, Some(1e-14));
     for (name, parameters, t, gamma_ref, pore_ref) in systems {
         for version in [
             AssociationVersion::YuWu,

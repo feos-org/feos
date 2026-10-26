@@ -271,15 +271,27 @@ where
     }
 
     /// Norm of the difference between the density and the projected density, together with the
-    /// mass action residual.
+    /// mass action residual weighted with the density of the segment that carries the site (so
+    /// that both parts are densities and the tolerance does not depend on the density level).
     fn convergence_norm(&self, x: &Array<f64, D::Larger>, residual: &Array<f64, D::Larger>) -> f64 {
-        let mass_action_residual = self.association_rows(residual);
-        let density_residual = Zip::from(&self.density_rows(x))
+        let rho = self.density_rows(x).mapv(f64::exp);
+        let density_residual = Zip::from(&rho)
             .and(&self.density_rows(residual))
-            .map_collect(|&x, &r| x.exp() * (1.0 - r.exp()));
-        ((density_residual.mapv(|r| r * r).sum() + mass_action_residual.mapv(|r| r * r).sum())
-            / residual.len() as f64)
-            .sqrt()
+            .fold(0.0, |acc, &rho, &r| acc + (rho * (1.0 - r.exp())).powi(2));
+        let mass_action_residual = self.functional.association().map_or(0.0, |a| {
+            let p = a.sites();
+            p.a.iter()
+                .chain(p.b)
+                .chain(p.c)
+                .zip(self.association_rows(residual).outer_iter())
+                .map(|(s, r)| {
+                    Zip::from(&r)
+                        .and(&rho.index_axis(Axis(0), s.assoc_comp))
+                        .fold(0.0, |acc, &r, &rho| acc + (rho * r).powi(2))
+                })
+                .sum()
+        });
+        ((density_residual + mass_action_residual) / residual.len() as f64).sqrt()
     }
 
     /// Changes of the logarithms of the density and of X limited to [NEWTON_MAX_STEP].
