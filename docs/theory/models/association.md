@@ -6,7 +6,9 @@ $$\frac{A^\mathrm{assoc}}{k_\mathrm{B}TV}=\sum_\alpha\rho_\alpha\left(\ln X_\alp
 
 Here, $\alpha$ is the index of all distinguishable **association sites** in the system. The site density $\rho_\alpha$ is the density of the segment or molecule on which the association site is located times the multiplicity of the site. The fraction of non-bonded association sites $X_\alpha$ is calculated implicitly from
 
-$$\frac{1}{X_\alpha}=1+\sum_\beta\rho_\beta X_\beta\Delta^{\alpha\beta}$$ (eqn:x_assoc)
+$$
+\frac{1}{X_\alpha}=1+\sum_\beta\rho_\beta X_\beta\Delta^{\alpha\beta}
+$$ (eqn:x_assoc)
 
 where $\Delta^{\alpha\beta}$ is the association strength between sites $\alpha$ and $\beta$. The exact expression for the association strength varies between different SAFT versions. We implement the expressions used in PC-SAFT but a generalization to other models is straightforward.
 
@@ -91,18 +93,28 @@ The integral is solved using a Gauss-Legendre quadrature of fifth order where th
 
 ## Helmholtz energy functional
 
-The Helmholtz energy contribution proposed by [Yu and Wu 2002](https://aip.scitation.org/doi/abs/10.1063/1.1463435) is used to model association in inhomogeneous systems. It uses the same weighted densities that are used in [Fundamental Measure Theory](hard_spheres) (the White-Bear version). The Helmholtz energy density is then calculated from
+In inhomogeneous systems, the fractions of non-bonded association sites $X_\alpha(\mathbf{r})$ are treated as additional variables of the density profile (see the section on the [Euler-Lagrange equation](../dft/euler_lagrange_equation.md)). The association contribution is the stationary point with respect to $X_\alpha(\mathbf{r})$ of
 
-$$\beta f=\sum_\alpha\frac{n_0^\alpha\xi_i}{m_i}\left(\ln X_\alpha-\frac{X_\alpha}{2}+\frac{1}{2}\right)$$
+$$Q[X,\rho]=\int\sum_\alpha\tilde\rho_\alpha(\mathbf{r})\left(\ln X_\alpha(\mathbf{r})-X_\alpha(\mathbf{r})+1\right)\mathrm{d}\mathbf{r}-\frac{1}{2}\iint\sum_{\alpha\beta}\tilde\rho_\alpha(\mathbf{r})X_\alpha(\mathbf{r})\tilde\rho_\beta(\mathbf{r}')X_\beta(\mathbf{r}')\Delta^{\alpha\beta}(\mathbf{r},\mathbf{r}')\mathrm{d}\mathbf{r}\mathrm{d}\mathbf{r}'$$
 
-with the equations for the fraction of non-bonded association sites adapted to
+which reduces to the expressions at the beginning of this page for a homogeneous system ([Michelsen and Hendriks 2001](https://doi.org/10.1016/S0378-3812(01)00344-2)). The different association functionals that are available in $\text{FeO}_\text{s}$ differ in the site densities $\tilde\rho_\alpha$ and in the association strength $\Delta^{\alpha\beta}(\mathbf{r},\mathbf{r}')$ between site $\alpha$ at $\mathbf{r}$ and site $\beta$ at $\mathbf{r}'$. For all of them, the association strength is written as
 
-$$\frac{1}{X_\alpha}=1+\sum_\beta\frac{n_0^\beta\xi_j}{m_j}X_\beta\Delta^{\alpha\beta}$$
+$$\Delta^{\alpha\beta}(\mathbf{r},\mathbf{r}')=c^{\alpha\beta}\sqrt{y_{ij}(\mathbf{r})y_{ij}(\mathbf{r}')}K_{ij}(\mathbf{r}-\mathbf{r}')$$
 
-The association strength, again using the PC-SAFT parametrization, is
+Here, $c^{\alpha\beta}$ is the association strength without the contact value of the cavity correlation function (e.g., $\sqrt{\sigma_i^3\kappa^\alpha\sigma_j^3\kappa^\beta}\left(e^{\frac{\varepsilon^\alpha+\varepsilon^\beta}{2k_\mathrm{B}T}}-1\right)$ for PC-SAFT), $K_{ij}$ is a kernel that is normalized to 1, and the contact value
 
-$$\Delta^{\alpha\beta}=\left(\frac{1}{1-n_3}+\frac{\frac{1}{4}d_{ij}n_2\xi}{\left(1-n_3\right)^2}+\frac{\frac{1}{72}d_{ij}^2n_2^2\xi}{\left(1-n_3\right)^3}\right)\sqrt{\sigma_i^3\kappa^\alpha\sigma_j^3\kappa^\beta}\left(e^{\frac{\varepsilon^\alpha+\varepsilon^\beta}{2k_\mathrm{B}T}}-1\right)$$
+$$y_{ij}=\frac{1}{1-\zeta_3}+\xi\frac{\frac{3}{2}d_{ij}\zeta_2}{\left(1-\zeta_3\right)^2}+\xi\frac{\frac{1}{2}d_{ij}^2\zeta_2^2}{\left(1-\zeta_3\right)^3}$$
 
-The quantities $\xi$ and $\xi_i$ were introduced to account for the effect of inhomogeneity and are defined as
+is evaluated at local values of $\zeta_2$, $\zeta_3$ and the inhomogeneity factor $\xi$. The geometric mean of the contact values at both positions keeps the association strength symmetric. Because the kernel is normalized, all versions reduce to the bulk expressions in a homogeneous system.
 
-$$\xi=1-\frac{\vec{n}_2\cdot\vec{n}_2}{n_2^2},~~~~\xi_i=1-\frac{\vec{n}_2^i\cdot\vec{n}_2^i}{{n_2^i}^2}$$
+|functional|site density $\tilde\rho_\alpha$|$\zeta_2$, $\zeta_3$, $\xi$ in $y_{ij}$|kernel $K_{ij}(\mathbf{r})$|
+|:-:|:-:|:-:|:-:|
+|iSAFT ([Segura et al. 1997](https://www.tandfonline.com/doi/abs/10.1080/002689797172110), [Bymaster and Chapman 2010](https://doi.org/10.1021/jp102677m))|$n_\alpha\rho_i$|$\zeta_2$ and $\zeta_3$ from $\bar\rho_k$, $\xi=1$|$\frac{\delta\left(\bar d_{ij}-\vert\mathbf{r}\vert\right)}{4\pi\bar d_{ij}^2}$, $\bar d_{ij}=\frac{d_i+d_j}{2}$|
+|Yu-Wu ([Yu and Wu 2002](https://aip.scitation.org/doi/abs/10.1063/1.1463435))|$\frac{n_\alpha n_0^i\xi_i}{m_i}$|$\zeta_2=\frac{n_2}{6}$, $\zeta_3=n_3$, $\xi=1-\frac{\vec n_2\cdot\vec n_2}{n_2^2}$ (FMT weighted densities)|$\delta(\mathbf{r})$|
+|WDA ([Camacho Vergara et al. 2020](https://doi.org/10.1080/00268976.2020.1725668))|$n_\alpha\bar\rho_i$|$\zeta_2$ and $\zeta_3$ from $\bar\rho_k$, $\xi=1$|$\delta(\mathbf{r})$|
+
+Here, $n_\alpha$ is the multiplicity of site $\alpha$ on segment $i$. The Yu-Wu functional uses the weighted densities $n_0^i$, $n_2$, $n_3$, and $\vec n_2$ from the [hard-sphere reference model](hard_spheres.md) (White Bear version) with the effective segment diameter $d_i$ and the segment-wise inhomogeneity factor $\xi_i=1-\frac{\vec n_2^i\cdot\vec n_2^i}{\left(n_2^i\right)^2}$. WDA and iSAFT use the average density inside a sphere with radius $d_i$
+
+$$\bar\rho_i(\mathbf{r})=\frac{3}{4\pi d_i^3}\int\rho_i(\mathbf{r}')\Theta\left(d_i-\vert\mathbf{r}-\mathbf{r}'\vert\right)\mathrm{d}\mathbf{r}'$$
+
+Only iSAFT uses a non-local kernel, which describes that bonding is only possible for segments at contact. In this case, the mass action equations are integral equations. The inhomogeneity factors are restricted to the interval $[0,1]$ and the site densities to non-negative values, which only matters for numerical artifacts of the convolutions inside walls.

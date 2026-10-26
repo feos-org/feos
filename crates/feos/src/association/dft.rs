@@ -1,348 +1,286 @@
 use super::*;
-use feos_core::FeosResult;
-use feos_core::parameter::GenericParameters;
-use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
-use ndarray::{Array1, Array2, ArrayBase, ArrayView2, Axis, Data, Ix1, Slice};
+use feos_dft::{AssociationSites, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
+use ndarray::{Array1, Array2, ArrayView2, Axis, Slice, Zip};
 use num_dual::DualNum;
 use std::f64::consts::PI;
-use std::ops::MulAssign;
 
 pub const N0_CUTOFF: f64 = 1e-9;
 
-impl Association {
-    /// Association strength for functional of Yu and Wu with xi parameter for inhomogeneity.
-    ///
-    /// Uses the contact value of hard-sphere pair correlation function and model-specific
-    /// implementations for the bonding volume.
-    #[expect(clippy::too_many_arguments)]
-    fn yu_wu_association_strength<A: AssociationStrength, D: DualNum<Primitive = f64> + Copy>(
-        &self,
-        parameters: &AssociationParameters<A::Record>,
-        model: &A,
-        temperature: D,
-        diameter: &DVector<D>,
-        n2: D,
-        n3i: D,
-        xi: D,
-    ) -> [DMatrix<D>; 2] {
-        let p = parameters;
-
-        let mut delta_ab = DMatrix::zeros(p.sites_a.len(), p.sites_b.len());
-        for b in &p.binary_ab {
-            let [i, j] = [b.id1, b.id2];
-            let di = diameter[p.sites_a[i].assoc_comp];
-            let dj = diameter[p.sites_b[j].assoc_comp];
-            let k = di * dj / (di + dj) * (n2 * n3i);
-            delta_ab[(i, j)] = n3i
-                * (k * xi * (k / 18.0 + 0.5) + 1.0)
-                * model.association_strength_ij(
-                    temperature,
-                    p.sites_a[i].assoc_comp,
-                    p.sites_b[j].assoc_comp,
-                    &b.model_record,
-                )
-        }
-        let mut delta_cc = DMatrix::zeros(p.sites_c.len(), p.sites_c.len());
-        for b in &p.binary_cc {
-            let [i, j] = [b.id1, b.id2];
-            let di = diameter[p.sites_c[i].assoc_comp];
-            let dj = diameter[p.sites_c[j].assoc_comp];
-            let k = di * dj / (di + dj) * (n2 * n3i);
-            delta_cc[(i, j)] = n3i
-                * (k * xi * (k / 18.0 + 0.5) + 1.0)
-                * model.association_strength_ij(
-                    temperature,
-                    p.sites_c[i].assoc_comp,
-                    p.sites_c[j].assoc_comp,
-                    &b.model_record,
-                )
-        }
-        [delta_ab, delta_cc]
-    }
+/// Versions of the association functional (see [SaftAssociationFunctional]).
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum AssociationVersion {
+    /// Inhomogeneous TPT1 with local site densities and a contact shell as association kernel
+    /// ([Bymaster and Chapman 2010](https://doi.org/10.1021/jp102677m)).
+    ISaft,
+    /// Site densities and contact values from FMT weighted densities
+    /// ([Yu and Wu 2002](https://aip.scitation.org/doi/abs/10.1063/1.1463435)).
+    YuWu,
+    /// Bulk association at weighted densities averaged over a sphere with the segment diameter
+    /// ([Camacho Vergara et al. 2020](https://doi.org/10.1080/00268976.2020.1725668)).
+    Wda,
 }
 
-/// Implementation of the association Helmholtz energy functional of Yu and Wu.
-///
-/// [Yang-Xin Yu and Jianzhong Wu (2002)](https://aip.scitation.org/doi/abs/10.1063/1.1463435)
-///
-/// # Note
-///  
-/// Uses the contact value of the hard-sphere pair correlation function and model-specific
-/// implementations for the bonding volume.
-pub struct YuWuAssociationFunctional<'a, A: AssociationStrength> {
+/// Association functional (Michelsen's Q function) for all models that implement
+/// [AssociationStrength].
+pub struct SaftAssociationFunctional<'a, A: AssociationStrength> {
     model: &'a A,
-    association_parameters: &'a AssociationParameters<A::Record>,
-    association: Association,
+    parameters: &'a AssociationParameters<A::Record>,
+    version: AssociationVersion,
 }
 
-impl<'a, A: AssociationStrength> YuWuAssociationFunctional<'a, A> {
-    pub fn new<P, B, Bo, C, Data>(
+impl<'a, A: AssociationStrength> SaftAssociationFunctional<'a, A> {
+    pub fn new(
         model: &'a A,
-        parameters: &'a GenericParameters<P, B, A::Record, Bo, C, Data>,
-        association: Option<Association>,
-    ) -> Option<Self> {
-        association.map(|a| Self {
+        parameters: &'a AssociationParameters<A::Record>,
+        version: AssociationVersion,
+    ) -> Self {
+        Self {
             model,
-            association_parameters: &parameters.association,
-            association: a,
-        })
+            parameters,
+            version,
+        }
+    }
+
+    /// Segment indices (i, j) of every binary association record (AB, then CC).
+    fn records(&self) -> impl Iterator<Item = (usize, usize, &A::Record)> {
+        let p = self.parameters;
+        let ab = p.binary_ab.iter().map(|b| {
+            let [i, j] = [p.sites_a[b.id1].assoc_comp, p.sites_b[b.id2].assoc_comp];
+            (i, j, &b.model_record)
+        });
+        let cc = p.binary_cc.iter().map(|b| {
+            let [i, j] = [p.sites_c[b.id1].assoc_comp, p.sites_c[b.id2].assoc_comp];
+            (i, j, &b.model_record)
+        });
+        ab.chain(cc)
+    }
+
+    /// Contact values of the hard-sphere pair correlation function for every record
+    /// (records x grid) from $n_2$, $n_3$, and the inhomogeneity factor $\xi$ (Yu and Wu).
+    fn bmcsl_contact_values<N: DualNum<Primitive = f64> + Copy>(
+        &self,
+        diameter: &DVector<N>,
+        n2: &Array1<N>,
+        n3: &Array1<N>,
+        xi: &Array1<N>,
+    ) -> Array2<N> {
+        let records: Vec<_> = self.records().map(|(i, j, _)| (i, j)).collect();
+        let mut y = Array2::zeros((records.len(), n2.len()));
+        for (mut y, &(i, j)) in y.outer_iter_mut().zip(&records) {
+            let (di, dj) = (diameter[i], diameter[j]);
+            let dij = di * dj / (di + dj);
+            Zip::from(&mut y)
+                .and(n2)
+                .and(n3)
+                .and(xi)
+                .for_each(|y, &n2, &n3, &xi| {
+                    let n3i = (-n3 + 1.0).recip();
+                    let k = dij * n2 * n3i;
+                    *y = n3i * (k * xi * (k / 18.0 + 0.5) + 1.0);
+                });
+        }
+        y
     }
 }
 
-impl<'a, A: AssociationStrength + Sync + Send> FunctionalContribution
-    for YuWuAssociationFunctional<'a, A>
+impl<A: AssociationStrength + Sync + Send> feos_dft::AssociationFunctional
+    for SaftAssociationFunctional<'_, A>
 where
     A::Record: Sync + Send,
 {
-    fn name(&self) -> &'static str {
-        "Association"
+    fn sites(&self) -> AssociationSites<'_> {
+        AssociationSites::new(self.parameters)
     }
 
-    fn weight_functions<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
+    fn weight_functions<N: DualNum<Primitive = f64> + Copy>(
+        &self,
+        temperature: N,
+    ) -> WeightFunctionInfo<N> {
         let p = self.model;
-        let r = p.hs_diameter(temperature) * N::from(0.5);
-        let [_, _, _, c3] = p.geometry_coefficients(temperature);
-        WeightFunctionInfo::new(p.component_index().into_owned().into(), false)
-            .add(
-                WeightFunction::new_scaled(r.clone(), WeightFunctionShape::Delta),
-                false,
-            )
-            .add(
-                WeightFunction {
-                    prefactor: c3.clone(),
-                    kernel_radius: r.clone(),
-                    shape: WeightFunctionShape::DeltaVec,
-                },
-                false,
-            )
-            .add(
-                WeightFunction {
-                    prefactor: c3,
-                    kernel_radius: r,
-                    shape: WeightFunctionShape::Theta,
-                },
-                true,
-            )
+        let d = p.hs_diameter(temperature);
+        let segments = p.component_index().len();
+        match self.version {
+            AssociationVersion::YuWu => {
+                let r = d * N::from(0.5);
+                let [_, _, _, c3] = p.geometry_coefficients(temperature);
+                WeightFunctionInfo::new(segments, false)
+                    // n0 per segment
+                    .add(
+                        WeightFunction::new_scaled(r.clone(), WeightFunctionShape::Delta),
+                        false,
+                    )
+                    // n2v per segment
+                    .add(
+                        WeightFunction {
+                            prefactor: c3.clone(),
+                            kernel_radius: r.clone(),
+                            shape: WeightFunctionShape::DeltaVec,
+                        },
+                        false,
+                    )
+                    // n3
+                    .add(
+                        WeightFunction {
+                            prefactor: c3,
+                            kernel_radius: r,
+                            shape: WeightFunctionShape::Theta,
+                        },
+                        true,
+                    )
+            }
+            AssociationVersion::Wda => WeightFunctionInfo::new(segments, false)
+                // rhobar per segment
+                .add(
+                    WeightFunction::new_scaled(d, WeightFunctionShape::Theta),
+                    false,
+                ),
+            AssociationVersion::ISaft => {
+                let [_, _, c2, c3] = p.geometry_coefficients(temperature);
+                // local_density
+                WeightFunctionInfo::new(segments, true)
+                    // n2
+                    .add(
+                        WeightFunction {
+                            prefactor: c2.zip_map(&d, |c, d| c * 0.75 / d),
+                            kernel_radius: d.clone(),
+                            shape: WeightFunctionShape::Theta,
+                        },
+                        true,
+                    )
+                    // n3
+                    .add(
+                        WeightFunction {
+                            prefactor: c3.map(|c| c * 0.125),
+                            kernel_radius: d,
+                            shape: WeightFunctionShape::Theta,
+                        },
+                        true,
+                    )
+            }
+        }
     }
 
-    fn helmholtz_energy_density<N: DualNum<Primitive = f64> + Copy>(
+    fn contact_distances<N: DualNum<Primitive = f64> + Copy>(
+        &self,
+        temperature: N,
+    ) -> Option<Array1<N>> {
+        (self.version == AssociationVersion::ISaft).then(|| {
+            let d = self.model.hs_diameter(temperature);
+            self.records()
+                .map(|(i, j, _)| (d[i] + d[j]) * 0.5)
+                .collect()
+        })
+    }
+
+    fn contact_values<N: DualNum<Primitive = f64> + Copy>(
         &self,
         temperature: N,
         weighted_densities: ArrayView2<N>,
-    ) -> FeosResult<Array1<N>> {
-        // number of segments
-        let n = self.association_parameters.component_index.len();
+    ) -> (Array2<N>, Array2<N>) {
+        let p = self.model;
+        let wd = weighted_densities;
+        let n = p.component_index().len();
+        let d = p.hs_diameter(temperature);
+        let [_, _, c2, c3] = p.geometry_coefficients(temperature);
+        match self.version {
+            AssociationVersion::YuWu => {
+                let dim = (wd.shape()[0] - 1) / n - 1;
+                let n0i = wd.slice_axis(Axis(0), Slice::from(0..n));
+                let n2vi: Vec<_> = (0..dim)
+                    .map(|k| wd.slice_axis(Axis(0), Slice::from(n * (k + 1)..n * (k + 2))))
+                    .collect();
+                let n3 = wd.index_axis(Axis(0), n * (dim + 1)).to_owned();
 
-        // number of dimensions
-        let dim = (weighted_densities.shape()[0] - 1) / n - 1;
-
-        // weighted densities
-        let n0i = weighted_densities.slice_axis(Axis(0), Slice::new(0, Some(n as isize), 1));
-        let n2vi: Vec<_> = (0..dim)
-            .map(|i| {
-                weighted_densities.slice_axis(
-                    Axis(0),
-                    Slice::new((n * (i + 1)) as isize, Some((n * (i + 2)) as isize), 1),
-                )
-            })
-            .collect();
-        let n3 = weighted_densities.index_axis(Axis(0), n * (dim + 1));
-
-        // calculate rho0
-        let [_, _, c2, _] = self.model.geometry_coefficients(temperature);
-        let diameter = self.model.hs_diameter(temperature);
-        let mut n2i = n0i.to_owned();
-        for (i, mut n2i) in n2i.outer_iter_mut().enumerate() {
-            n2i.mul_assign(diameter[i].powi(2) * c2[i] * PI);
-        }
-        let mut rho0: Array2<N> = (n2vi
-            .iter()
-            .fold(Array2::zeros(n0i.raw_dim()), |acc, n2vi| acc + n2vi * n2vi)
-            / -(&n2i * &n2i)
-            + 1.0)
-            * n0i;
-        rho0.iter_mut().zip(&n0i).for_each(|(rho0, &n0i)| {
-            if n0i.re() < N0_CUTOFF {
-                *rho0 = n0i;
-            }
-        });
-
-        // calculate xi
-        let n2v: Vec<_> = n2vi.iter().map(|n2vi| n2vi.sum_axis(Axis(0))).collect();
-        let n2 = n2i.sum_axis(Axis(0));
-        let mut xi = n2v
-            .iter()
-            .fold(Array1::zeros(n2.raw_dim()), |acc, n2v| acc + n2v * n2v)
-            / -(&n2 * &n2)
-            + 1.0;
-        xi.iter_mut()
-            .zip(&n0i.sum_axis(Axis(0)))
-            .for_each(|(xi, &n0i)| {
-                if n0i.re() < N0_CUTOFF {
-                    *xi = N::one();
+                // segment-wise inhomogeneity factors and site densities (|n2v| > n2 and n0 < 0
+                // only from FFT ringing; xi is bound to [0, 1] and the site densities have to be
+                // non-negative)
+                let mut n2i = n0i.to_owned();
+                for (mut n2i, i) in n2i.outer_iter_mut().zip(0..n) {
+                    n2i.mapv_inplace(|n0| n0 * d[i].powi(2) * c2[i] * PI);
                 }
-            });
+                let n2vi_sq: Array2<N> = n2vi
+                    .iter()
+                    .fold(Array2::zeros(n0i.raw_dim()), |acc, v| acc + &(v * v));
+                let rho =
+                    Zip::from(&n0i)
+                        .and(&n2i)
+                        .and(&n2vi_sq)
+                        .map_collect(|&n0, &n2, &n2v_sq| {
+                            if n0.re() < N0_CUTOFF {
+                                clip0(n0)
+                            } else {
+                                n0 * clip01(-n2v_sq / (n2 * n2) + 1.0)
+                            }
+                        });
 
-        // auxiliary variables
-        let n3i = n3.mapv(|n3| (-n3 + 1.0).recip());
+                // total inhomogeneity factor
+                let n2 = n2i.sum_axis(Axis(0));
+                let n2v_sq: Array1<N> = n2vi
+                    .iter()
+                    .map(|v| v.sum_axis(Axis(0)))
+                    .fold(Array1::zeros(n2.raw_dim()), |acc, v| acc + &v * &v);
+                let n0 = n0i.sum_axis(Axis(0));
+                let xi = Zip::from(&n0)
+                    .and(&n2)
+                    .and(&n2v_sq)
+                    .map_collect(|&n0, &n2, &n2v_sq| {
+                        if n0.re() < N0_CUTOFF {
+                            N::one()
+                        } else {
+                            clip01(-n2v_sq / (n2 * n2) + 1.0)
+                        }
+                    });
+                let y = self.bmcsl_contact_values(&d, &n2, &n3, &xi);
+                (rho, y)
+            }
+            AssociationVersion::Wda => {
+                let mut n2 = Array1::zeros(wd.shape()[1]);
+                let mut n3 = Array1::zeros(wd.shape()[1]);
+                for (rhobar, i) in wd.outer_iter().zip(0..n) {
+                    n2 += &rhobar.mapv(|r| r * d[i].powi(2) * c2[i] * PI);
+                    n3 += &rhobar.mapv(|r| r * d[i].powi(3) * c3[i] * (PI / 6.0));
+                }
+                let xi = Array1::ones(n2.raw_dim());
+                let y = self.bmcsl_contact_values(&d, &n2, &n3, &xi);
+                // rhobar < 0 only from FFT ringing; the site densities have to be non-negative
+                (wd.mapv(clip0), y)
+            }
+            AssociationVersion::ISaft => {
+                let rho = wd.slice_axis(Axis(0), Slice::from(0..n)).to_owned();
+                let n2 = wd.index_axis(Axis(0), n).to_owned();
+                let n3 = wd.index_axis(Axis(0), n + 1).to_owned();
+                let xi = Array1::ones(n2.raw_dim());
+                let y = self.bmcsl_contact_values(&d, &n2, &n3, &xi);
+                (rho, y)
+            }
+        }
+    }
 
-        self._helmholtz_energy_density(temperature, &rho0, &n2, &n3i, &xi)
+    fn association_strength<N: DualNum<Primitive = f64> + Copy>(
+        &self,
+        temperature: N,
+    ) -> Array1<N> {
+        self.records()
+            .map(|(i, j, record)| {
+                self.model
+                    .association_strength_ij(temperature, i, j, record)
+            })
+            .collect()
     }
 }
 
-impl<'a, A: AssociationStrength> YuWuAssociationFunctional<'a, A> {
-    pub fn _helmholtz_energy_density<N: DualNum<Primitive = f64> + Copy, S: Data<Elem = N>>(
-        &self,
-        temperature: N,
-        rho0: &Array2<N>,
-        n2: &ArrayBase<S, Ix1>,
-        n3i: &Array1<N>,
-        xi: &Array1<N>,
-    ) -> FeosResult<Array1<N>> {
-        let a = &self.association_parameters;
-        let t = temperature;
+/// Clip a value to non-negative values.
+fn clip0<N: DualNum<Primitive = f64> + Copy>(x: N) -> N {
+    if x.re() < 0.0 { N::zero() } else { x }
+}
 
-        let d = self.model.hs_diameter(t);
-
-        match (
-            a.sites_a.len() * a.sites_b.len(),
-            a.sites_c.len(),
-            self.association.force_cross_association,
-        ) {
-            (0, 0, _) => Ok(Array1::zeros(n3i.len())),
-            (1, 0, false) => {
-                let params = a.binary_ab.first().map(|r| &r.model_record);
-                Ok(self.helmholtz_energy_density_ab_analytic(params, t, rho0, &d, n2, n3i, xi))
-            }
-            (0, 1, false) => {
-                let params = a.binary_cc.first().map(|r| &r.model_record);
-                Ok(self.helmholtz_energy_density_cc_analytic(params, t, rho0, &d, n2, n3i, xi))
-            }
-            (1, 1, false) => {
-                let params_ab = a.binary_ab.first().map(|r| &r.model_record);
-                let params_cc = a.binary_cc.first().map(|r| &r.model_record);
-                Ok(
-                    self.helmholtz_energy_density_ab_analytic(params_ab, t, rho0, &d, n2, n3i, xi)
-                        + self.helmholtz_energy_density_cc_analytic(
-                            params_cc, t, rho0, &d, n2, n3i, xi,
-                        ),
-                )
-            }
-            _ => {
-                let mut x = DVector::from_element(a.sites_a.len() + a.sites_b.len(), 0.2);
-                let (assoc_comp_ab, n_ab): (Vec<_>, Vec<_>) = a
-                    .sites_a
-                    .iter()
-                    .chain(a.sites_b.iter())
-                    .map(|s| (s.assoc_comp, s.n))
-                    .unzip();
-                let rhoab = Array2::from_shape_fn((x.len(), n3i.len()), |(i, j)| {
-                    rho0[(assoc_comp_ab[i], j)] * n_ab[i]
-                });
-                rhoab
-                    .axis_iter(Axis(1))
-                    .zip(n2.iter())
-                    .zip(n3i.iter())
-                    .zip(xi.iter())
-                    .map(|(((rho, &n2), &n3i), &xi)| {
-                        let [delta_ab, delta_cc] = self.association.yu_wu_association_strength(
-                            self.association_parameters,
-                            self.model,
-                            t,
-                            &d,
-                            n2,
-                            n3i,
-                            xi,
-                        );
-                        let rho = DVector::from(rho.to_vec());
-                        self.association.helmholtz_energy_density_cross_association(
-                            &rho,
-                            &delta_ab,
-                            &delta_cc,
-                            Some(&mut x),
-                        )
-                    })
-                    .collect()
-            }
-        }
-    }
-
-    #[expect(clippy::too_many_arguments)]
-    fn helmholtz_energy_density_ab_analytic<N: DualNum<Primitive = f64> + Copy, S: Data<Elem = N>>(
-        &self,
-        parameters: Option<&A::Record>,
-        temperature: N,
-        rho0: &Array2<N>,
-        diameter: &DVector<N>,
-        n2: &ArrayBase<S, Ix1>,
-        n3i: &Array1<N>,
-        xi: &Array1<N>,
-    ) -> Array1<N> {
-        let a = &self.association_parameters;
-        let Some(par) = parameters else {
-            return Array1::zeros(xi.len());
-        };
-
-        // site densities
-        let i = a.sites_a[0].assoc_comp;
-        let j = a.sites_b[0].assoc_comp;
-        let rhoa = &rho0.index_axis(Axis(0), i) * a.sites_a[0].n;
-        let rhob = &rho0.index_axis(Axis(0), j) * a.sites_b[0].n;
-
-        // association strength
-        let di = diameter[i];
-        let dj = diameter[j];
-        let k = n2 * n3i * (di * dj / (di + dj));
-        let delta = (((&k / 18.0 + 0.5) * &k * xi + 1.0) * n3i)
-            * self.model.association_strength_ij(temperature, i, j, par);
-
-        // no cross association, two association sites
-        let (xa, xb) = if rhoa.sum().re() > rhob.sum().re() {
-            let aux = &delta * (&rhoa - &rhob) + 1.0;
-            let xb = ((&aux * &aux + &delta * &rhob * 4.0).map(N::sqrt) + aux).map(N::recip) * 2.0;
-            let xa = (&delta * &rhob * &xb + 1.0).map(N::recip);
-            (xa, xb)
-        } else {
-            let aux = &delta * (&rhob - &rhoa) + 1.0;
-            let xa = ((&aux * &aux + &delta * &rhoa * 4.0).map(N::sqrt) + aux).map(N::recip) * 2.0;
-            let xb = (&delta * &rhoa * &xa + 1.0).map(N::recip);
-            (xa, xb)
-        };
-
-        let f = |x: N| x.ln() - x * 0.5 + 0.5;
-        rhoa * xa.mapv(f) + rhob * xb.mapv(f)
-    }
-
-    #[expect(clippy::too_many_arguments)]
-    fn helmholtz_energy_density_cc_analytic<N: DualNum<Primitive = f64> + Copy, S: Data<Elem = N>>(
-        &self,
-        parameters: Option<&A::Record>,
-        temperature: N,
-        rho0: &Array2<N>,
-        diameter: &DVector<N>,
-        n2: &ArrayBase<S, Ix1>,
-        n3i: &Array1<N>,
-        xi: &Array1<N>,
-    ) -> Array1<N> {
-        let a = &self.association_parameters;
-        let Some(par) = parameters else {
-            return Array1::zeros(xi.len());
-        };
-
-        // site densities
-        let i = a.sites_c[0].assoc_comp;
-        let rhoc = &rho0.index_axis(Axis(0), i) * a.sites_c[0].n;
-
-        // association strength
-        let di = diameter[i];
-        let k = n2 * n3i * (di * 0.5);
-        let delta = (((&k / 18.0 + 0.5) * &k * xi + 1.0) * n3i)
-            * self.model.association_strength_ij(temperature, i, i, par);
-
-        // no cross association, two association sites
-        let xc = ((delta * 4.0 * &rhoc + 1.0).map(N::sqrt) + 1.0).map(N::recip) * 2.0;
-
-        let f = |x: N| x.ln() - x * 0.5 + 0.5;
-        rhoc * xc.mapv(f)
+/// Clip a value to the interval [0, 1].
+fn clip01<N: DualNum<Primitive = f64> + Copy>(x: N) -> N {
+    if x.re() < 0.0 {
+        N::zero()
+    } else if x.re() > 1.0 {
+        N::one()
+    } else {
+        x
     }
 }

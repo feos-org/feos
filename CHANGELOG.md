@@ -10,8 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the `Grid` and `PoreProfile` classes as an entry points to DFT in various coordinate systems in Python. [#376](https://github.com/feos-org/feos/pull/376)
 - `PoreProfile.solver_log` now stores a timing profile of the different solver steps. [#385](https://github.com/feos-org/feos/pull/385)
 - Added `Interface::curved` to calculate cylindrical and spherical interfaces from a planar interface. [#387](https://github.com/feos-org/feos/pull/387)
+- Added `drho_dn` and `drho_dt_n` to DFT profiles to calculate derivatives of density profiles at constant number of particles. [#403](https://github.com/feos-org/feos/pull/403)
+- Added the association functionals of Yu and Wu, WDA, and iSAFT with the fractions of non-bonded sites as additional variables of the density profile. The version is selected with `AssociationVersion` (default iSAFT). [#403](https://github.com/feos-org/feos/pull/403)
+- Added `non_bonded_fractions` to DFT profiles to access the fractions of non-bonded association sites. [#403](https://github.com/feos-org/feos/pull/403)
 
 ### Changed
+- Removed most heap allocations from the evaluation of the residual Helmholtz energy of PC-SAFT. [#397](https://github.com/feos-org/feos/pull/397)
+- `ResidualDyn::for_each_contribution` and `Residual::for_each_contribution`, which pass each Helmholtz energy contribution to a closure, are now the only methods a model has to implement to evaluate the Helmholtz energy. `Residual::reduced_residual_helmholtz_energy_density` and `Residual::reduced_helmholtz_energy_density_contributions` are provided methods built on top of it, and both methods were removed from `ResidualDyn`. [#397](https://github.com/feos-org/feos/pull/397)
+- `HelmholtzEnergyFunctional::evaluate_bulk` passes each contribution to a closure instead of returning a `Vec`. [#397](https://github.com/feos-org/feos/pull/397)
+- `MonomerShape::NonSpherical` holds a reference `&DVector<f64>` to the segment numbers instead of an owned `DVector<D>`. [#397](https://github.com/feos-org/feos/pull/397)
+- `StateHD::new_density` takes the partial densities by value. [#397](https://github.com/feos-org/feos/pull/397)
 - Changed data type of initial temperatures or pressure for phase equilibrium calculations (`TemperatureOrPressure::Other`) from `D` to `f64`. [#369](https://github.com/feos-org/feos/pull/369)
 - Reworked DFT solution algorithms slightly for the cases in which additional specifications are given. [#371](https://github.com/feos-org/feos/pull/371)
 - External potentials are passed and returned as quantities (energies) instead of reduced units. [#372](https://github.com/feos-org/feos/pull/372)
@@ -20,11 +28,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed `PlanarInterface` to `Interface` and its constructors `from_tanh` and `from_pdgt` to `planar_from_tanh` and `planar_from_pdgt`. [#387](https://github.com/feos-org/feos/pull/387)
 - Replaced `PlanarInterface.from_density_profile` in Python with the `Interface(grid, vle, density)` constructor in analogy to `PoreProfile`. [#387](https://github.com/feos-org/feos/pull/387)
 - `drho_dp`, `dn_dp`, `drho_dt`, and `dn_dt` of DFT profiles now take the bulk state as an argument (methods instead of properties in Python). [#387](https://github.com/feos-org/feos/pull/387)
+- Renamed `drho_dt` and `dn_dt` of DFT profiles to `drho_dt_p` and `dn_dt_p` (derivatives at constant pressure and bulk composition). [#403](https://github.com/feos-org/feos/pull/403)
+- The Newton solver is now the default solver for DFT (previously Anderson mixing). It always iterates the logarithms of the density profiles (and of the fractions of non-bonded sites), so the `log` argument of `DFTSolver.newton` is removed. Jacobian-vector products are calculated exactly from the linearized residual, and the step size is controlled by a line search. [#403](https://github.com/feos-org/feos/pull/403)
 
 ### Removed
 - Removed the `DFTSpecification` trait in favor of only using the `DFTSpecification` enum (renamed from `DFTSpecifications`). [#371](https://github.com/feos-org/feos/pull/371)
 - Removed the `Pore2D` and `Pore3D` interfaces including the (limited) calculation of external potentials for complex pore grometries. [#376](https://github.com/feos-org/feos/pull/376)
 - Removed the free energy-averaged external (FEA) potential. [#376](https://github.com/feos-org/feos/pull/376)
+- Removed predictive density gradient theory (pDGT) including `Interface::planar_from_pdgt`. Interfaces are initialized with `Interface::planar_from_tanh`. [#403](https://github.com/feos-org/feos/pull/403)
+- Removed the association functional of Yu and Wu as functional contribution (`YuWuAssociationFunctional`). Association in DFT is now handled by `SaftAssociationFunctional` with the fractions of non-bonded sites as additional variables. [#403](https://github.com/feos-org/feos/pull/403)
 
 ### Fixed
 - The Newton solver for cDFT now correctly handles specifications other than the chemical potential. [#384](https://github.com/feos-org/feos/pull/384)
@@ -34,14 +46,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `quantity` and `num-dual` dependencies to 0.15. [#380](https://github.com/feos-org/feos/pull/380)
 
 ## [Unreleased]
-### Changed
-- Removed most heap allocations from the evaluation of the residual Helmholtz energy of PC-SAFT. [#397](https://github.com/feos-org/feos/pull/397)
-- `ResidualDyn::for_each_contribution` and `Residual::for_each_contribution`, which pass each Helmholtz energy contribution to a closure, are now the only methods a model has to implement to evaluate the Helmholtz energy. `Residual::reduced_residual_helmholtz_energy_density` and `Residual::reduced_helmholtz_energy_density_contributions` are provided methods built on top of it, and both methods were removed from `ResidualDyn`. [#397](https://github.com/feos-org/feos/pull/397)
-- `HelmholtzEnergyFunctional::evaluate_bulk` passes each contribution to a closure instead of returning a `Vec`. [#397](https://github.com/feos-org/feos/pull/397)
-- `MonomerShape::NonSpherical` holds a reference `&DVector<f64>` to the segment numbers instead of an owned `DVector<D>`. [#397](https://github.com/feos-org/feos/pull/397)
-- `StateHD::new_density` takes the partial densities by value. [#397](https://github.com/feos-org/feos/pull/397)
 
-## [0.10.5] - 2026-10-24
+## [0.10.5](https://github.com/feos-org/feos/releases/tag/v0.10.5) - 2026-10-24
 ### Fixed
 - Fixed `State::critical_point_binary` at fixed pressure, which evaluated the pressure at the wrong volume and never converged. [#402](https://github.com/feos-org/feos/pull/402)
 - Fixed `PhaseEquilibrium::tp_flash` with an initial state returning the previous phase split if only the feed composition changes. [#402](https://github.com/feos-org/feos/pull/402)
@@ -49,14 +55,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed `State::residual_chemical_potential_contributions` passing the temperature as molar volume. [#402](https://github.com/feos-org/feos/pull/402)
 - Fixed duplicate point in `PhaseDiagram::dew_point_line`. [#402](https://github.com/feos-org/feos/pull/402)
 
-## [0.10.4] - 2026-10-21
+## [0.10.4](https://github.com/feos-org/feos/releases/tag/v0.10.4) - 2026-10-21
 ### Fixed
 - Fixed bug in `_density_iteration` which used the residual Helmholtz energy as the pressure and the pressure as derivative. [#396](https://github.com/feos-org/feos/pull/396)
 - Fixed missing mole fraction factor in `State::thermodynamic_factor`. [#400](https://github.com/feos-org/feos/pull/400)
 - Fixed `State::henrys_law_constant` for mixed solvents. [#400](https://github.com/feos-org/feos/pull/400)
 - Fixed the acceleration in `PhaseEquilibrium::tp_flash` (Gibbs energy acceptance criterion not weighted by phase fractions and incomplete K-value history). [#400](https://github.com/feos-org/feos/pull/400)
 
-## [0.10.3] - 2026-10-14
+## [0.10.3](https://github.com/feos-org/feos/releases/tag/v0.10.3) - 2026-10-14
 ### Fixed
 - Fixed numerical roundoff errors in the analytic solution of association site fractions for asymmetric association schemes. [#393](https://github.com/feos-org/feos/pull/393),[#394](https://github.com/feos-org/feos/pull/394)
 

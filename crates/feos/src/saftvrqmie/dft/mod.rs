@@ -7,7 +7,7 @@ use feos_core::{FeosResult, ReferenceSystem};
 use feos_derive::FunctionalContribution;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
-use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctionalDyn, MoleculeShape};
+use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctionalDyn, MoleculeShape, NoAssociation};
 use nalgebra::DVector;
 use ndarray::{Array, Array1, Array2};
 use non_additive_hs::NonAddHardSphereFunctional;
@@ -33,6 +33,7 @@ impl SaftVRQMie {
 
 impl HelmholtzEnergyFunctionalDyn for SaftVRQMie {
     type Contribution<'a> = SaftVRQMieFunctionalContribution<'a>;
+    type Association<'a> = NoAssociation;
 
     fn contributions<'a>(&'a self) -> impl Iterator<Item = SaftVRQMieFunctionalContribution<'a>> {
         let mut contributions = Vec::with_capacity(3);

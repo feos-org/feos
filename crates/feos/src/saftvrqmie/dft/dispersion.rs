@@ -2,14 +2,12 @@ use crate::saftvrqmie::eos::dispersion::{Alpha, dispersion_energy_density};
 use crate::saftvrqmie::parameters::SaftVRQMiePars;
 use feos_core::FeosResult;
 use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
-use nalgebra::{DMatrix, DVector};
+use nalgebra::DMatrix;
 use ndarray::*;
 use num_dual::DualNum;
 
 /// psi Parameter for DFT (Sauer2017)
 const PSI_DFT: f64 = 1.3862;
-/// psi Parameter for pDGT (Rehner2018)
-const PSI_PDGT: f64 = 1.3286;
 
 #[derive(Clone)]
 pub struct AttractiveFunctional<'a> {
@@ -28,7 +26,7 @@ fn att_weight_functions<N: DualNum<Primitive = f64> + Copy>(
     temperature: N,
 ) -> WeightFunctionInfo<N> {
     let d = p.hs_diameter(temperature);
-    WeightFunctionInfo::new(DVector::from_fn(d.len(), |i, _| i), false).add(
+    WeightFunctionInfo::new(d.len(), false).add(
         WeightFunction::new_scaled(d * N::from(psi), WeightFunctionShape::Theta),
         false,
     )
@@ -39,15 +37,11 @@ impl<'a> FunctionalContribution for AttractiveFunctional<'a> {
         "Attractive functional"
     }
 
-    fn weight_functions<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
-        att_weight_functions(self.parameters, PSI_DFT, temperature)
-    }
-
-    fn weight_functions_pdgt<N: DualNum<Primitive = f64> + Copy>(
+    fn weight_functions<N: DualNum<Primitive = f64> + Copy>(
         &self,
         temperature: N,
     ) -> WeightFunctionInfo<N> {
-        att_weight_functions(self.parameters, PSI_PDGT, temperature)
+        att_weight_functions(self.parameters, PSI_DFT, temperature)
     }
 
     fn helmholtz_energy_density<N: DualNum<Primitive = f64> + Copy>(

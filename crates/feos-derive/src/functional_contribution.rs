@@ -36,12 +36,6 @@ fn impl_functional_contribution(
             Self::#name(functional_contribution) => functional_contribution.weight_functions(temperature)
         }
     });
-    let weight_functions_pdgt = variants.iter().map(|v| {
-        let name = &v.ident;
-        quote! {
-            Self::#name(functional_contribution) => functional_contribution.weight_functions_pdgt(temperature)
-        }
-    });
     let helmholtz_energy_density = variants.iter().map(|v| {
         let name = &v.ident;
         quote! {
@@ -59,11 +53,6 @@ fn impl_functional_contribution(
             fn weight_functions<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> feos_dft::WeightFunctionInfo<N> {
                 match self {
                     #(#weight_functions,)*
-                }
-            }
-            fn weight_functions_pdgt<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> feos_dft::WeightFunctionInfo<N> {
-                match self {
-                    #(#weight_functions_pdgt,)*
                 }
             }
             fn helmholtz_energy_density<N: DualNum<Primitive = f64> + Copy>(

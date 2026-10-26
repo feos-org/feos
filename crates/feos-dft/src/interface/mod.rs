@@ -2,7 +2,6 @@
 use crate::DFTSpecification;
 use crate::functional::HelmholtzEnergyFunctional;
 use crate::geometry::{Axis, Geometry, Grid};
-use crate::pdgt::PdgtFunctionalProperties;
 use crate::profile::{DFTProfile, InitialDensity};
 use crate::solver::DFTSolver;
 use feos_core::{Contributions, FeosError, FeosResult, PhaseEquilibrium, ReferenceSystem, State};
@@ -12,9 +11,6 @@ use std::f64::consts::{FRAC_PI_3, PI};
 
 mod surface_tension_diagram;
 pub use surface_tension_diagram::SurfaceTensionDiagram;
-
-const RELATIVE_WIDTH: f64 = 6.0;
-const MIN_WIDTH: f64 = 100.0;
 
 /// Density profile and properties of a planar interface.
 #[derive(Clone)]
@@ -126,38 +122,6 @@ impl<F: HelmholtzEnergyFunctional> Interface<F> {
         });
 
         Self::new(vle, ax, density)
-    }
-
-    pub fn planar_from_pdgt(vle: &PhaseEquilibrium<F, 2>, n_grid: usize) -> FeosResult<Self> {
-        let dft = &vle.vapor().eos;
-
-        if dft.component_index().len() != 1 {
-            panic!("Initialization from pDGT not possible for segment DFT or mixtures");
-        }
-
-        // calculate density profile from pDGT
-        let n_grid_pdgt = 20;
-        let mut z_pdgt = Length::zeros(n_grid_pdgt);
-        let mut w_pdgt = Length::from_reduced(0.0);
-        let (rho_pdgt, gamma_pdgt) =
-            dft.solve_pdgt(vle, 20, 0, Some((&mut z_pdgt, &mut w_pdgt)))?;
-        if !gamma_pdgt.to_reduced().is_normal() {
-            return Err(FeosError::InvalidState(
-                String::from("DFTProfile::from_pdgt"),
-                String::from("gamma_pdgt"),
-                gamma_pdgt.to_reduced(),
-            ));
-        }
-
-        // create PlanarInterface
-        let l_grid = Length::from_reduced(MIN_WIDTH).max(w_pdgt * RELATIVE_WIDTH);
-
-        // interpolate density profile from pDGT to DFT
-        let ax = Axis::new_cartesian(n_grid, l_grid, None);
-        let r = l_grid * 0.5;
-        let density = interp_symmetric(vle, z_pdgt, rho_pdgt, vle, &ax.grid, r)?;
-
-        Ok(Self::new(vle, ax, density))
     }
 
     pub fn curved(
@@ -343,28 +307,28 @@ impl<F: HelmholtzEnergyFunctional> Interface<F> {
 }
 
 fn interp_symmetric<F: HelmholtzEnergyFunctional>(
-    vle_pdgt: &PhaseEquilibrium<F, 2>,
-    z_pdgt: Length<Array1<f64>>,
-    rho_pdgt: Density<Array2<f64>>,
+    vle_init: &PhaseEquilibrium<F, 2>,
+    z_init: Length<Array1<f64>>,
+    rho_init: Density<Array2<f64>>,
     vle: &PhaseEquilibrium<F, 2>,
     z: &Array1<f64>,
     radius: Length,
 ) -> FeosResult<Density<Array2<f64>>> {
-    let rho_v = segment_densities(vle_pdgt.vapor());
-    let rho_l = segment_densities(vle_pdgt.liquid());
-    let reduced_density = Array2::from_shape_fn(rho_pdgt.raw_dim(), |(i, j)| {
-        ((rho_pdgt.get((i, j)) - rho_v.get(i)) / (rho_l.get(i) - rho_v.get(i))).into_value() - 0.5
+    let rho_v = segment_densities(vle_init.vapor());
+    let rho_l = segment_densities(vle_init.liquid());
+    let reduced_density = Array2::from_shape_fn(rho_init.raw_dim(), |(i, j)| {
+        ((rho_init.get((i, j)) - rho_v.get(i)) / (rho_l.get(i) - rho_v.get(i))).into_value() - 0.5
     });
     let segments = rho_v.len();
     let mut reduced_density = interp(
-        &z_pdgt.to_reduced(),
+        &z_init.to_reduced(),
         &reduced_density,
         &(z - radius.to_reduced()),
         &Array1::from_elem(segments, 0.5),
         &Array1::from_elem(segments, -0.5),
         false,
     ) + interp(
-        &z_pdgt.to_reduced(),
+        &z_init.to_reduced(),
         &reduced_density,
         &(z + radius.to_reduced()),
         &Array1::from_elem(segments, -0.5),

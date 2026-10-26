@@ -108,13 +108,46 @@ $$f_\alpha=\rho_\alpha^\mathrm{b}e^{\beta\sum_\gamma\hat F_{\rho_\gamma}^\mathrm
 
 which is by construction equal for every segment $\alpha$ on the same molecule.
 
-## Combined expression
-To avoid having multiple implementations of the central part of the DFT code, the different descriptions of molecules can be combined in a single version of the Euler-Lagrange equation:
+## Associating molecules
+Association is described with Wertheim's theory, which introduces the fractions of non-bonded association sites $X_A$. In the bulk, they are determined from the mass action equations, which are usually solved for given densities before the Helmholtz energy is evaluated. In inhomogeneous systems, we treat the fractions of non-bonded sites $X_A(\mathbf{r})$ as additional variables of the density profile. Following [Michelsen and Hendriks (2001)](https://doi.org/10.1016/S0378-3812(01)00344-2), we define the functional
+
+$$Q[X,\rho]=\int\sum_A\tilde\rho_A(\mathbf{r})\left(\ln X_A(\mathbf{r})-X_A(\mathbf{r})+1\right)\mathrm{d}\mathbf{r}-\frac{1}{2}\iint\sum_{AB}\tilde\rho_A(\mathbf{r})X_A(\mathbf{r})\tilde\rho_B(\mathbf{r}')X_B(\mathbf{r}')\Delta^{AB}(\mathbf{r},\mathbf{r}')\mathrm{d}\mathbf{r}\mathrm{d}\mathbf{r}'$$
+
+of the density profiles and the fractions of non-bonded sites. Here, $\tilde\rho_A$ is the density of site $A$, i.e., the multiplicity of the site times the (possibly weighted) density of the segment that carries the site, and $\Delta^{AB}(\mathbf{r},\mathbf{r}')$ is the association strength between sites $A$ and $B$ at positions $\mathbf{r}$ and $\mathbf{r}'$. For local approaches, $\Delta^{AB}(\mathbf{r},\mathbf{r}')=\Delta^{AB}(\mathbf{r})\delta(\mathbf{r}-\mathbf{r}')$, whereas the non-local approach restricts $\mathbf{r}'$ to a shell at contact around $\mathbf{r}$. The specific expressions are given in the section on the [association functionals](../models/association.md).
+
+The association contribution to the Helmholtz energy follows as the stationary point of $Q$ with respect to the fractions of non-bonded sites
+
+$$\beta F^\mathrm{assoc}=\underset{X}{\mathrm{stat}}~Q[X,\rho]$$
+
+The stationarity condition $\frac{\delta Q}{\delta X_A(\mathbf{r})}=0$ yields the mass action equations
+
+$$
+X_A(\mathbf{r})=\frac{1}{1+S_A(\mathbf{r})}
+$$ (eqn:mass_action)
+
+with the association sums
+
+$$S_A(\mathbf{r})=\sum_B\int\tilde\rho_B(\mathbf{r}')X_B(\mathbf{r}')\Delta^{AB}(\mathbf{r},\mathbf{r}')\mathrm{d}\mathbf{r}'$$
+
+Inserting the mass action equations into $Q$ recovers the well-known form of the association contribution
+
+$$\beta F^\mathrm{assoc}=\int\sum_A\tilde\rho_A(\mathbf{r})\left(\ln X_A(\mathbf{r})-\frac{X_A(\mathbf{r})}{2}+\frac{1}{2}\right)\mathrm{d}\mathbf{r}$$
+
+The stationarity also simplifies the functional derivative with respect to the density profiles because the implicit dependence of $X_A(\mathbf{r})$ on the density profiles does not contribute. The functional derivative is therefore evaluated at fixed $X_A(\mathbf{r})$
+
+$$\beta F_{\rho_\alpha}^\mathrm{assoc}(\mathbf{r})=\int\sum_A\frac{\delta\tilde\rho_A(\mathbf{r}')}{\delta\rho_\alpha(\mathbf{r})}\left(\ln X_A(\mathbf{r}')-X_A(\mathbf{r}')+1-X_A(\mathbf{r}')S_A(\mathbf{r}')\right)\mathrm{d}\mathbf{r}'-\frac{1}{2}\iint\sum_{AB}\tilde\rho_A(\mathbf{r}')X_A(\mathbf{r}')\tilde\rho_B(\mathbf{r}'')X_B(\mathbf{r}'')\frac{\delta\Delta^{AB}(\mathbf{r}',\mathbf{r}'')}{\delta\rho_\alpha(\mathbf{r})}\mathrm{d}\mathbf{r}'\mathrm{d}\mathbf{r}''$$
+
+The association contribution is added to $\hat F_{\rho_\alpha}^\mathrm{res}$, so the Euler-Lagrange equation keeps its form and is solved together with eq. {eq}`eqn:mass_action` for $\rho_\alpha(\mathbf{r})$ and $X_A(\mathbf{r})$. In the bulk phase, the fractions of non-bonded sites $X_A^\mathrm{b}$ follow from the mass action equations at the bulk densities, and the association contribution to $\hat F_{\rho_\alpha}^\mathrm{b,res}$ is evaluated at $X_A^\mathrm{b}$.
+
+## Full expression
+To avoid having multiple implementations of the central part of the DFT code, the different descriptions of molecules are combined in a single set of equations:
 
 $$\rho_\alpha(\mathbf{r})=f_\alpha e^{-\frac{\beta}{m_\alpha}\left(\hat F_{\rho_\alpha}^\mathrm{res}(\mathbf{r})+V_\alpha^\mathrm{ext}(\mathbf{r})\right)}\prod_{\alpha'}I_{\alpha\alpha'}(\mathbf{r})$$
 
 $$I_{\alpha\alpha'}(\mathbf{r})=\int e^{-\frac{\beta}{m_{\alpha'}}\left(\hat F_{\rho_{\alpha'}}^\mathrm{res}(\mathbf{r}')+V_{\alpha'}^\mathrm{ext}(\mathbf{r}')\right)}\left(\prod_{\alpha''\neq\alpha}I_{\alpha'\alpha''}(\mathbf{r}')\right)\omega_\mathrm{chain}^{\alpha\alpha'}(\mathbf{r}-\mathbf{r}')\mathrm{d}\mathbf{r}'$$
 
+$$X_A(\mathbf{r})=\frac{1}{1+S_A(\mathbf{r})}$$
+
 $$f_\alpha=\rho_\alpha^\mathrm{b}e^{\frac{\beta}{m_\alpha}\sum_\gamma\hat F_{\rho_\gamma}^\mathrm{b,res}}$$
 
-If molecules consist of single (possibly non-spherical) segments, the Euler-Lagrange equation simplifies to that of the homosegmented chains shown above. For heterosegmented chains, the correct expression is obtained by setting $m_\alpha=1$.
+Here, $\hat F_{\rho_\alpha}^\mathrm{res}$ contains the association contribution at fixed $X_A(\mathbf{r})$, and $\hat F_{\rho_\gamma}^\mathrm{b,res}$ the association contribution at the fractions of non-bonded sites of the bulk phase. If molecules consist of single (possibly non-spherical) segments, the Euler-Lagrange equation simplifies to that of the homosegmented chains shown above. For heterosegmented chains, the correct expression is obtained by setting $m_\alpha=1$. Without association, the mass action equations drop out.

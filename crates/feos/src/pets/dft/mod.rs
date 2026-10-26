@@ -7,7 +7,7 @@ use feos_core::{FeosResult, ReferenceSystem};
 use feos_derive::FunctionalContribution;
 use feos_dft::adsorption::FluidParameters;
 use feos_dft::solvation::PairPotential;
-use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctionalDyn, MoleculeShape};
+use feos_dft::{FunctionalContribution, HelmholtzEnergyFunctionalDyn, MoleculeShape, NoAssociation};
 use nalgebra::DVector;
 use ndarray::{Array1, Array2};
 use num_dual::DualNum;
@@ -30,6 +30,7 @@ impl Pets {
 
 impl HelmholtzEnergyFunctionalDyn for Pets {
     type Contribution<'a> = PetsFunctionalContribution<'a>;
+    type Association<'a> = NoAssociation;
 
     fn molecule_shape(&self) -> MoleculeShape<'_> {
         MoleculeShape::Spherical(self.sigma.len())

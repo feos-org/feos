@@ -3,7 +3,6 @@ use crate::pets::Pets;
 use crate::pets::eos::dispersion::{A, B};
 use feos_core::{FeosError, FeosResult};
 use feos_dft::{FunctionalContribution, WeightFunction, WeightFunctionInfo, WeightFunctionShape};
-use nalgebra::dvector;
 use ndarray::*;
 use num_dual::*;
 use std::f64::consts::{FRAC_PI_6, PI};
@@ -31,9 +30,12 @@ impl<'a> FunctionalContribution for PureFMTFunctional<'a> {
         "Pure FMT"
     }
 
-    fn weight_functions<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
+    fn weight_functions<N: DualNum<Primitive = f64> + Copy>(
+        &self,
+        temperature: N,
+    ) -> WeightFunctionInfo<N> {
         let r = self.parameters.hs_diameter(temperature) * N::from(0.5);
-        WeightFunctionInfo::new(dvector![0], false).extend(
+        WeightFunctionInfo::new(1, false).extend(
             vec![
                 WeightFunctionShape::Delta,
                 WeightFunctionShape::Theta,
@@ -123,10 +125,13 @@ impl<'a> FunctionalContribution for PureAttFunctional<'a> {
         "Pure attractive"
     }
 
-    fn weight_functions<N: DualNum<Primitive = f64> + Copy>(&self, temperature: N) -> WeightFunctionInfo<N> {
+    fn weight_functions<N: DualNum<Primitive = f64> + Copy>(
+        &self,
+        temperature: N,
+    ) -> WeightFunctionInfo<N> {
         let d = self.parameters.hs_diameter(temperature);
         const PSI: f64 = 1.21; // Homosegmented DFT (Heier2018)
-        WeightFunctionInfo::new(dvector![0], false).add(
+        WeightFunctionInfo::new(1, false).add(
             WeightFunction::new_scaled(d * N::from(PSI), WeightFunctionShape::Theta),
             false,
         )

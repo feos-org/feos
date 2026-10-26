@@ -76,6 +76,11 @@ macro_rules! impl_profile {
             }
 
             #[getter]
+            fn get_non_bonded_fractions<'py>(&self, py: Python<'py>) -> Bound<'py, PyArrayDyn<f64>> {
+                self.0.profile.non_bonded_fractions.view().into_dyn().to_pyarray(py)
+            }
+
+            #[getter]
             fn get_moles(&self) -> Moles<DVector<f64>> {
                 self.0.profile.moles()
             }
@@ -225,8 +230,8 @@ macro_rules! impl_profile {
             /// Returns
             /// -------
             /// SIArray
-            fn drho_dt(&mut self, bulk: &PyState) -> PyResult<<Density<ArrayD<f64>> as std::ops::Div<Temperature>>::Output> {
-                Ok(self.0.profile.drho_dt(&bulk.0).map_err(PyFeosError::from)?.into_dyn())
+            fn drho_dt_p(&mut self, bulk: &PyState) -> PyResult<<Density<ArrayD<f64>> as std::ops::Div<Temperature>>::Output> {
+                Ok(self.0.profile.drho_dt_p(&bulk.0).map_err(PyFeosError::from)?.into_dyn())
             }
 
             /// Calculate the partial derivatives of the number of moles w.r.t. the temperature
@@ -240,8 +245,18 @@ macro_rules! impl_profile {
             /// Returns
             /// -------
             /// SIArray1
-            fn dn_dt(&mut self, bulk: &PyState) -> PyResult<<Moles<DVector<f64>> as std::ops::Div<Temperature>>::Output> {
-                Ok(self.0.profile.dn_dt(&bulk.0).map_err(PyFeosError::from)?)
+            fn dn_dt_p(&mut self, bulk: &PyState) -> PyResult<<Moles<DVector<f64>> as std::ops::Div<Temperature>>::Output> {
+                Ok(self.0.profile.dn_dt_p(&bulk.0).map_err(PyFeosError::from)?)
+            }
+
+            #[getter]
+            fn get_drho_dn(&mut self) -> PyResult<<Density<ArrayD<f64>> as std::ops::Div<Moles>>::Output> {
+                Ok(self.0.profile.drho_dn().map_err(PyFeosError::from)?.into_dyn())
+            }
+
+            #[getter]
+            fn get_drho_dt_n(&mut self) -> PyResult<<Density<ArrayD<f64>> as std::ops::Div<Temperature>>::Output> {
+                Ok(self.0.profile.drho_dt_n().map_err(PyFeosError::from)?.into_dyn())
             }
         }
     };

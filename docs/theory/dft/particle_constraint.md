@@ -22,7 +22,7 @@ $$
 \frac{\delta Q}{\delta\mu_i}=N_i^\mathrm{spec}-\int\rho_i(\mathbf{r})\mathrm{d}\mathbf{r}=0
 $$
 
-which can be identified as the Euler-Lagrange equation and the particle number constraint. The two equations can be solved together by inserting the Euler-Lagrange equation (now using the [combined expression](euler_lagrange_equation.md)) into the particle number constraint
+which can be identified as the Euler-Lagrange equation and the particle number constraint. The two equations can be solved together by inserting the Euler-Lagrange equation (now using the [full expression](euler_lagrange_equation.md)) into the particle number constraint
 
 $$
 N_\alpha^\mathrm{spec}=f_\alpha\int e^{-\frac{\beta}{m_\alpha}\left(\hat F_{\rho_\alpha}^\mathrm{res}(\mathbf{r})+V_\alpha^\mathrm{ext}(\mathbf{r})\right)}\prod_{\alpha'}I_{\alpha\alpha'}(\mathbf{r})\mathrm{d}\mathbf{r}\equiv f_\alpha z_\alpha

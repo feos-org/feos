@@ -1,6 +1,8 @@
 use crate::eos::{PyEquationOfState, parse_molefracs};
 use crate::ideal_gas::IdealGasModel;
 use crate::residual::ResidualModel;
+#[cfg(any(feature = "pcsaft", feature = "gc_pcsaft"))]
+use feos::association::AssociationVersion;
 use feos::hard_sphere::{FMTFunctional, FMTVersion};
 use feos_core::{EquationOfState, ResidualDyn};
 use feos_dft::Geometry;
@@ -81,6 +83,41 @@ impl From<PyFMTVersion> for FMTVersion {
             PyFMTVersion::WhiteBear => FMTVersion::WhiteBear,
             PyFMTVersion::KierlikRosinberg => FMTVersion::KierlikRosinberg,
             PyFMTVersion::AntiSymWhiteBear => FMTVersion::AntiSymWhiteBear,
+        }
+    }
+}
+
+/// Different versions of the association functional.
+#[cfg(any(feature = "pcsaft", feature = "gc_pcsaft"))]
+#[derive(Clone, Copy, PartialEq)]
+#[pyclass(name = "AssociationVersion", eq, eq_int, from_py_object)]
+pub enum PyAssociationVersion {
+    /// Site densities and contact values from FMT weighted densities ([Yu and Wu, 2002](https://doi.org/10.1063/1.1463435))
+    YuWu,
+    /// Bulk association at weighted densities averaged over a sphere with the segment diameter ([Camacho Vergara et al., 2020](https://doi.org/10.1080/00268976.2020.1725668))
+    Wda,
+    /// Inhomogeneous TPT1 with local site densities and a contact shell as association kernel ([Bymaster and Chapman, 2010](https://doi.org/10.1021/jp102677m))
+    ISaft,
+}
+
+#[cfg(any(feature = "pcsaft", feature = "gc_pcsaft"))]
+impl From<AssociationVersion> for PyAssociationVersion {
+    fn from(association_version: AssociationVersion) -> Self {
+        match association_version {
+            AssociationVersion::YuWu => PyAssociationVersion::YuWu,
+            AssociationVersion::Wda => PyAssociationVersion::Wda,
+            AssociationVersion::ISaft => PyAssociationVersion::ISaft,
+        }
+    }
+}
+
+#[cfg(any(feature = "pcsaft", feature = "gc_pcsaft"))]
+impl From<PyAssociationVersion> for AssociationVersion {
+    fn from(association_version: PyAssociationVersion) -> Self {
+        match association_version {
+            PyAssociationVersion::YuWu => AssociationVersion::YuWu,
+            PyAssociationVersion::Wda => AssociationVersion::Wda,
+            PyAssociationVersion::ISaft => AssociationVersion::ISaft,
         }
     }
 }

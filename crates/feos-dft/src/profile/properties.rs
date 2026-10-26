@@ -1,18 +1,18 @@
 #![allow(type_alias_bounds)]
-use super::DFTProfile;
-use crate::convolver::{Convolver, PeriodicConvolver};
+use super::{DFTProfile, DFTSpecification};
+use crate::association::AssociationFunctional;
+use crate::functional::HelmholtzEnergyFunctional;
 use crate::functional_contribution::FunctionalContribution;
-use crate::solver::DFTSolverLog;
-use crate::{ConvolverFFT, HelmholtzEnergyFunctional, WeightFunctionInfo};
+use crate::solver::{DFTSolverLog, Evaluate, Tape, solve_linearized};
 use feos_core::{Contributions, FeosResult, ReferenceSystem, State, Total};
 use nalgebra::{DMatrix, DVector};
-use ndarray::{Array, Array1, Axis, Dimension, Ix0, RemoveAxis};
-use num_dual::{Dual64, DualNum};
+use ndarray::{Array, Array1, Axis, Dimension, RemoveAxis};
+use num_dual::{Dual64, DualNumCopy};
 use quantity::{
     Density, Energy, Entropy, EntropyDensity, MolarEnergy, Moles, Pressure, Quantity, Temperature,
 };
+use rustdct::DctNum;
 use std::ops::{AddAssign, Div};
-use std::sync::Arc;
 
 type DrhoDmu<D: Dimension> =
     <Density<Array<f64, <D::Larger as Dimension>::Larger>> as Div<MolarEnergy>>::Output;
@@ -20,24 +20,21 @@ type DnDmu = <Moles<DMatrix<f64>> as Div<MolarEnergy>>::Output;
 type DrhoDp<D: Dimension> = <Density<Array<f64, D::Larger>> as Div<Pressure>>::Output;
 type DnDp = <Moles<DVector<f64>> as Div<Pressure>>::Output;
 type DrhoDT<D: Dimension> = <Density<Array<f64, D::Larger>> as Div<Temperature>>::Output;
+type DrhoDn<D: Dimension> =
+    <Density<Array<f64, <D::Larger as Dimension>::Larger>> as Div<Moles>>::Output;
 type DnDT = <Moles<DVector<f64>> as Div<Temperature>>::Output;
 
 impl<D: Dimension, F: HelmholtzEnergyFunctional> DFTProfile<D, F>
 where
     D::Larger: Dimension<Smaller = D>,
+    <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
-    /// Calculate the grand potential density $\omega$.
+    /// Calculate the grand potential density $\omega$ for a converged density profile.
     pub fn grand_potential_density(&self) -> FeosResult<Pressure<Array<f64, D>>> {
         // Calculate residual Helmholtz energy density and functional derivative
         let t = self.temperature.to_reduced();
         let rho = self.density.to_reduced();
-        let mut solver_log = DFTSolverLog::new();
-        let (mut f, dfdrho) = self.functional.functional_derivative(
-            t,
-            &rho,
-            self.convolver.as_ref(),
-            &mut solver_log,
-        )?;
+        let (mut f, dfdrho) = self.functional_derivative()?;
 
         // Calculate the grand potential density
         for ((rho, dfdrho), &m) in rho
@@ -66,13 +63,36 @@ where
     /// functional derivative $\beta\hat F_{\rho_\alpha}^\mathrm{res}(\mathbf{r})$.
     #[expect(clippy::type_complexity)]
     pub fn functional_derivative(&self) -> FeosResult<(Array<f64, D>, Array<f64, D::Larger>)> {
-        let mut solver_log = DFTSolverLog::new();
-        self.functional.functional_derivative(
-            self.temperature.to_reduced(),
-            &self.density.to_reduced(),
-            self.convolver.as_ref(),
-            &mut solver_log,
-        )
+        let density = self.density.to_reduced();
+        let temperature = self.temperature.into_reduced();
+
+        // partial derivatives of the functional contributions
+        let weighted_densities = self.convolver.weighted_densities(&density);
+        let mut helmholtz_energy_density = Array::zeros(density.raw_dim().remove_axis(Axis(0)));
+        let mut partial_derivatives = Vec::new();
+        for (c, wd) in self.functional.contributions().zip(weighted_densities) {
+            let (phi, pd) = Evaluate.local_derivatives(temperature, &wd, &c)?;
+            helmholtz_energy_density += &phi.index_axis_move(Axis(0), 0);
+            partial_derivatives.push(pd);
+        }
+        let mut functional_derivative = self.convolver.functional_derivative(&partial_derivatives);
+
+        // association at fixed X
+        if let (Some(a), Some(convolver)) =
+            (self.functional.association(), &self.association_convolver)
+        {
+            let association = a.evaluate(
+                temperature,
+                &density,
+                &self.non_bonded_fractions,
+                convolver.as_ref(),
+                self.association_kernel_convolver.as_deref(),
+            );
+            helmholtz_energy_density += &association.helmholtz_energy_density;
+            functional_derivative += &association.functional_derivative;
+        }
+
+        Ok((helmholtz_energy_density, functional_derivative))
     }
 }
 
@@ -82,23 +102,19 @@ where
     D::Smaller: Dimension<Larger = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
-    fn intrinsic_helmholtz_energy_density<N>(
+    fn residual_helmholtz_energy_density<N: DualNumCopy<Primitive = f64> + DctNum>(
         &self,
         temperature: N,
-        density: &Array<f64, D::Larger>,
-        convolver: &dyn Convolver<N, D>,
-    ) -> FeosResult<Array<N, D>>
-    where
-        N: DualNum<Primitive = f64> + Copy,
-    {
-        let density_dual = density.mapv(N::from);
-        let weighted_densities = convolver.weighted_densities(&density_dual);
-        let functional_contributions = self.functional.contributions();
-        let mut helmholtz_energy_density: Array<N, D> = self
+    ) -> FeosResult<Array<N, D>> {
+        let (convolver, association_convolver, kernel_convolver) =
+            self.functional.convolvers::<D, _>(&self.grid, temperature);
+        let density = self.density.to_reduced().mapv(N::from);
+        let weighted_densities = convolver.weighted_densities(&density);
+        let mut helmholtz_energy_density = self
             .functional
             .ideal_chain_contribution()
-            .helmholtz_energy_density(&density.mapv(N::from))?;
-        for (c, wd) in functional_contributions.into_iter().zip(weighted_densities) {
+            .helmholtz_energy_density(&density)?;
+        for (c, wd) in self.functional.contributions().zip(weighted_densities) {
             let nwd = wd.shape()[0];
             let ngrid = wd.len() / nwd;
             helmholtz_energy_density
@@ -110,6 +126,18 @@ where
                     wd.into_shape_with_order((nwd, ngrid)).unwrap().view(),
                 )?);
         }
+        if let (Some(a), Some(association_convolver)) =
+            (self.functional.association(), association_convolver)
+        {
+            let association = a.evaluate(
+                temperature,
+                &density,
+                &self.non_bonded_fractions.mapv(N::from),
+                association_convolver.as_ref(),
+                kernel_convolver.as_deref(),
+            );
+            helmholtz_energy_density += &association.helmholtz_energy_density;
+        }
         Ok(helmholtz_energy_density.mapv(|a| a * temperature))
     }
 
@@ -117,64 +145,11 @@ where
     ///
     /// Untested with heterosegmented functionals.
     pub fn residual_entropy_density(&self) -> FeosResult<EntropyDensity<Array<f64, D>>> {
-        // initialize convolver
-        let temperature = self.temperature.to_reduced();
-        let temperature_dual = Dual64::from(temperature).derivative();
-        let functional_contributions = self.functional.contributions();
-        let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
-            .into_iter()
-            .map(|c| c.weight_functions(temperature_dual))
-            .collect();
-        let convolver = ConvolverFFT::plan(&self.grid, &weight_functions);
-
-        let density = self.density.to_reduced();
-
-        let helmholtz_energy_density = self.intrinsic_helmholtz_energy_density(
-            temperature_dual,
-            &density,
-            convolver.as_ref(),
-        )?;
+        let temperature = Dual64::from(self.temperature.to_reduced()).derivative();
+        let helmholtz_energy_density = self.residual_helmholtz_energy_density(temperature)?;
         Ok(EntropyDensity::from_reduced(
             helmholtz_energy_density.mapv(|f| -f.eps),
         ))
-    }
-
-    /// Calculate the individual contributions to the entropy density.
-    ///
-    /// Untested with heterosegmented functionals.
-    pub fn entropy_density_contributions(
-        &self,
-        temperature: f64,
-        density: &Array<f64, D::Larger>,
-        convolver: &dyn Convolver<Dual64, D>,
-    ) -> FeosResult<Vec<Array<f64, D>>> {
-        let density_dual = density.mapv(Dual64::from);
-        let temperature_dual = Dual64::from(temperature).derivative();
-        let weighted_densities = convolver.weighted_densities(&density_dual);
-        let functional_contributions = self.functional.contributions();
-        let mut helmholtz_energy_density: Vec<Array<Dual64, _>> = Vec::new();
-        helmholtz_energy_density.push(
-            self.functional
-                .ideal_chain_contribution()
-                .helmholtz_energy_density(&density.mapv(Dual64::from))?,
-        );
-
-        for (c, wd) in functional_contributions.into_iter().zip(weighted_densities) {
-            let nwd = wd.shape()[0];
-            let ngrid = wd.len() / nwd;
-            helmholtz_energy_density.push(
-                c.helmholtz_energy_density(
-                    temperature_dual,
-                    wd.into_shape_with_order((nwd, ngrid)).unwrap().view(),
-                )?
-                .into_shape_with_order(density.raw_dim().remove_axis(Axis(0)))
-                .unwrap(),
-            );
-        }
-        Ok(helmholtz_energy_density
-            .iter()
-            .map(|v| v.mapv(|f| -(f * temperature_dual).eps))
-            .collect())
     }
 }
 
@@ -184,17 +159,35 @@ where
     D::Smaller: Dimension<Larger = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
-    fn ideal_gas_contribution_dual(
+    fn ideal_gas_contribution<N: DualNumCopy<Primitive = f64, Inner = f64>>(
         &self,
-        temperature: Dual64,
-        density: &Array<f64, D::Larger>,
-    ) -> Array<Dual64, D> {
+        temperature: N,
+    ) -> Array<N, D> {
+        let density = self.density.to_reduced();
         let lambda = self.functional.lift_total().ln_lambda3(temperature);
         let mut phi = Array::zeros(density.raw_dim().remove_axis(Axis(0)));
         for (i, rhoi) in density.outer_iter().enumerate() {
             phi += &rhoi.mapv(|rhoi| (lambda[i] + rhoi.ln() - 1.0) * rhoi);
         }
-        phi.map(|p| p * temperature)
+        phi.mapv(|p| p * temperature)
+    }
+
+    fn helmholtz_energy_density<N: DualNumCopy<Primitive = f64, Inner = f64> + DctNum>(
+        &self,
+        temperature: N,
+        contributions: Contributions,
+    ) -> FeosResult<Array<N, D>> {
+        let mut helmholtz_energy_density = self.residual_helmholtz_energy_density(temperature)?;
+        match contributions {
+            Contributions::Total => {
+                helmholtz_energy_density += &self.ideal_gas_contribution(temperature);
+            }
+            Contributions::IdealGas => panic!(
+                "Only Contributions::Residual or Contributions::Total are supported for temperature derivatives"
+            ),
+            Contributions::Residual => (),
+        }
+        Ok(helmholtz_energy_density)
     }
 
     /// Calculate the entropy density $s(\mathbf{r})$.
@@ -204,33 +197,8 @@ where
         &self,
         contributions: Contributions,
     ) -> FeosResult<EntropyDensity<Array<f64, D>>> {
-        // initialize convolver
-        let temperature = self.temperature.to_reduced();
-        let temperature_dual = Dual64::from(temperature).derivative();
-        let functional_contributions = self.functional.contributions();
-        let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
-            .into_iter()
-            .map(|c| c.weight_functions(temperature_dual))
-            .collect();
-        let convolver = ConvolverFFT::plan(&self.grid, &weight_functions);
-
-        let density = self.density.to_reduced();
-
-        let mut helmholtz_energy_density = self.intrinsic_helmholtz_energy_density(
-            temperature_dual,
-            &density,
-            convolver.as_ref(),
-        )?;
-        match contributions {
-            Contributions::Total => {
-                helmholtz_energy_density +=
-                    &self.ideal_gas_contribution_dual(temperature_dual, &density);
-            }
-            Contributions::IdealGas => panic!(
-                "Entropy density can only be calculated for Contributions::Residual or Contributions::Total"
-            ),
-            Contributions::Residual => (),
-        }
+        let temperature = Dual64::from(self.temperature.into_reduced()).derivative();
+        let helmholtz_energy_density = self.helmholtz_energy_density(temperature, contributions)?;
         Ok(EntropyDensity::from_reduced(
             helmholtz_energy_density.mapv(|f| -f.eps),
         ))
@@ -249,42 +217,15 @@ where
     pub fn internal_energy_density(
         &self,
         contributions: Contributions,
-    ) -> FeosResult<Pressure<Array<f64, D>>>
-    where
-        D: Dimension,
-        D::Larger: Dimension<Smaller = D>,
-    {
-        // initialize convolver
-        let temperature = self.temperature.to_reduced();
+    ) -> FeosResult<Pressure<Array<f64, D>>> {
+        let temperature = self.temperature.into_reduced();
         let temperature_dual = Dual64::from(temperature).derivative();
-        let functional_contributions = self.functional.contributions();
-        let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
-            .into_iter()
-            .map(|c| c.weight_functions(temperature_dual))
-            .collect();
-        let convolver = ConvolverFFT::plan(&self.grid, &weight_functions);
-
         let density = self.density.to_reduced();
-
-        let mut helmholtz_energy_density_dual = self.intrinsic_helmholtz_energy_density(
-            temperature_dual,
-            &density,
-            convolver.as_ref(),
-        )?;
-        match contributions {
-            Contributions::Total => {
-                helmholtz_energy_density_dual +=
-                    &self.ideal_gas_contribution_dual(temperature_dual, &density);
-            }
-            Contributions::IdealGas => panic!(
-                "Internal energy density can only be calculated for Contributions::Residual or Contributions::Total"
-            ),
-            Contributions::Residual => (),
-        }
-        let helmholtz_energy_density = helmholtz_energy_density_dual
-            .mapv(|f| f.re - f.eps * temperature)
+        let helmholtz_energy_density =
+            self.helmholtz_energy_density(temperature_dual, contributions)?;
+        let internal_energy_density = helmholtz_energy_density.mapv(|f| f.re - f.eps * temperature)
             + (&self.external_potential * density).sum_axis(Axis(0)) * temperature;
-        Ok(Pressure::from_reduced(helmholtz_energy_density))
+        Ok(Pressure::from_reduced(internal_energy_density))
     }
 
     /// Calculate the internal energy $U$.
@@ -301,37 +242,85 @@ where
     D::Smaller: Dimension<Larger = D>,
     <D::Larger as Dimension>::Larger: Dimension<Smaller = D::Larger>,
 {
+    /// Derivatives of the unknowns $x=(\ln\rho,\ln X)$ with respect to a parameter $\theta$ from
+    /// the linearized Euler-Lagrange equation and mass action equations,
+    /// $J\frac{\mathrm{d}x}{\mathrm{d}\theta}=-\frac{\partial r}{\partial\theta}$.
+    ///
+    /// The `specification` determines which quantities are held constant (chemical potentials or
+    /// numbers of particles) and temporarily replaces the specification of the profile.
+    /// `dr_dtheta` returns the partial derivatives of the residual (stacked like the unknowns).
+    fn implicit_derivative(
+        &mut self,
+        specification: DFTSpecification,
+        dr_dtheta: impl FnOnce(&Self) -> FeosResult<Array<f64, D::Larger>>,
+    ) -> FeosResult<Array<f64, D::Larger>> {
+        let rho = self.density.to_reduced();
+        let specification = std::mem::replace(&mut self.specification, specification);
+        let dx_dtheta = (|| {
+            let mut lhs = dr_dtheta(self)?;
+            lhs.mapv_inplace(|l| if l.is_finite() { l } else { 0.0 });
+            // the density rows come first in the stacked array
+            self.mask_external_potential(&mut lhs);
+            let x = Self::stack_variables(&rho, &self.non_bonded_fractions);
+            solve_linearized(&*self, &x, &lhs, 200, 1e-13)
+        })();
+        self.specification = specification;
+        dx_dtheta
+    }
+
+    /// Derivatives of the density profiles from [Self::implicit_derivative].
     fn density_derivative(
         &mut self,
-        lhs: &Array<f64, D::Larger>,
+        specification: DFTSpecification,
+        dr_dtheta: impl FnOnce(&Self) -> FeosResult<Array<f64, D::Larger>>,
     ) -> FeosResult<Array<f64, D::Larger>> {
-        let t = self.temperature.into_reduced();
         let rho = self.density.to_reduced();
-        let second_partial_derivatives =
-            self.functional
-                .second_partial_derivatives(t, &rho, self.convolver.as_ref())?;
-        let exp_dfdrho = self.project(&rho)?.exp_dfdrho;
+        let dx_dtheta = self.implicit_derivative(specification, dr_dtheta)?;
+        Ok(&self.density_rows(&dx_dtheta) * &rho)
+    }
 
-        let rhs = |x: &_| {
-            let delta_functional_derivative = Self::delta_functional_derivative(
-                x,
-                &second_partial_derivatives,
-                self.convolver.as_ref(),
-            );
-            let mut xm = x.clone();
-            xm.outer_iter_mut()
-                .zip(self.functional.m().iter())
-                .for_each(|(mut x, &m)| x *= m);
-            let delta_i = self.functional.delta_bond_integrals(
-                t,
-                &exp_dfdrho,
-                &delta_functional_derivative,
-                self.convolver.as_ref(),
-            );
-            xm + (delta_functional_derivative - delta_i) * &rho
-        };
-        let mut solver_log = DFTSolverLog::new();
-        Self::gmres(rhs, lhs, 200, 1e-13, &mut solver_log)
+    /// Specification at constant chemical potential (the values of the fugacities do not enter
+    /// the derivatives).
+    fn constant_chemical_potential(&self) -> DFTSpecification {
+        DFTSpecification::ChemicalPotential(Array1::zeros(self.density.shape()[0]))
+    }
+
+    /// Specification at constant number of particles (number of particles of every segment).
+    fn constant_moles(&self) -> (DFTSpecification, Array1<f64>) {
+        let moles = self.grid.integrate_reduced_comp(&self.density.to_reduced());
+        (DFTSpecification::Moles(moles.clone()), moles)
+    }
+
+    /// Zero array with the shape of the stacked unknowns $x=(\ln\rho,\ln X)$, with the density
+    /// rows set to `value(segment)`.
+    fn density_rows_from(&self, value: impl Fn(usize) -> f64) -> Array<f64, D::Larger> {
+        let mut dim = self.density.raw_dim();
+        dim[0] += self.non_bonded_fractions.shape()[0];
+        let mut a = Array::zeros(dim);
+        for (i, mut a) in a.outer_iter_mut().take(self.density.shape()[0]).enumerate() {
+            a.fill(value(i));
+        }
+        a
+    }
+
+    /// Temperature derivative of the residual at fixed unknowns and fixed specification, from the
+    /// Euler-Lagrange equation in dual numbers.
+    fn dr_dt(&self) -> FeosResult<Array<f64, D::Larger>> {
+        let t_dual = Dual64::from(self.temperature.to_reduced()).derivative();
+        let (convolver, association_convolver, kernel_convolver) =
+            self.functional.convolvers::<D, _>(&self.grid, t_dual);
+        let rho = self.density.to_reduced();
+        let x = Self::stack_variables(&rho, &self.non_bonded_fractions).mapv(Dual64::from);
+        let (residual, _) = self.euler_lagrange_dual(
+            &mut Evaluate,
+            t_dual,
+            convolver.as_ref(),
+            association_convolver.as_deref(),
+            kernel_convolver.as_deref(),
+            &x,
+            &mut DFTSolverLog::new(),
+        )?;
+        Ok(residual.mapv(|r| r.eps))
     }
 
     /// Return the partial derivatives of the density profiles w.r.t. the chemical potentials $\left(\frac{\partial\rho_i(\mathbf{r})}{\partial\mu_k}\right)_T$
@@ -342,14 +331,17 @@ where
             .collect();
         let mut drho_dmu = Array::zeros(shape).into_dimensionality().unwrap();
         let component_index = self.functional.component_index().into_owned();
+        let m = self.functional.m().into_owned();
         for (k, mut d) in drho_dmu.outer_iter_mut().enumerate() {
-            let mut lhs = self.density.to_reduced();
-            for (i, mut l) in lhs.outer_iter_mut().enumerate() {
-                if component_index[i] != k {
-                    l.fill(0.0);
+            let dr_dmu = self.density_rows_from(|i| {
+                if component_index[i] == k {
+                    1.0 / m[i]
+                } else {
+                    0.0
                 }
-            }
-            d.assign(&self.density_derivative(&lhs)?);
+            });
+            let specification = self.constant_chemical_potential();
+            d.assign(&self.density_derivative(specification, |_| Ok(dr_dmu))?);
         }
         Ok(Quantity::from_reduced(
             drho_dmu / self.temperature.to_reduced(),
@@ -370,16 +362,13 @@ where
 
     /// Return the partial derivatives of the density profiles w.r.t. the bulk pressure at constant temperature and bulk composition $\left(\frac{\partial\rho_i(\mathbf{r})}{\partial p}\right)_{T,\mathbf{x}}$
     pub fn drho_dp(&mut self, bulk: &State<F>) -> FeosResult<DrhoDp<D>> {
-        let mut lhs = self.density.to_reduced();
         let v = bulk.partial_molar_volume().to_reduced();
-        for (mut l, &c) in lhs
-            .outer_iter_mut()
-            .zip(self.functional.component_index().iter())
-        {
-            l *= v[c];
-        }
+        let component_index = self.functional.component_index().into_owned();
+        let m = self.functional.m().into_owned();
+        let dr_dp = self.density_rows_from(|i| v[component_index[i]] / m[i]);
+        let specification = self.constant_chemical_potential();
         Ok(Quantity::from_reduced(
-            self.density_derivative(&lhs)? / self.temperature.to_reduced(),
+            self.density_derivative(specification, |_| Ok(dr_dp))? / self.temperature.to_reduced(),
         ))
     }
 
@@ -390,88 +379,51 @@ where
     }
 
     /// Return the partial derivatives of the density profiles w.r.t. the temperature at constant bulk pressure and composition $\left(\frac{\partial\rho_i(\mathbf{r})}{\partial T}\right)_{p,\mathbf{x}}$
-    pub fn drho_dt(&mut self, bulk: &State<F>) -> FeosResult<DrhoDT<D>> {
-        let rho = self.density.to_reduced();
+    pub fn drho_dt_p(&mut self, bulk: &State<F>) -> FeosResult<DrhoDT<D>> {
         let t = self.temperature.to_reduced();
-        let rho_dual = rho.mapv(Dual64::from);
-        let t_dual = Dual64::from(t).derivative();
-        let mut solver_log = DFTSolverLog::new();
+        let dln_f_dt = bulk.dln_phi_dt().to_reduced().map(|d| d - 1.0 / t);
+        let component_index = self.functional.component_index().into_owned();
+        let m = self.functional.m().into_owned();
+        let df_dt = self.density_rows_from(|i| dln_f_dt[component_index[i]] / m[i]);
 
-        // calculate intrinsic functional derivative
-        let functional_contributions = self.functional.contributions();
-        let weight_functions: Vec<WeightFunctionInfo<Dual64>> = functional_contributions
-            .into_iter()
-            .map(|c| c.weight_functions(t_dual))
-            .collect();
-        let convolver: Arc<dyn Convolver<_, D>> = ConvolverFFT::plan(&self.grid, &weight_functions);
-        let (_, mut dfdrho) = self.functional.functional_derivative(
-            t_dual,
-            &rho_dual,
-            convolver.as_ref(),
-            &mut solver_log,
-        )?;
-
-        // calculate total functional derivative
-        dfdrho += &(&self.external_potential * t).mapv(|v| Dual64::from(v) / t_dual);
-
-        // calculate bulk functional derivative
-        let rho_bulk = self
-            .functional
-            .segment_densities(&bulk.partial_density().into_reduced());
-        let rho_bulk_dual = rho_bulk.mapv(Dual64::from);
-        let bulk_convolver = PeriodicConvolver::<_, Ix0>::new_0d(&weight_functions);
-        let (_, dfdrho_bulk) = self.functional.functional_derivative(
-            t_dual,
-            &rho_bulk_dual,
-            bulk_convolver.as_ref(),
-            &mut solver_log,
-        )?;
-        dfdrho
-            .outer_iter_mut()
-            .zip(dfdrho_bulk)
-            .zip(self.functional.m().iter())
-            .for_each(|((mut df, df_b), &m)| {
-                df.map_inplace(|df| *df = (*df - df_b) / Dual64::from(m));
-            });
-
-        // calculate bond integrals
-        let exp_dfdrho = dfdrho.mapv(|x| (-x).exp());
-        let bonds = self
-            .functional
-            .bond_integrals(t_dual, &exp_dfdrho, convolver.as_ref());
-
-        // solve for drho_dt
-        let mut lhs = (exp_dfdrho * bonds).mapv(|x| (-x.ln() * t_dual).eps);
-        let x = (bulk.partial_molar_volume() * bulk.dp_dt(Contributions::Total)).to_reduced();
-        let x: Array1<_> = self
-            .functional
-            .component_index()
-            .iter()
-            .map(|&i| x[i])
-            .collect();
-        lhs.outer_iter_mut()
-            .zip(rho.outer_iter())
-            .zip(rho_bulk)
-            .zip(self.functional.m().iter())
-            .zip(x)
-            .for_each(|((((mut lhs, rho), rho_b), &m), x)| {
-                lhs += &(&rho / rho_b).mapv(f64::ln);
-                lhs *= m;
-                lhs += x;
-            });
-
-        lhs *= &(-&rho / t);
-        lhs.iter_mut().for_each(|l| {
-            if !l.is_finite() {
-                *l = 0.0
-            }
-        });
-        Ok(Quantity::from_reduced(self.density_derivative(&lhs)?))
+        let specification = self.constant_chemical_potential();
+        let drho_dt =
+            self.density_derivative(specification, |profile| Ok(profile.dr_dt()? + df_dt))?;
+        Ok(Quantity::from_reduced(drho_dt))
     }
 
     /// Return the partial derivatives of the number of moles w.r.t. the temperature at constant bulk pressure and composition $\left(\frac{\partial N_i}{\partial T}\right)_{p,\mathbf{x}}$
-    pub fn dn_dt(&mut self, bulk: &State<F>) -> FeosResult<DnDT> {
-        let drho_dt = self.drho_dt(bulk)?;
+    pub fn dn_dt_p(&mut self, bulk: &State<F>) -> FeosResult<DnDT> {
+        let drho_dt = self.drho_dt_p(bulk)?;
         Ok(self.integrate_segments(&drho_dt))
+    }
+
+    /// Return the partial derivatives of the density profiles w.r.t. the number of moles at constant temperature $\left(\frac{\partial\rho_i(\mathbf{r})}{\partial N_k}\right)_{T,N_{j\neq k}}$
+    pub fn drho_dn(&mut self) -> FeosResult<DrhoDn<D>> {
+        let shape: Vec<_> = std::iter::once(&self.functional.components())
+            .chain(self.density.shape())
+            .copied()
+            .collect();
+        let mut drho_dn = Array::zeros(shape).into_dimensionality().unwrap();
+        let component_index = self.functional.component_index().into_owned();
+        for (k, mut d) in drho_dn.outer_iter_mut().enumerate() {
+            let (specification, moles) = self.constant_moles();
+            let dr_dn = self.density_rows_from(|i| {
+                if component_index[i] == k {
+                    1.0 / moles[i]
+                } else {
+                    0.0
+                }
+            });
+            d.assign(&self.density_derivative(specification, |_| Ok(dr_dn))?);
+        }
+        Ok(Quantity::from_reduced(drho_dn))
+    }
+
+    /// Return the partial derivatives of the density profiles w.r.t. the temperature at constant number of moles $\left(\frac{\partial\rho_i(\mathbf{r})}{\partial T}\right)_{N}$
+    pub fn drho_dt_n(&mut self) -> FeosResult<DrhoDT<D>> {
+        let (specification, _) = self.constant_moles();
+        let drho_dt = self.density_derivative(specification, |profile| profile.dr_dt())?;
+        Ok(Quantity::from_reduced(drho_dt))
     }
 }
