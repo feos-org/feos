@@ -25,7 +25,7 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, features = ["preserve_order"] }
 indexmap = { workspace = true, features = ["serde"] }
 rayon = { workspace = true, optional = true }
-csv = { workspace = true }
+csv = { workspace = true, optional = true }
 itertools = { workspace = true }
 rusqlite = { workspace = true, features = ["bundled"], optional = true }
 
@@ -35,5 +35,5 @@ quantity = { workspace = true, features = ["approx"] }
 
 [features]
 default = []
-ndarray = ["dep:ndarray", "quantity/ndarray"]
+ndarray = ["dep:ndarray", "csv", "quantity/ndarray"]
 rayon = ["dep:rayon", "ndarray/rayon"]
