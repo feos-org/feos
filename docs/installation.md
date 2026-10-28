@@ -11,7 +11,7 @@ pip install feos
 If you have a Rust compiler installed and want to have the latest development version (github `main` branch), you can build and install the python wheel via
 
 ```
-pip install git+https://github.com/feos-org/feos
+pip install "git+https://github.com/feos-org/feos#subdirectory=py-feos"
 ```
 ````
 

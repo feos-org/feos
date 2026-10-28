@@ -120,7 +120,7 @@ pip install feos
 If there is no compiled package for your system available from PyPI and you have a Rust compiler installed, you can instead build the python package from source using
 
 ```
-pip install git+https://github.com/feos-org/feos
+pip install "git+https://github.com/feos-org/feos#subdirectory=py-feos"
 ```
 
 This command builds the package without link-time optimization (LTO) that can be used to increase the performance further.
