@@ -248,14 +248,6 @@ where
 
         Ok(new_vle_state)
     }
-
-    fn tangent_plane_distance(&self, trial_state: &State<E, N>) -> f64 {
-        let ln_phi_z = self.ln_phi();
-        let ln_phi_w = trial_state.ln_phi();
-        let z = &self.molefracs;
-        let w = &trial_state.molefracs;
-        w.dot(&(w.map(f64::ln) + ln_phi_w - z.map(f64::ln) - ln_phi_z))
-    }
 }
 
 impl<E: Residual<N>, N: Gradients> PhaseEquilibrium<E, 2, N>
@@ -420,9 +412,12 @@ where
     }
 
     fn vle_init_stability(feed_state: &State<E, N>) -> FeosResult<(Self, Option<Self>)> {
-        let mut stable_states = feed_state.stability_analysis(SolverOptions::default())?;
-        let state1 = stable_states.pop();
-        let state2 = stable_states.pop();
+        // candidates are sorted by tpd, so the most negative ones are used
+        let mut stable_states = feed_state
+            .stability_analysis(SolverOptions::default())?
+            .into_iter();
+        let state1 = stable_states.next();
+        let state2 = stable_states.next();
         if let Some(s1) = state1 {
             let init1 = if s1.density < feed_state.density {
                 Self::two_phase(s1.clone(), feed_state.clone())
