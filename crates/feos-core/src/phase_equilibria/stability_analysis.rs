@@ -16,6 +16,7 @@ const MIN_EIGENVAL: f64 = 1E-03;
 const ETA_STEP: f64 = 0.25;
 const MINIMIZE_KMAX: usize = 100;
 const ZERO_TPD: f64 = -1E-08;
+const DUPLICATE_TOL: f64 = 1E-03;
 
 /// # Stability analysis
 impl<E: Residual<N>, N: Gradients> State<E, N>
@@ -31,37 +32,106 @@ where
     /// Perform a stability analysis. The result is a list of [State]s with
     /// negative tangent plane distance (i.e. lower Gibbs energy) that can be
     /// used as initial estimates for a phase equilibrium calculation.
+    /// The states are sorted by their tangent plane distance, starting with
+    /// the most negative one.
+    ///
+    /// A trial phase whose minimization fails is still returned if its
+    /// tangent plane distance is negative, because that already proves the
+    /// instability. Otherwise it is skipped. An error is only returned if
+    /// no trial phase could be evaluated successfully.
     pub fn stability_analysis(&self, options: SolverOptions) -> FeosResult<Vec<State<E, N>>> {
-        let mut result = Vec::new();
+        let mut result: Vec<(f64, State<E, N>)> = Vec::new();
+        let mut successful_trials = 0;
+        let mut last_error = None;
         for i_trial in 0..self.eos.components() + 1 {
             let phase = if i_trial == self.eos.components() {
                 "Vapor phase".to_string()
             } else {
                 format!("Liquid phase {}", i_trial + 1)
             };
-            if let Ok(mut trial_state) = self.define_trial_state(i_trial) {
-                let (tpd, i) = self.minimize_tpd(&mut trial_state, options)?;
-                let msg = if let Some(tpd) = tpd {
-                    if tpd < ZERO_TPD {
-                        if result
-                            .iter()
-                            .any(|s| PhaseEquilibrium::is_trivial_solution(s, &trial_state))
-                        {
-                            "Found already identified minimum"
-                        } else {
-                            result.push(trial_state);
-                            "Found candidate"
-                        }
+            let mut trial_state = match self.define_trial_state(i_trial) {
+                Ok(trial_state) => trial_state,
+                Err(e) => {
+                    log_result!(options.verbosity, "{}: Failed ({})\n", phase, e);
+                    last_error = Some(e);
+                    continue;
+                }
+            };
+            // The tpd tracked during the minimization is only an estimate, so the
+            // true tpd of the final trial state is used to compare candidates.
+            let (tpd, steps) = match self.minimize_tpd(&mut trial_state, options) {
+                Ok((None, i)) => (None, Some(i)),
+                Ok((Some(_), i)) => (Some(self.tangent_plane_distance(&trial_state)), Some(i)),
+                Err(e) => {
+                    let tpd = self.tangent_plane_distance(&trial_state);
+                    if tpd < ZERO_TPD && !PhaseEquilibrium::is_trivial_solution(self, &trial_state)
+                    {
+                        (Some(tpd), None)
                     } else {
-                        "Found minimum > 0"
+                        log_result!(options.verbosity, "{}: Failed ({})\n", phase, e);
+                        last_error = Some(e);
+                        continue;
+                    }
+                }
+            };
+            successful_trials += 1;
+            let msg = if let Some(tpd) = tpd {
+                if tpd < ZERO_TPD {
+                    if result.iter().any(|(_, s)| s.is_same_phase(&trial_state)) {
+                        "Found already identified minimum"
+                    } else {
+                        result.push((tpd, trial_state));
+                        "Found candidate"
                     }
                 } else {
-                    "Found trivial solution"
-                };
-                log_result!(options.verbosity, "{}: {} in {} step(s)\n", phase, msg, i);
+                    "Found minimum > 0"
+                }
+            } else {
+                "Found trivial solution"
+            };
+            match steps {
+                Some(i) => {
+                    log_result!(options.verbosity, "{}: {} in {} step(s)\n", phase, msg, i)
+                }
+                None => log_result!(options.verbosity, "{}: {} (not converged)\n", phase, msg),
             }
         }
-        Ok(result)
+        if let Some(e) = last_error
+            && successful_trials == 0
+        {
+            return Err(e);
+        }
+        result.sort_by(|(tpd1, _), (tpd2, _)| tpd1.total_cmp(tpd2));
+        Ok(result.into_iter().map(|(_, s)| s).collect())
+    }
+
+    /// Check if two candidates from the stability analysis describe the same phase.
+    ///
+    /// In contrast to [PhaseEquilibrium::is_trivial_solution], the partial densities
+    /// are compared relative to the total density, so that differences in trace
+    /// components (which can be large in relative terms) are ignored.
+    fn is_same_phase(&self, other: &State<E, N>) -> bool {
+        let rho1 = self.density.into_reduced();
+        let rho2 = other.density.into_reduced();
+        let max_diff = self
+            .molefracs
+            .zip_fold(&other.molefracs, 0.0, |acc: f64, x1, x2| {
+                acc.max((x1 * rho1 - x2 * rho2).abs())
+            });
+        max_diff / rho1.max(rho2) < DUPLICATE_TOL
+    }
+
+    /// Tangent plane distance of the trial state with respect to this state.
+    ///
+    /// Components that are absent in the trial state do not contribute (w ln w -> 0).
+    pub(super) fn tangent_plane_distance(&self, trial_state: &State<E, N>) -> f64 {
+        let ln_phi_z = self.ln_phi();
+        let ln_phi_w = trial_state.ln_phi();
+        let (z, w) = (&self.molefracs, &trial_state.molefracs);
+        (0..w.len())
+            .filter(|&i| w[i] > 0.0)
+            .map(|i| w[i] * (w[i].ln() + ln_phi_w[i] - z[i].ln() - ln_phi_z[i]))
+            .sum()
     }
 
     fn define_trial_state(&self, dominant_component: usize) -> FeosResult<State<E, N>> {
