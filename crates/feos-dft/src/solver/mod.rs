@@ -2,6 +2,7 @@ use crate::{DFTProfile, HelmholtzEnergyFunctional};
 use feos_core::{FeosError, FeosResult, Verbosity, log_iter, log_result};
 use indexmap::IndexMap;
 use nalgebra::{DMatrix, DVector};
+use ndarray::Zip;
 use ndarray::prelude::*;
 use quantity::{MILLI, SECOND, Time};
 use std::collections::VecDeque;
@@ -453,9 +454,12 @@ where
             "Anderson mixing"
         };
 
+        // residuals, damped fixed-point updates x + damping * residual of the unknowns, and the
+        // scalar products of all pairs of residuals
         let mut resm = VecDeque::with_capacity(anderson.mmax);
-        let mut rhom = VecDeque::with_capacity(anderson.mmax);
-        let mut xm = VecDeque::with_capacity(anderson.mmax);
+        let mut rhom: VecDeque<Array<f64, D::Larger>> = VecDeque::with_capacity(anderson.mmax);
+        let mut xm: VecDeque<Array<f64, D::Larger>> = VecDeque::with_capacity(anderson.mmax);
+        let mut products: VecDeque<VecDeque<f64>> = VecDeque::with_capacity(anderson.mmax);
 
         for k in 0..anderson.max_iter {
             // drop old values
@@ -463,6 +467,10 @@ where
                 resm.pop_front();
                 rhom.pop_front();
                 xm.pop_front();
+                products.pop_front();
+                products.iter_mut().for_each(|row| {
+                    row.pop_front();
+                });
             }
             let m = resm.len() + 1;
 
@@ -476,23 +484,42 @@ where
                 return Ok((true, k));
             }
 
-            // save residuals and unknowns (the residual for ln X is that of successive substitution)
-            resm.push_back((residual.density, residual.mass_action));
-            if anderson.log {
-                rhom.push_back(rho.mapv(f64::ln));
-            } else {
-                rhom.push_back(rho.clone());
-            }
-            xm.push_back(non_bonded_fractions.mapv(f64::ln));
-
-            // calculate alpha
             solver_log.time_function("Anderson mixing", || {
+                // save the unknowns after a damped fixed-point step (the residual for ln X is
+                // that of successive substitution)
+                let mut rho_k = if anderson.log {
+                    rho.mapv(f64::ln)
+                } else {
+                    rho.clone()
+                };
+                rho_k.scaled_add(anderson.damping_coefficient, &residual.density);
+                rhom.push_back(rho_k);
+                let mut x_k = non_bonded_fractions.mapv(f64::ln);
+                x_k.scaled_add(anderson.damping_coefficient, &residual.mass_action);
+                xm.push_back(x_k);
+
+                // The scalar products of the stored residuals do not change: only those with
+                // the new residual are calculated.
+                let mut row: VecDeque<f64> = resm
+                    .iter()
+                    .map(|(res, resx)| {
+                        scalar_product(res, &residual.density)
+                            + scalar_product(resx, &residual.mass_action)
+                    })
+                    .collect();
+                row.push_back(
+                    scalar_product(&residual.density, &residual.density)
+                        + scalar_product(&residual.mass_action, &residual.mass_action),
+                );
+                for (products, &product) in products.iter_mut().zip(&row) {
+                    products.push_back(product);
+                }
+                products.push_back(row);
+                resm.push_back((residual.density, residual.mass_action));
+
+                // calculate alpha
                 let r = DMatrix::from_fn(m + 1, m + 1, |i, j| match (i == m, j == m) {
-                    (false, false) => {
-                        let (resi, resxi) = &resm[i];
-                        let (resj, resxj) = &resm[j];
-                        (resi * resj).sum() + (resxi * resxj).sum()
-                    }
+                    (false, false) => products[i][j],
                     (true, true) => 0.0,
                     _ => 1.0,
                 });
@@ -506,10 +533,8 @@ where
                 rho.fill(0.0);
                 non_bonded_fractions.fill(0.0);
                 for i in 0..m {
-                    let (resi, resxi) = &resm[i];
-                    *rho += &(alpha[i] * (&rhom[i] + &(anderson.damping_coefficient * resi)));
-                    *non_bonded_fractions +=
-                        &(alpha[i] * (&xm[i] + &(anderson.damping_coefficient * resxi)));
+                    rho.scaled_add(alpha[i], &rhom[i]);
+                    non_bonded_fractions.scaled_add(alpha[i], &xm[i]);
                 }
                 if anderson.log {
                     rho.mapv_inplace(f64::exp);
@@ -546,6 +571,14 @@ where
         *rho = self.density_rows(&x).mapv(f64::exp);
         *non_bonded_fractions = self.association_rows(&x).mapv(f64::exp);
         result
+    }
+}
+
+/// Scalar product of two arrays of the same shape, without a temporary array for the products.
+fn scalar_product<D: Dimension>(a: &Array<f64, D>, b: &Array<f64, D>) -> f64 {
+    match (a.as_slice(), b.as_slice()) {
+        (Some(a), Some(b)) => ArrayView1::from(a).dot(&ArrayView1::from(b)),
+        _ => Zip::from(a).and(b).fold(0.0, |acc, &a, &b| acc + a * b),
     }
 }
 
