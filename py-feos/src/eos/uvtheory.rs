@@ -28,8 +28,7 @@ impl PyEquationOfState {
     ///     states.
     #[staticmethod]
     #[pyo3(
-        signature = (parameters, max_eta=0.5, perturbation="WCA"),
-        text_signature = r#"(parameters, max_eta=0.5, perturbation="WCA")"#
+        signature = (parameters, max_eta=0.5, perturbation="WCA")
     )]
     fn uvtheory(parameters: PyParameters, max_eta: f64, perturbation: &str) -> PyResult<Self> {
         let perturbation = match perturbation {

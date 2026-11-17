@@ -47,7 +47,7 @@ pub use state::{Composition, Contributions, DensityInitialization, State, StateH
 pub enum Verbosity {
     /// Do not print output.
     #[default]
-    None,
+    Silent,
     /// Print information about the success of failure of the iteration.
     Result,
     /// Print a detailed outpur for every iteration.
@@ -73,7 +73,7 @@ impl From<(Option<usize>, Option<f64>, Option<Verbosity>)> for SolverOptions {
         Self {
             max_iter: options.0,
             tol: options.1,
-            verbosity: options.2.unwrap_or(Verbosity::None),
+            verbosity: options.2.unwrap_or(Verbosity::Silent),
         }
     }
 }

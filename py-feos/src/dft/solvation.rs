@@ -52,9 +52,6 @@ impl_profile!(PySolvationProfile);
 #[pymethods]
 impl PySolvationProfile {
     #[new]
-    #[pyo3(
-        text_signature = "(bulk, n_grid, coordinates, sigma, epsilon_k, system_size=None, cutoff_radius=None)"
-    )]
     #[pyo3(signature = (bulk, n_grid, coordinates, sigma, epsilon_k, system_size=None, cutoff_radius=None))]
     fn new<'py>(
         bulk: &PyState,

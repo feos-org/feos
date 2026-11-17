@@ -2,7 +2,7 @@ use super::PyEquationOfState;
 #[cfg(feature = "dft")]
 use crate::dft::{PyAssociationVersion, PyFMTVersion, PyHelmholtzEnergyFunctional};
 use crate::ideal_gas::IdealGasModel;
-use crate::parameter::{PyGcParameters, PyParameters};
+use crate::parameter::PyParametersOrGcParameters;
 use crate::residual::ResidualModel;
 #[cfg(feature = "dft")]
 use feos::pcsaft::PcSaftFunctional;
@@ -36,11 +36,10 @@ impl PyEquationOfState {
     ///     states.
     #[staticmethod]
     #[pyo3(
-        signature = (parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, dq_variant="dq35"),
-        text_signature = r#"(parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, dq_variant="dq35")"#
+        signature = (parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, dq_variant="dq35")
     )]
     pub fn pcsaft(
-        parameters: &Bound<'_, PyAny>,
+        parameters: PyParametersOrGcParameters,
         max_eta: f64,
         max_iter_cross_assoc: usize,
         tol_cross_assoc: f64,
@@ -52,7 +51,7 @@ impl PyEquationOfState {
             _ => {
                 return Err(PyErr::new::<PyValueError, _>(
                     r#"dq_variant must be "dq35" or "dq44""#,
-                ))
+                ));
             }
         };
         let options = PcSaftOptions {
@@ -61,14 +60,11 @@ impl PyEquationOfState {
             tol_cross_assoc,
             dq_variant,
         };
-        let parameters = if let Ok(parameters) = parameters.extract::<PyParameters>() {
-            parameters.try_convert()
-        } else if let Ok(parameters) = parameters.extract::<PyGcParameters>() {
-            parameters.try_convert_homosegmented()
-        } else {
-            return Err(PyErr::new::<PyValueError, _>(
-                "Argument `parameters` must by Parameters or GcParameters",
-            ));
+        let parameters = match parameters {
+            PyParametersOrGcParameters::Parameters(parameters) => parameters.try_convert(),
+            PyParametersOrGcParameters::GcParameters(parameters) => {
+                parameters.try_convert_homosegmented()
+            }
         }?;
         let residual = ResidualModel::PcSaft(PcSaft::with_options(parameters, options));
         let ideal_gas = vec![IdealGasModel::NoModel; residual.components()];
@@ -104,8 +100,7 @@ impl PyHelmholtzEnergyFunctional {
     #[cfg(feature = "pcsaft")]
     #[staticmethod]
     #[pyo3(
-        signature = (parameters, fmt_version=PyFMTVersion::WhiteBear, association_version=PyAssociationVersion::ISaft, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, dq_variant="dq35"),
-        text_signature = r#"(parameters, fmt_version=FMTVersion.WhiteBear, association_version=AssociationVersion.ISaft, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, dq_variant="dq35")"#
+        signature = (parameters, fmt_version=PyFMTVersion::WhiteBear, association_version=PyAssociationVersion::ISaft, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, dq_variant="dq35")
     )]
     fn pcsaft(
         parameters: crate::parameter::PyParameters,
@@ -122,7 +117,7 @@ impl PyHelmholtzEnergyFunctional {
             _ => {
                 return Err(PyErr::new::<PyValueError, _>(
                     r#"dq_variant must be "dq35" or "dq44""#.to_string(),
-                ))
+                ));
             }
         };
         let options = PcSaftOptions {

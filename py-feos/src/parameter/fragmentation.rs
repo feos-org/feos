@@ -20,7 +20,7 @@ pub(crate) struct PySmartsRecord {
 #[pymethods]
 impl PySmartsRecord {
     #[new]
-    #[pyo3(text_signature = "(group, smarts, max=None)", signature = (group, smarts, max=None))]
+    #[pyo3(signature = (group, smarts, max=None))]
     fn new(group: String, smarts: String, max: Option<usize>) -> Self {
         Self { group, smarts, max }
     }
@@ -51,7 +51,6 @@ impl PySmartsRecord {
     /// -------
     /// [SmartsRecord]
     #[staticmethod]
-    #[pyo3(text_signature = "(path)")]
     pub fn from_json(path: &str) -> PyResult<Vec<Self>> {
         Ok(
             serde_json::from_reader(BufReader::new(File::open(path)?))

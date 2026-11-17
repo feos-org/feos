@@ -22,7 +22,7 @@ pub(crate) mod user_defined;
 #[pyclass(name = "Verbosity", eq, eq_int, from_py_object)]
 pub(crate) enum PyVerbosity {
     /// Do not print output.
-    None,
+    Silent,
     /// Print information about the success of failure of the iteration.
     Result,
     /// Print a detailed outpur for every iteration.
@@ -31,22 +31,20 @@ pub(crate) enum PyVerbosity {
 
 impl From<Verbosity> for PyVerbosity {
     fn from(value: Verbosity) -> Self {
-        use Verbosity::*;
         match value {
-            None => Self::None,
-            Result => Self::Result,
-            Iter => Self::Iter,
+            Verbosity::Silent => Self::Silent,
+            Verbosity::Result => Self::Result,
+            Verbosity::Iter => Self::Iter,
         }
     }
 }
 
 impl From<PyVerbosity> for Verbosity {
     fn from(value: PyVerbosity) -> Self {
-        use PyVerbosity::*;
         match value {
-            None => Self::None,
-            Result => Self::Result,
-            Iter => Self::Iter,
+            PyVerbosity::Silent => Self::Silent,
+            PyVerbosity::Result => Self::Result,
+            PyVerbosity::Iter => Self::Iter,
         }
     }
 }
@@ -143,80 +141,60 @@ mod rayon_features {
 }
 
 #[pymodule]
-fn feos(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add("__version__", env!("CARGO_PKG_VERSION"))?;
+mod feos {
+    #[pymodule_export]
+    #[expect(non_upper_case_globals)]
+    const __version__: &str = env!("CARGO_PKG_VERSION");
 
-    #[cfg(feature = "rayon")]
-    {
-        rayon_features::rayon_threads_from_env();
-        m.add_function(wrap_pyfunction!(rayon_features::set_num_threads, m)?)?;
-        m.add_function(wrap_pyfunction!(rayon_features::get_num_threads, m)?)?;
+    #[pymodule_init]
+    fn init() {
+        #[cfg(feature = "rayon")]
+        super::rayon_features::rayon_threads_from_env();
     }
 
+    #[cfg(feature = "rayon")]
+    #[pymodule_export]
+    use super::rayon_features::{get_num_threads, set_num_threads};
+
     // Utility
-    m.add_class::<PyVerbosity>()?;
+    #[pymodule_export]
+    use super::PyVerbosity;
 
     // State & phase equilibria.
-    m.add_class::<state::PyContributions>()?;
-    m.add_class::<state::PyState>()?;
-    m.add_class::<state::PyStateVec>()?;
-    m.add_class::<phase_equilibria::PyPhaseDiagram>()?;
-    m.add_class::<phase_equilibria::PyPhaseDiagramHetero>()?;
-    m.add_class::<phase_equilibria::PyPhaseEquilibrium>()?;
+    #[pymodule_export]
+    use super::phase_equilibria::{
+        PyPhaseDiagram, PyPhaseDiagramHetero, PyPhaseEquilibrium, PyThreePhaseEquilibrium,
+    };
+    #[pymodule_export]
+    use super::state::{PyContributions, PyState, PyStateVec};
 
     // Parameter
-    m.add_class::<parameter::PyIdentifier>()?;
-    m.add_class::<parameter::PyIdentifierOption>()?;
-    m.add_class::<parameter::PyChemicalRecord>()?;
-    m.add_class::<parameter::PySmartsRecord>()?;
-    m.add_class::<parameter::PyPureRecord>()?;
-    m.add_class::<parameter::PySegmentRecord>()?;
-    m.add_class::<parameter::PyBinaryRecord>()?;
-    m.add_class::<parameter::PyBinarySegmentRecord>()?;
-    m.add_class::<parameter::PyParameters>()?;
-    m.add_class::<parameter::PyGcParameters>()?;
+    #[pymodule_export]
+    use super::parameter::{
+        PyBinaryRecord, PyBinarySegmentRecord, PyChemicalRecord, PyGcParameters, PyIdentifier,
+        PyIdentifierOption, PyParameters, PyPureRecord, PySegmentRecord, PySmartsRecord,
+    };
 
     // Equation of state
-    m.add_class::<eos::PyEquationOfState>()?;
+    #[pymodule_export]
+    use super::eos::PyEquationOfState;
 
     // AD
     #[cfg(feature = "ad")]
-    {
-        m.add_class::<ad::PyEquationOfStateAD>()?;
-        m.add_class::<ad::PyPropertyAD>()?;
+    #[pymodule_export]
+    use super::ad::{PyBinaryDataset, PyEquationOfStateAD, PyPropertyAD, PyPureDataset};
 
-        // Datasets
-        m.add_class::<ad::PyPureDataset>()?;
-        m.add_class::<ad::PyBinaryDataset>()?;
-    }
-
+    #[cfg(all(feature = "dft", any(feature = "pcsaft", feature = "gc_pcsaft")))]
+    #[pymodule_export]
+    use super::dft::PyAssociationVersion;
+    #[cfg(all(feature = "dft", feature = "rayon"))]
+    #[pymodule_export]
+    use super::dft::PySolvationProfile;
     #[cfg(feature = "dft")]
-    {
-        m.add_class::<dft::PyHelmholtzEnergyFunctional>()?;
-        m.add_class::<dft::PyFMTVersion>()?;
-        #[cfg(any(feature = "pcsaft", feature = "gc_pcsaft"))]
-        m.add_class::<dft::PyAssociationVersion>()?;
-        m.add_class::<dft::PyGeometry>()?;
-
-        // Solver
-        m.add_class::<dft::PyDFTSolver>()?;
-        m.add_class::<dft::PyDFTSolverLog>()?;
-
-        // Adsorption
-        m.add_class::<dft::PyAdsorption>()?;
-        m.add_class::<dft::PyExternalPotential>()?;
-        m.add_class::<dft::PyPoreSpecification>()?;
-        m.add_class::<dft::PyPore1D>()?;
-        m.add_class::<dft::PyPoreProfile>()?;
-        m.add_class::<dft::PyGrid>()?;
-
-        // Interface
-        m.add_class::<dft::PySurfaceTensionDiagram>()?;
-        m.add_class::<dft::PyInterface>()?;
-
-        m.add_class::<dft::PyPairCorrelation>()?;
-        #[cfg(feature = "rayon")]
-        m.add_class::<dft::PySolvationProfile>()?;
-    }
-    Ok(())
+    #[pymodule_export]
+    use super::dft::{
+        PyAdsorption, PyDFTSolver, PyDFTSolverLog, PyExternalPotential, PyFMTVersion, PyGeometry,
+        PyGrid, PyHelmholtzEnergyFunctional, PyInterface, PyPairCorrelation, PyPore1D,
+        PyPoreProfile, PyPoreSpecification, PySurfaceTensionDiagram,
+    };
 }

@@ -1,6 +1,6 @@
 use super::PyDFTSolver;
 use crate::PyVerbosity;
-use crate::eos::{Compositions, PyEquationOfState};
+use crate::eos::{PyComposition, PyEquationOfState};
 use crate::error::PyFeosError;
 use crate::ideal_gas::IdealGasModel;
 use crate::residual::ResidualModel;
@@ -51,9 +51,6 @@ impl PyAdsorption {
     /// Adsorption
     ///
     #[staticmethod]
-    #[pyo3(
-        text_signature = "(functional, temperature, pressure, grid, external_potential, composition=None, solver=None)"
-    )]
     #[pyo3(signature = (functional, temperature, pressure, grid, external_potential, composition=None, solver=None))]
     fn adsorption_isotherm(
         functional: &PyEquationOfState,
@@ -61,7 +58,7 @@ impl PyAdsorption {
         pressure: Pressure<Array1<f64>>,
         grid: PyGrid,
         external_potential: Energy<ArrayD<f64>>,
-        composition: Option<&Bound<'_, PyAny>>,
+        composition: Option<PyComposition>,
         solver: Option<PyDFTSolver>,
     ) -> PyResult<Self> {
         Ok(Self(
@@ -71,7 +68,7 @@ impl PyAdsorption {
                 &pressure,
                 &grid.0,
                 &external_potential,
-                Compositions::try_from(composition)?,
+                composition.unwrap_or_default(),
                 solver.map(|s| s.0).as_ref(),
             )
             .map_err(PyFeosError::from)?,
@@ -104,9 +101,6 @@ impl PyAdsorption {
     /// Adsorption
     ///
     #[staticmethod]
-    #[pyo3(
-        text_signature = "(functional, temperature, pressure, grid, external_potential, composition=None, solver=None)"
-    )]
     #[pyo3(signature = (functional, temperature, pressure, grid, external_potential, composition=None, solver=None))]
     fn desorption_isotherm(
         functional: &PyEquationOfState,
@@ -114,7 +108,7 @@ impl PyAdsorption {
         pressure: Pressure<Array1<f64>>,
         grid: PyGrid,
         external_potential: Energy<ArrayD<f64>>,
-        composition: Option<&Bound<'_, PyAny>>,
+        composition: Option<PyComposition>,
         solver: Option<PyDFTSolver>,
     ) -> PyResult<Self> {
         Ok(Self(
@@ -124,7 +118,7 @@ impl PyAdsorption {
                 &pressure,
                 &grid.0,
                 &external_potential,
-                Compositions::try_from(composition)?,
+                composition.unwrap_or_default(),
                 solver.map(|s| s.0).as_ref(),
             )
             .map_err(PyFeosError::from)?,
@@ -160,9 +154,6 @@ impl PyAdsorption {
     /// Adsorption
     ///
     #[staticmethod]
-    #[pyo3(
-        text_signature = "(functional, temperature, pressure, grid, external_potential, composition=None, solver=None)"
-    )]
     #[pyo3(signature = (functional, temperature, pressure, grid, external_potential, composition=None, solver=None))]
     fn equilibrium_isotherm(
         functional: &PyEquationOfState,
@@ -170,7 +161,7 @@ impl PyAdsorption {
         pressure: Pressure<Array1<f64>>,
         grid: PyGrid,
         external_potential: Energy<ArrayD<f64>>,
-        composition: Option<&Bound<'_, PyAny>>,
+        composition: Option<PyComposition>,
         solver: Option<PyDFTSolver>,
     ) -> PyResult<Self> {
         Ok(Self(
@@ -180,7 +171,7 @@ impl PyAdsorption {
                 &pressure,
                 &grid.0,
                 &external_potential,
-                Compositions::try_from(composition)?,
+                composition.unwrap_or_default(),
                 solver.map(|s| s.0).as_ref(),
             )
             .map_err(PyFeosError::from)?,
@@ -219,9 +210,6 @@ impl PyAdsorption {
     /// Adsorption
     ///
     #[staticmethod]
-    #[pyo3(
-        text_signature = "(functional, temperature, p_min, p_max, grid, external_potential, composition=None, solver=None, max_iter=None, tol=None, verbosity=None)"
-    )]
     #[pyo3(signature = (functional, temperature, p_min, p_max, grid, external_potential, composition=None, solver=None, max_iter=None, tol=None, verbosity=None))]
     #[expect(clippy::too_many_arguments)]
     fn phase_equilibrium(
@@ -231,7 +219,7 @@ impl PyAdsorption {
         p_max: Pressure,
         grid: PyGrid,
         external_potential: Energy<ArrayD<f64>>,
-        composition: Option<&Bound<'_, PyAny>>,
+        composition: Option<PyComposition>,
         solver: Option<PyDFTSolver>,
         max_iter: Option<usize>,
         tol: Option<f64>,
@@ -245,7 +233,7 @@ impl PyAdsorption {
                 p_max,
                 &grid.0,
                 &external_potential,
-                Compositions::try_from(composition)?,
+                composition.unwrap_or_default(),
                 solver.map(|s| s.0).as_ref(),
                 (max_iter, tol, verbosity.map(|v| v.into())).into(),
             )

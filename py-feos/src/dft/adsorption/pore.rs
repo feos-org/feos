@@ -144,9 +144,6 @@ pub struct PyPoreProfile(
 #[pymethods]
 impl PyPoreProfile {
     #[new]
-    #[pyo3(
-        text_signature = "(grid, bulk, external_potential, density=None, specification=PoreSpecification.ChemicalPotential)"
-    )]
     #[pyo3(signature = (grid, bulk, external_potential, density=None, specification=PyPoreSpecification::ChemicalPotential()))]
     fn new(
         grid: PyGrid,
@@ -261,7 +258,6 @@ pub struct PyPore1D(pub Pore1D);
 #[pymethods]
 impl PyPore1D {
     #[new]
-    #[pyo3(text_signature = "(functional, geometry, pore_size, external_potential, n_grid=None)")]
     #[pyo3(signature = (functional, geometry, pore_size, external_potential, n_grid=None))]
     fn new(
         functional: &PyEquationOfState,
@@ -294,9 +290,6 @@ impl PyPore1D {
     /// Returns
     /// -------
     /// PoreProfile
-    #[pyo3(
-        text_signature = "($self, bulk, density=None, specification=PoreSpecification.ChemicalPotential)"
-    )]
     #[pyo3(signature = (bulk, density=None, specification=PyPoreSpecification::ChemicalPotential()))]
     fn initialize(
         &self,

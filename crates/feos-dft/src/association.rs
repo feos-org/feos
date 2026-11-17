@@ -147,7 +147,7 @@ where
             MASS_ACTION_MAX_ITER_GMRES,
             MASS_ACTION_TOL,
             &mut DFTSolverLog::new(),
-            Verbosity::None,
+            Verbosity::Silent,
         );
         ln_x.mapv(f64::exp)
     }

@@ -26,7 +26,7 @@ impl From<PyChemicalRecord> for ChemicalRecord {
 #[pymethods]
 impl PyChemicalRecord {
     #[new]
-    #[pyo3(text_signature = "(identifier, segments, bonds=None)", signature = (identifier, segments, bonds=None))]
+    #[pyo3(signature = (identifier, segments, bonds=None))]
     fn py_new(
         identifier: PyIdentifier,
         segments: Vec<String>,
@@ -84,8 +84,9 @@ impl PyChemicalRecord {
     }
 
     #[staticmethod]
+    #[pyo3(signature = (identifier: "str | Identifier", smarts))]
     pub fn from_smiles(
-        identifier: &Bound<'_, PyAny>,
+        identifier: Bound<'_, PyAny>,
         smarts: Vec<PySmartsRecord>,
     ) -> PyResult<Self> {
         let py = identifier.py();

@@ -22,8 +22,8 @@ keywords = [
 categories = ["science"]
 
 [workspace.dependencies]
-quantity = "0.15"
-num-dual = "0.15"
+quantity = "0.16"
+num-dual = "0.16"
 ndarray = "0.17"
 nalgebra = "0.35"
 thiserror = "2.0"
@@ -58,3 +58,4 @@ codegen-units = 1
 inherits = "release"
 lto = "thin"
 codegen-units = 1
+

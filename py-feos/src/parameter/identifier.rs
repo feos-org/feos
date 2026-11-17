@@ -51,7 +51,6 @@ pub struct PyIdentifier(pub Identifier);
 impl PyIdentifier {
     #[new]
     #[pyo3(
-        text_signature = "(cas=None, name=None, iupac_name=None, smiles=None, inchi=None, formula=None)",
         signature = (cas=None, name=None, iupac_name=None, smiles=None, inchi=None, formula=None)
     )]
     fn py_new(
