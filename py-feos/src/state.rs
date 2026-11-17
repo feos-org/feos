@@ -1,16 +1,22 @@
-use crate::eos::{Compositions, parse_molefracs};
+use crate::eos::{PyComposition, parse_molefracs};
+use crate::phase_equilibria::PyTemperatureOrPressure;
 use crate::{
     PyVerbosity, eos::PyEquationOfState, error::PyFeosError, ideal_gas::IdealGasModel,
     residual::ResidualModel,
 };
 use feos_core::{
-    Contributions, DensityInitialization, EquationOfState, FeosError, ResidualDyn, State, StateVec,
+    Contributions, DensityInitialization, EquationOfState, ResidualDyn, State, StateVec,
 };
 use ndarray::{Array1, Array2};
 use numpy::nalgebra::{DMatrix, DVector};
 use numpy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1, ToPyArray};
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::prelude::*;
+#[cfg(feature = "experimental-inspect")]
+use pyo3::{
+    inspect::{PyStaticConstant, PyStaticExpr},
+    type_hint_identifier, type_hint_subscript, type_hint_union,
+};
 use quantity::*;
 use std::collections::HashMap;
 use std::ops::{Deref, Div, Neg};
@@ -20,6 +26,29 @@ type Quot<T1, T2> = <T1 as Div<T2>>::Output;
 
 type InvT<T> = Quantity<T, <_Temperature as Neg>::Output>;
 type InvP<T> = Quantity<T, <_Pressure as Neg>::Output>;
+
+/// The composition of a `State`, which can additionally be given as partial densities.
+pub enum PyStateComposition {
+    PartialDensity(Density<DVector<f64>>),
+    Composition(PyComposition),
+}
+
+impl<'a, 'py> FromPyObject<'a, 'py> for PyStateComposition {
+    type Error = PyErr;
+
+    #[cfg(feature = "experimental-inspect")]
+    const INPUT_TYPE: pyo3::inspect::PyStaticExpr = type_hint_union!(
+        <Density<DVector<f64>> as FromPyObject<'static, 'static>>::INPUT_TYPE,
+        <PyComposition as FromPyObject<'static, 'static>>::INPUT_TYPE
+    );
+
+    fn extract(composition: Borrowed<'a, 'py, PyAny>) -> PyResult<Self> {
+        match composition.extract::<Density<DVector<f64>>>() {
+            Ok(rho) => Ok(Self::PartialDensity(rho)),
+            Err(_) => composition.extract().map(Self::Composition),
+        }
+    }
+}
 
 /// Possible contributions that can be computed.
 #[derive(Clone, Copy, PartialEq)]
@@ -98,53 +127,74 @@ impl From<PyContributions> for Contributions {
 #[derive(Clone)]
 pub struct PyState(pub State<Arc<EquationOfState<Vec<IdealGasModel>, ResidualModel>>>);
 
+/// The initialization of a density iteration as accepted from Python: the phase (`"vapor"` or
+/// `"liquid"`) or a molar density.
+pub struct PyDensityInitialization(DensityInitialization);
+
+impl<'a, 'py> FromPyObject<'a, 'py> for PyDensityInitialization {
+    type Error = PyErr;
+
+    #[cfg(feature = "experimental-inspect")]
+    const INPUT_TYPE: PyStaticExpr = type_hint_union!(
+        type_hint_subscript!(
+            type_hint_identifier!("typing", "Literal"),
+            PyStaticExpr::Constant {
+                value: PyStaticConstant::Str("vapor")
+            },
+            PyStaticExpr::Constant {
+                value: PyStaticConstant::Str("liquid")
+            }
+        ),
+        <Density as FromPyObject<'static, 'static>>::INPUT_TYPE
+    );
+
+    fn extract(ob: Borrowed<'a, 'py, PyAny>) -> PyResult<Self> {
+        if let Ok(phase) = ob.extract::<String>() {
+            match phase.as_str() {
+                "vapor" => Ok(Self(DensityInitialization::Vapor)),
+                "liquid" => Ok(Self(DensityInitialization::Liquid)),
+                _ => Err(PyValueError::new_err(
+                    "`density_initialization` must be 'vapor' or 'liquid'.",
+                )),
+            }
+        } else if let Ok(density) = ob.extract::<Density>() {
+            Ok(Self(DensityInitialization::InitialDensity(density)))
+        } else {
+            Err(PyValueError::new_err(
+                "`density_initialization` must be 'vapor' or 'liquid' or a molar density as `SINumber` has to be provided.",
+            ))
+        }
+    }
+}
+
 #[pymethods]
 impl PyState {
     #[new]
-    #[pyo3(
-        text_signature = "(eos, temperature=None, volume=None, density=None, composition=None, pressure=None, molar_enthalpy=None, molar_entropy=None, molar_internal_energy=None, density_initialization=None, initial_temperature=None)"
-    )]
     #[pyo3(signature = (eos, temperature=None, volume=None, density=None, composition=None, pressure=None, molar_enthalpy=None, molar_entropy=None, molar_internal_energy=None, density_initialization=None, initial_temperature=None))]
     #[expect(clippy::too_many_arguments)]
-    pub fn new<'py>(
+    pub fn new(
         eos: &PyEquationOfState,
         temperature: Option<Temperature>,
         volume: Option<Volume>,
         mut density: Option<Density>,
-        composition: Option<&Bound<'py, PyAny>>,
+        composition: Option<PyStateComposition>,
         pressure: Option<Pressure>,
         molar_enthalpy: Option<MolarEnergy>,
         molar_entropy: Option<MolarEntropy>,
         molar_internal_energy: Option<MolarEnergy>,
-        density_initialization: Option<&Bound<'py, PyAny>>,
+        density_initialization: Option<PyDensityInitialization>,
         initial_temperature: Option<Temperature>,
     ) -> PyResult<Self> {
         // partial density is supported here as a special case
-        let composition = if let Some(composition) = composition
-            && let Ok(rho) = composition.extract::<Density<DVector<f64>>>()
-        {
-            density = Some(rho.sum());
-            Compositions::Molefracs(rho.convert_into(density.unwrap()))
-        } else {
-            Compositions::try_from(composition)?
-        };
-        let density_init = if let Some(di) = density_initialization {
-            if let Ok(d) = di.extract::<String>().as_deref() {
-                match d {
-                    "vapor" => Ok(Some(DensityInitialization::Vapor)),
-                    "liquid" => Ok(Some(DensityInitialization::Liquid)),
-                    _ => Err(PyErr::new::<PyValueError, _>(
-                        "`density_initialization` must be 'vapor' or 'liquid'.".to_string(),
-                    )),
-                }
-            } else if let Ok(d) = di.extract::<Density>() {
-                Ok(Some(DensityInitialization::InitialDensity(d)))
-            } else {
-                Err(PyErr::new::<PyValueError, _>("`density_initialization` must be 'vapor' or 'liquid' or a molar density as `SINumber` has to be provided.".to_string()))
+        let composition = match composition {
+            Some(PyStateComposition::PartialDensity(rho)) => {
+                density = Some(rho.sum());
+                PyComposition::Molefracs(rho.convert_into(density.unwrap()))
             }
-        } else {
-            Ok(None)
-        }?;
+            Some(PyStateComposition::Composition(composition)) => composition,
+            None => PyComposition::None,
+        };
+        let density_init = density_initialization.map(|d| d.0);
         Ok(Self(
             State::build_full(
                 &eos.0,
@@ -183,9 +233,6 @@ impl PyState {
     /// -------
     /// list[State] : List of pure-substance State objects at critical conditions.
     #[staticmethod]
-    #[pyo3(
-        text_signature = "(eos, initial_temperature=None, initial_density=None, max_iter=None, tol=None, verbosity=None)"
-    )]
     #[pyo3(signature = (eos, initial_temperature=None, initial_density=None, max_iter=None, tol=None, verbosity=None))]
     fn critical_point_pure(
         eos: &PyEquationOfState,
@@ -226,13 +273,10 @@ impl PyState {
     /// -------
     /// State : State at critical conditions.
     #[staticmethod]
-    #[pyo3(
-        text_signature = "(eos, composition=None, initial_temperature=None, initial_density=None, max_iter=None, tol=None, verbosity=None)"
-    )]
     #[pyo3(signature = (eos, composition=None, initial_temperature=None, initial_density=None, max_iter=None, tol=None, verbosity=None))]
-    fn critical_point<'py>(
+    fn critical_point(
         eos: &PyEquationOfState,
-        composition: Option<&Bound<'py, PyAny>>,
+        composition: Option<PyComposition>,
         initial_temperature: Option<Temperature>,
         initial_density: Option<Density>,
         max_iter: Option<usize>,
@@ -242,7 +286,7 @@ impl PyState {
         Ok(PyState(
             State::critical_point(
                 &eos.0,
-                Compositions::try_from(composition)?,
+                composition.unwrap_or_default(),
                 initial_temperature,
                 initial_density,
                 (max_iter, tol, verbosity.map(|v| v.into())).into(),
@@ -274,14 +318,11 @@ impl PyState {
     /// -------
     /// State : State at critical conditions.
     #[staticmethod]
-    #[pyo3(
-        text_signature = "(eos, temperature_or_pressure, initial_temperature=None, initial_molefracs=None, initial_density=None, max_iter=None, tol=None, verbosity=None)"
-    )]
     #[pyo3(signature = (eos, temperature_or_pressure, initial_temperature=None, initial_molefracs=None, initial_density=None, max_iter=None, tol=None, verbosity=None))]
     #[expect(clippy::too_many_arguments)]
     fn critical_point_binary(
         eos: &PyEquationOfState,
-        temperature_or_pressure: &Bound<'_, PyAny>,
+        temperature_or_pressure: PyTemperatureOrPressure,
         initial_temperature: Option<Temperature>,
         initial_molefracs: Option<[f64; 2]>,
         initial_density: Option<Density>,
@@ -290,8 +331,8 @@ impl PyState {
         verbosity: Option<PyVerbosity>,
     ) -> PyResult<Self> {
         let v = verbosity.map(|v| v.into());
-        if let Ok(t) = temperature_or_pressure.extract::<Temperature>() {
-            Ok(PyState(
+        match temperature_or_pressure {
+            PyTemperatureOrPressure::Temperature(t) => Ok(PyState(
                 State::critical_point_binary(
                     &eos.0,
                     t,
@@ -301,9 +342,8 @@ impl PyState {
                     (max_iter, tol, v).into(),
                 )
                 .map_err(PyFeosError::from)?,
-            ))
-        } else if let Ok(p) = temperature_or_pressure.extract::<Pressure>() {
-            Ok(PyState(
+            )),
+            PyTemperatureOrPressure::Pressure(p) => Ok(PyState(
                 State::critical_point_binary(
                     &eos.0,
                     p,
@@ -313,14 +353,7 @@ impl PyState {
                     (max_iter, tol, v).into(),
                 )
                 .map_err(PyFeosError::from)?,
-            ))
-        } else {
-            let repr = temperature_or_pressure
-                .call_method0("__repr__")
-                .map_err(|e| FeosError::Error(e.to_string()))
-                .map_err(PyFeosError::from)?;
-            let err = FeosError::WrongUnits("K or Pa".to_string(), repr.to_string());
-            Err(PyFeosError::from(err).into())
+            )),
         }
     }
 
@@ -345,14 +378,11 @@ impl PyState {
     /// -------
     /// (State, State): Spinodal states.
     #[staticmethod]
-    #[pyo3(
-        text_signature = "(eos, temperature, composition=None, max_iter=None, tol=None, verbosity=None)"
-    )]
     #[pyo3(signature = (eos, temperature, composition=None, max_iter=None, tol=None, verbosity=None))]
-    fn spinodal<'py>(
+    fn spinodal(
         eos: &PyEquationOfState,
         temperature: Temperature,
-        composition: Option<&Bound<'py, PyAny>>,
+        composition: Option<PyComposition>,
         max_iter: Option<usize>,
         tol: Option<f64>,
         verbosity: Option<PyVerbosity>,
@@ -360,7 +390,7 @@ impl PyState {
         let [state1, state2] = State::spinodal(
             &eos.0,
             temperature,
-            Compositions::try_from(composition)?,
+            composition.unwrap_or_default(),
             (max_iter, tol, verbosity.map(|v| v.into())).into(),
         )
         .map_err(PyFeosError::from)?;
@@ -382,7 +412,6 @@ impl PyState {
     /// Returns
     /// -------
     /// State
-    #[pyo3(text_signature = "(max_iter=None, tol=None, verbosity=None)")]
     #[pyo3(signature = (max_iter=None, tol=None, verbosity=None))]
     fn stability_analysis(
         &self,
@@ -414,7 +443,6 @@ impl PyState {
     /// Returns
     /// -------
     /// bool
-    #[pyo3(text_signature = "(max_iter=None, tol=None, verbosity=None)")]
     #[pyo3(signature = (max_iter=None, tol=None, verbosity=None))]
     fn is_stable(
         &self,
@@ -439,7 +467,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn pressure(&self, contributions: PyContributions) -> Pressure {
         self.0.pressure(contributions.into())
     }
@@ -464,7 +492,7 @@ impl PyState {
     /// Returns
     /// -------
     /// float
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn compressibility(&self, contributions: PyContributions) -> f64 {
         self.0.compressibility(contributions.into())
     }
@@ -480,7 +508,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn dp_dv(&self, contributions: PyContributions) -> Quot<Pressure, MolarVolume> {
         self.0.dp_dv(contributions.into())
     }
@@ -496,7 +524,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn dp_drho(&self, contributions: PyContributions) -> Quot<Pressure, Density> {
         self.0.dp_drho(contributions.into())
     }
@@ -512,7 +540,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn dp_dt(&self, contributions: PyContributions) -> Quot<Pressure, Temperature> {
         self.0.dp_dt(contributions.into())
     }
@@ -528,7 +556,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SIArray1
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn n_dp_dni(&self, contributions: PyContributions) -> Pressure<DVector<f64>> {
         self.0.n_dp_dni(contributions.into())
     }
@@ -544,7 +572,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn d2p_dv2(
         &self,
         contributions: PyContributions,
@@ -563,7 +591,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn d2p_drho2(&self, contributions: PyContributions) -> Quot<Quot<Pressure, Density>, Density> {
         self.0.d2p_drho2(contributions.into())
     }
@@ -588,7 +616,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SIArray1
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn chemical_potential(&self, contributions: PyContributions) -> MolarEnergy<DVector<f64>> {
         self.0.chemical_potential(contributions.into())
     }
@@ -607,7 +635,7 @@ impl PyState {
     /// Returns
     /// -------
     /// List[Tuple[str, SINumber]]
-    #[pyo3(signature = (component, contributions=PyContributions::Total), text_signature = "($self, component, contributions)")]
+    #[pyo3(signature = (component, contributions=PyContributions::Total))]
     fn chemical_potential_contributions(
         &self,
         component: usize,
@@ -628,7 +656,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SIArray1
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn dmu_dt(
         &self,
         contributions: PyContributions,
@@ -647,7 +675,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SIArray2
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn n_dmu_dni(&self, contributions: PyContributions) -> MolarEnergy<DMatrix<f64>> {
         self.0.n_dmu_dni(contributions.into())
     }
@@ -791,7 +819,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn molar_isochoric_heat_capacity(&self, contributions: PyContributions) -> MolarEntropy {
         self.0.molar_isochoric_heat_capacity(contributions.into())
     }
@@ -807,7 +835,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn dc_v_dt(&self, contributions: PyContributions) -> Quot<MolarEntropy, Temperature> {
         self.0.dc_v_dt(contributions.into())
     }
@@ -823,7 +851,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn molar_isobaric_heat_capacity(&self, contributions: PyContributions) -> MolarEntropy {
         self.0.molar_isobaric_heat_capacity(contributions.into())
     }
@@ -839,7 +867,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn entropy(&self, contributions: PyContributions) -> PyResult<Entropy> {
         self.0
             .entropy(contributions.into())
@@ -858,7 +886,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn ds_dt(&self, contributions: PyContributions) -> Quot<MolarEntropy, Temperature> {
         self.0.ds_dt(contributions.into())
     }
@@ -874,7 +902,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn molar_entropy(&self, contributions: PyContributions) -> MolarEntropy {
         self.0.molar_entropy(contributions.into())
     }
@@ -899,7 +927,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn enthalpy(&self, contributions: PyContributions) -> PyResult<Energy> {
         self.0
             .enthalpy(contributions.into())
@@ -918,7 +946,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn molar_enthalpy(&self, contributions: PyContributions) -> MolarEnergy {
         self.0.molar_enthalpy(contributions.into())
     }
@@ -943,7 +971,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn helmholtz_energy(&self, contributions: PyContributions) -> PyResult<Energy> {
         self.0
             .helmholtz_energy(contributions.into())
@@ -962,7 +990,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn molar_helmholtz_energy(&self, contributions: PyContributions) -> MolarEnergy {
         self.0.molar_helmholtz_energy(contributions.into())
     }
@@ -987,7 +1015,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn gibbs_energy(&self, contributions: PyContributions) -> PyResult<Energy> {
         self.0
             .gibbs_energy(contributions.into())
@@ -1006,7 +1034,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn molar_gibbs_energy(&self, contributions: PyContributions) -> MolarEnergy {
         self.0.molar_gibbs_energy(contributions.into())
     }
@@ -1022,7 +1050,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn internal_energy(&self, contributions: PyContributions) -> PyResult<Energy> {
         self.0
             .internal_energy(contributions.into())
@@ -1041,7 +1069,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn molar_internal_energy(&self, contributions: PyContributions) -> MolarEnergy {
         self.0.molar_internal_energy(contributions.into())
     }
@@ -1180,7 +1208,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn specific_helmholtz_energy(&self, contributions: PyContributions) -> SpecificEnergy {
         self.0.specific_helmholtz_energy(contributions.into())
     }
@@ -1196,7 +1224,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn specific_entropy(&self, contributions: PyContributions) -> SpecificEntropy {
         self.0.specific_entropy(contributions.into())
     }
@@ -1212,7 +1240,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn specific_internal_energy(&self, contributions: PyContributions) -> SpecificEnergy {
         self.0.specific_internal_energy(contributions.into())
     }
@@ -1228,7 +1256,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn specific_gibbs_energy(&self, contributions: PyContributions) -> SpecificEnergy {
         self.0.specific_gibbs_energy(contributions.into())
     }
@@ -1244,7 +1272,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn specific_enthalpy(&self, contributions: PyContributions) -> SpecificEnergy {
         self.0.specific_enthalpy(contributions.into())
     }
@@ -1260,7 +1288,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn specific_isochoric_heat_capacity(&self, contributions: PyContributions) -> SpecificEntropy {
         self.0
             .specific_isochoric_heat_capacity(contributions.into())
@@ -1277,7 +1305,7 @@ impl PyState {
     /// Returns
     /// -------
     /// SINumber
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn specific_isobaric_heat_capacity(&self, contributions: PyContributions) -> SpecificEntropy {
         self.0.specific_isobaric_heat_capacity(contributions.into())
     }
@@ -1503,7 +1531,7 @@ impl PyStateVec {
     /// Returns
     /// -------
     /// SIArray1
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn molar_entropy(&self, contributions: PyContributions) -> MolarEntropy<Array1<f64>> {
         StateVec::from(self).molar_entropy(contributions.into())
     }
@@ -1519,7 +1547,7 @@ impl PyStateVec {
     /// Returns
     /// -------
     /// SIArray1
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn specific_entropy(&self, contributions: PyContributions) -> SpecificEntropy<Array1<f64>> {
         StateVec::from(self).specific_entropy(contributions.into())
     }
@@ -1535,7 +1563,7 @@ impl PyStateVec {
     /// Returns
     /// -------
     /// SIArray1
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn molar_enthalpy(&self, contributions: PyContributions) -> MolarEnergy<Array1<f64>> {
         StateVec::from(self).molar_enthalpy(contributions.into())
     }
@@ -1551,7 +1579,7 @@ impl PyStateVec {
     /// Returns
     /// -------
     /// SIArray1
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     fn specific_enthalpy(&self, contributions: PyContributions) -> SpecificEnergy<Array1<f64>> {
         StateVec::from(self).specific_enthalpy(contributions.into())
     }
@@ -1632,7 +1660,7 @@ impl PyStateVec {
     /// - specific entropies : kJ / kg / K
     /// - xi: molefraction of component i
     /// - component index `i` matches to order of components in parameters.
-    #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+    #[pyo3(signature = (contributions=PyContributions::Total))]
     pub fn to_dict(&self, contributions: PyContributions) -> HashMap<String, Vec<f64>> {
         let states = StateVec::from(self);
         let n = states.0[0].eos.deref().components();

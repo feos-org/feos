@@ -15,12 +15,12 @@ name = "feos"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.29", features = [
+pyo3 = { version = "0.30", features = [
     "multiple-pymethods",
     "indexmap"
 ] }
-pythonize = "0.29"
-numpy = { version = "0.29" }
+pythonize = "0.30"
+numpy = { version = "0.30" }
 
 quantity = { workspace = true, features = ["python", "python_numpy"] }
 num-dual = { workspace = true, features = ["python_macro"] }
@@ -58,6 +58,11 @@ rayon = ["dep:rayon", "ndarray/rayon", "feos-core/rayon", "feos-dft?/rayon"]
 # Loading parameters from a sqlite database. Not active for emscripten wheel.
 sqlite = ["feos-core/rusqlite"]
 ad = ["feos/pcsaft"]
+# Embed introspection data for type stub generation (`maturin generate-stubs`).
+experimental-inspect = [
+    "pyo3/experimental-inspect",
+    "quantity/experimental-inspect",
+]
 # EoS and DFT model implementations.
 all_models = [
     "dft",

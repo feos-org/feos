@@ -32,8 +32,7 @@ impl PyEquationOfState {
     #[cfg(feature = "gc_pcsaft")]
     #[staticmethod]
     #[pyo3(
-        signature = (parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10),
-        text_signature = "(parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10)"
+        signature = (parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10)
     )]
     pub fn gc_pcsaft(
         parameters: PyGcParameters,
@@ -81,8 +80,7 @@ impl PyHelmholtzEnergyFunctional {
     #[cfg(feature = "gc_pcsaft")]
     #[staticmethod]
     #[pyo3(
-        signature = (parameters, fmt_version=PyFMTVersion::WhiteBear, association_version=PyAssociationVersion::ISaft, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10),
-        text_signature = "(parameters, fmt_version=FMTVersion.WhiteBear, association_version=AssociationVersion.ISaft, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10)"
+        signature = (parameters, fmt_version=PyFMTVersion::WhiteBear, association_version=PyAssociationVersion::ISaft, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10)
     )]
     fn gc_pcsaft(
         parameters: PyGcParameters,

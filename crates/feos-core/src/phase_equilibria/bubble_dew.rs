@@ -319,7 +319,7 @@ where
                     &mut p,
                     &mut molar_volume,
                     &mut rho2,
-                    Verbosity::None,
+                    Verbosity::Silent,
                 )?
             } else {
                 Self::newton_step_p(
@@ -329,7 +329,7 @@ where
                     p,
                     &mut molar_volume,
                     &mut rho2,
-                    Verbosity::None,
+                    Verbosity::Silent,
                 )?
             };
         }

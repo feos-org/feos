@@ -4,11 +4,14 @@ use feos_core::ad::{
     PureProperty, ResidualIsobaricHeatCapacityRecord, VaporPressureRecord,
 };
 use ndarray::{Array2, ArrayView1};
-use numpy::{PyArray1, PyArray2, PyReadonlyArray1, ToPyArray};
+use numpy::{PyArray1, PyArray2, PyArrayDyn, PyReadonlyArray1, ToPyArray};
 use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::prelude::*;
 
 use crate::eos::PyEquationOfState;
+
+/// Predicted values and convergence status of every data point.
+type EvaluateResult<'py> = PyResult<(Bound<'py, PyArrayDyn<f64>>, Bound<'py, PyArrayDyn<bool>>)>;
 
 /// Run a `Dataset::evaluate` against a single equation of state or a list of them.
 ///
@@ -19,13 +22,13 @@ fn evaluate_eos<'py, D: Dataset>(
     py: Python<'py>,
     dataset: &D,
     eos: &Bound<'py, PyAny>,
-) -> PyResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)> {
+) -> EvaluateResult<'py> {
     // Evaluate a single EoS.
     if let Ok(e) = eos.extract::<PyRef<PyEquationOfState>>() {
         let (pred, status) = dataset.evaluate(&e.0);
         return Ok((
-            pred.to_pyarray(py).into_any(),
-            status.to_pyarray(py).into_any(),
+            pred.into_dyn().to_pyarray(py),
+            status.into_dyn().to_pyarray(py),
         ));
     }
 
@@ -49,8 +52,8 @@ fn evaluate_eos<'py, D: Dataset>(
         status.column_mut(j).assign(&c);
     }
     Ok((
-        pred.to_pyarray(py).into_any(),
-        status.to_pyarray(py).into_any(),
+        pred.into_dyn().to_pyarray(py),
+        status.into_dyn().to_pyarray(py),
     ))
 }
 
@@ -355,12 +358,9 @@ impl PyPureDataset {
     ///     2D arrays of shape ``[n_points, n_eos]``; column ``k``
     ///     corresponds to ``eos[k]``. Non-converged points are reported as
     ///     ``NaN`` in ``predicted`` and ``False`` in ``converged``.
-    pub fn evaluate<'py>(
-        &self,
-        py: Python<'py>,
-        eos: &Bound<'py, PyAny>,
-    ) -> PyResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)> {
-        evaluate_eos(py, &self.inner, eos)
+    #[pyo3(signature = (eos: "EquationOfState | list[EquationOfState]"))]
+    pub fn evaluate<'py>(&self, py: Python<'py>, eos: Bound<'py, PyAny>) -> EvaluateResult<'py> {
+        evaluate_eos(py, &self.inner, &eos)
     }
 
     pub fn __repr__(&self) -> String {
@@ -514,12 +514,9 @@ impl PyBinaryDataset {
     ///     2D arrays of shape ``[n_points, n_eos]``; column ``k``
     ///     corresponds to ``eos[k]``. Non-converged points are reported as
     ///     ``NaN`` in ``predicted`` and ``False`` in ``converged``.
-    pub fn evaluate<'py>(
-        &self,
-        py: Python<'py>,
-        eos: &Bound<'py, PyAny>,
-    ) -> PyResult<(Bound<'py, PyAny>, Bound<'py, PyAny>)> {
-        evaluate_eos(py, &self.inner, eos)
+    #[pyo3(signature = (eos: "EquationOfState | list[EquationOfState]"))]
+    pub fn evaluate<'py>(&self, py: Python<'py>, eos: Bound<'py, PyAny>) -> EvaluateResult<'py> {
+        evaluate_eos(py, &self.inner, &eos)
     }
 
     pub fn __repr__(&self) -> String {

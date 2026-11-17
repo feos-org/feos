@@ -125,7 +125,6 @@ impl PyExternalPotential {
     /// ExternalPotential
     ///
     #[staticmethod]
-    #[pyo3(text_signature = "(sigma_ss, epsilon_k_ss, rho_s, xi=None)")]
     #[pyo3(signature = (sigma_ss, epsilon_k_ss, rho_s, xi=None))]
     pub fn Steele(sigma_ss: f64, epsilon_k_ss: f64, rho_s: f64, xi: Option<f64>) -> Self {
         Self(ExternalPotential::Steele {
@@ -156,7 +155,6 @@ impl PyExternalPotential {
     /// ExternalPotential
     ///
     #[staticmethod]
-    #[pyo3(text_signature = "(sigma_sf, epsilon_k_sf, rho_s, xi=None)")]
     #[pyo3(signature = (sigma_sf, epsilon_k_sf, rho_s, xi=None))]
     pub fn CustomSteele(
         sigma_sf: &Bound<'_, PyArray1<f64>>,

@@ -94,13 +94,14 @@ impl PyPropertyAD {
     /// -------
     /// (np.ndarray[float], np.ndarray[float], np.ndarray[bool]): The vapor pressures (in Pa), gradients, and convergence status.
     #[staticmethod]
+    #[pyo3(signature = (model, parameter_names: "list[str]", parameters, input))]
     pub fn vapor_pressure_derivatives<'py>(
         model: PyEquationOfStateAD,
-        parameter_names: &Bound<'py, PyAny>,
-        parameters: &Bound<'py, PyAny>,
+        parameter_names: Bound<'py, PyAny>,
+        parameters: Bound<'py, PyAny>,
         input: PyReadonlyArray2<f64>,
     ) -> GradResult<'py> {
-        _vapor_pressure_derivatives(model, parameter_names, parameters, input)
+        _vapor_pressure_derivatives(model, &parameter_names, &parameters, input)
     }
 
     /// Calculate boiling temperatures in parallel.
@@ -142,13 +143,14 @@ impl PyPropertyAD {
     /// -------
     /// (np.ndarray[float], np.ndarray[float], np.ndarray[bool]): The boiling temperature (in K), gradients, and convergence status.
     #[staticmethod]
+    #[pyo3(signature = (model, parameter_names: "list[str]", parameters, input))]
     pub fn boiling_temperature_derivatives<'py>(
         model: PyEquationOfStateAD,
-        parameter_names: &Bound<'py, PyAny>,
-        parameters: &Bound<'py, PyAny>,
+        parameter_names: Bound<'py, PyAny>,
+        parameters: Bound<'py, PyAny>,
         input: PyReadonlyArray2<f64>,
     ) -> GradResult<'py> {
-        _boiling_temperature_derivatives(model, parameter_names, parameters, input)
+        _boiling_temperature_derivatives(model, &parameter_names, &parameters, input)
     }
 
     /// Calculate liquid densities in parallel.
@@ -190,13 +192,14 @@ impl PyPropertyAD {
     /// -------
     /// (np.ndarray[float], np.ndarray[float], np.ndarray[bool]): The liquid densities (in kmol/m³), gradients, and convergence status.
     #[staticmethod]
+    #[pyo3(signature = (model, parameter_names: "list[str]", parameters, input))]
     pub fn liquid_density_derivatives<'py>(
         model: PyEquationOfStateAD,
-        parameter_names: &Bound<'py, PyAny>,
-        parameters: &Bound<'py, PyAny>,
+        parameter_names: Bound<'py, PyAny>,
+        parameters: Bound<'py, PyAny>,
         input: PyReadonlyArray2<f64>,
     ) -> GradResult<'py> {
-        _liquid_density_derivatives(model, parameter_names, parameters, input)
+        _liquid_density_derivatives(model, &parameter_names, &parameters, input)
     }
 
     /// Calculate liquid densities at saturation in parallel.
@@ -238,13 +241,14 @@ impl PyPropertyAD {
     /// -------
     /// (np.ndarray[float], np.ndarray[float], np.ndarray[bool]): The liquid densities (in kmol/m³), gradients, and convergence status.
     #[staticmethod]
+    #[pyo3(signature = (model, parameter_names: "list[str]", parameters, input))]
     pub fn equilibrium_liquid_density_derivatives<'py>(
         model: PyEquationOfStateAD,
-        parameter_names: &Bound<'py, PyAny>,
-        parameters: &Bound<'py, PyAny>,
+        parameter_names: Bound<'py, PyAny>,
+        parameters: Bound<'py, PyAny>,
         input: PyReadonlyArray2<f64>,
     ) -> GradResult<'py> {
-        _equilibrium_liquid_density_derivatives(model, parameter_names, parameters, input)
+        _equilibrium_liquid_density_derivatives(model, &parameter_names, &parameters, input)
     }
 
     /// Calculate enthalpy of vaporization in parallel.
@@ -288,13 +292,14 @@ impl PyPropertyAD {
     /// (np.ndarray[float], np.ndarray[float], np.ndarray[bool]):
     ///     The enthalpies of vaporization (in J/mol), gradients, and convergence status.
     #[staticmethod]
+    #[pyo3(signature = (model, parameter_names: "list[str]", parameters, input))]
     pub fn enthalpy_of_vaporization_derivatives<'py>(
         model: PyEquationOfStateAD,
-        parameter_names: &Bound<'py, PyAny>,
-        parameters: &Bound<'py, PyAny>,
+        parameter_names: Bound<'py, PyAny>,
+        parameters: Bound<'py, PyAny>,
         input: PyReadonlyArray2<f64>,
     ) -> GradResult<'py> {
-        _enthalpy_of_vaporization_derivatives(model, parameter_names, parameters, input)
+        _enthalpy_of_vaporization_derivatives(model, &parameter_names, &parameters, input)
     }
 
     /// Calculate residual isobaric molar heat capacities (liquid phase) in parallel.
@@ -339,13 +344,14 @@ impl PyPropertyAD {
     /// (np.ndarray[float], np.ndarray[float], np.ndarray[bool]):
     ///     The residual isobaric heat capacities (in J/(mol·K)), gradients, and convergence status.
     #[staticmethod]
+    #[pyo3(signature = (model, parameter_names: "list[str]", parameters, input))]
     pub fn residual_isobaric_heat_capacity_derivatives<'py>(
         model: PyEquationOfStateAD,
-        parameter_names: &Bound<'py, PyAny>,
-        parameters: &Bound<'py, PyAny>,
+        parameter_names: Bound<'py, PyAny>,
+        parameters: Bound<'py, PyAny>,
         input: PyReadonlyArray2<f64>,
     ) -> GradResult<'py> {
-        _residual_isobaric_heat_capacity_derivatives(model, parameter_names, parameters, input)
+        _residual_isobaric_heat_capacity_derivatives(model, &parameter_names, &parameters, input)
     }
 
     /// Calculate bubble point pressures of binary mixtures in parallel.
@@ -389,13 +395,14 @@ impl PyPropertyAD {
     /// -------
     /// (np.ndarray[float], np.ndarray[float], np.ndarray[bool]): The bubble point pressures (in Pa), gradients, and convergence status.
     #[staticmethod]
+    #[pyo3(signature = (model, parameter_names: "list[str]", parameters, input))]
     pub fn bubble_point_pressure_derivatives<'py>(
         model: PyEquationOfStateAD,
-        parameter_names: &Bound<'py, PyAny>,
-        parameters: &Bound<'py, PyAny>,
+        parameter_names: Bound<'py, PyAny>,
+        parameters: Bound<'py, PyAny>,
         input: PyReadonlyArray2<f64>,
     ) -> GradResult<'py> {
-        _bubble_point_pressure_derivatives(model, parameter_names, parameters, input)
+        _bubble_point_pressure_derivatives(model, &parameter_names, &parameters, input)
     }
 
     /// Calculate dew point pressures of binary mixtures in parallel.
@@ -439,13 +446,14 @@ impl PyPropertyAD {
     /// -------
     /// (np.ndarray[float], np.ndarray[float], np.ndarray[bool]): The dew point pressures (in Pa), gradients, and convergence status.
     #[staticmethod]
+    #[pyo3(signature = (model, parameter_names: "list[str]", parameters, input))]
     pub fn dew_point_pressure_derivatives<'py>(
         model: PyEquationOfStateAD,
-        parameter_names: &Bound<'py, PyAny>,
-        parameters: &Bound<'py, PyAny>,
+        parameter_names: Bound<'py, PyAny>,
+        parameters: Bound<'py, PyAny>,
         input: PyReadonlyArray2<f64>,
     ) -> GradResult<'py> {
-        _dew_point_pressure_derivatives(model, parameter_names, parameters, input)
+        _dew_point_pressure_derivatives(model, &parameter_names, &parameters, input)
     }
 }
 

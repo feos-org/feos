@@ -1,3 +1,14 @@
+use ndarray::ArrayD;
+use pyo3::IntoPyObject;
+use quantity::Length;
+
+/// The grid points of a profile: a single axis or one array per dimension.
+#[derive(IntoPyObject)]
+pub(crate) enum GridPoints {
+    Axis(Length<ArrayD<f64>>),
+    Mesh(Vec<Length<ArrayD<f64>>>),
+}
+
 macro_rules! impl_profile {
     ($struct:ident) => {
         #[pymethods]
@@ -13,7 +24,7 @@ macro_rules! impl_profile {
             /// -------
             /// (numpy.ndarray[float], numpy.ndarray[float])
             ///
-            #[pyo3(signature = (log=false), text_signature = "($self, log=False)")]
+            #[pyo3(signature = (log=false))]
             fn residual<'py>(
                 &mut self,
                 log: bool,
@@ -37,7 +48,7 @@ macro_rules! impl_profile {
             /// -------
             /// $struct
             ///
-            #[pyo3(signature = (solver=None, debug=false), text_signature = "($self, solver=None, debug=False)")]
+            #[pyo3(signature = (solver=None, debug=false))]
             fn solve(slf: Bound<'_, Self>, solver: Option<PyDFTSolver>, debug: bool) -> PyResult<Bound<'_, Self>> {
                 slf.borrow_mut()
                     .0
@@ -56,12 +67,12 @@ macro_rules! impl_profile {
             }
 
             #[getter]
-            fn get_grid<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+            fn get_grid(&self) -> crate::dft::profile::GridPoints {
                 let mut grid = self.0.profile.grid.mesh();
                 if grid.len() == 1 {
-                    grid.pop().unwrap().into_pyobject(py)
+                    crate::dft::profile::GridPoints::Axis(grid.pop().unwrap())
                 } else {
-                    grid.into_pyobject(py)
+                    crate::dft::profile::GridPoints::Mesh(grid)
                 }
             }
 
@@ -128,7 +139,7 @@ macro_rules! impl_profile {
             /// Returns
             /// -------
             /// SIArray
-            #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+            #[pyo3(signature = (contributions=PyContributions::Total))]
             fn entropy_density(
                 &mut self,
                 contributions: PyContributions,
@@ -147,7 +158,7 @@ macro_rules! impl_profile {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+            #[pyo3(signature = (contributions=PyContributions::Total))]
             fn entropy(
                 &mut self,
                 contributions: PyContributions,
@@ -166,7 +177,7 @@ macro_rules! impl_profile {
             /// Returns
             /// -------
             /// SINumber
-            #[pyo3(signature = (contributions=PyContributions::Total), text_signature = "($self, contributions)")]
+            #[pyo3(signature = (contributions=PyContributions::Total))]
             fn internal_energy(
                 &mut self,
                 contributions: PyContributions,

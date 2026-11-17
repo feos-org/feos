@@ -108,7 +108,6 @@ impl PyDataSet {
     /// property. For most properties it is the absolute relative difference.
     /// See the constructors of the respective properties
     /// to learn about the cost functions that are used.
-    #[pyo3(text_signature = "($self, eos, loss)")]
     fn cost<'py>(
         &self,
         eos: &PyEquationOfState,
@@ -134,7 +133,6 @@ impl PyDataSet {
     /// Returns
     /// -------
     /// SIArray1
-    #[pyo3(text_signature = "($self, eos)")]
     fn predict<'py>(
         &self,
         eos: &PyEquationOfState,
@@ -163,7 +161,6 @@ impl PyDataSet {
     /// Returns
     /// -------
     /// numpy.ndarray[Float]
-    #[pyo3(text_signature = "($self, eos)")]
     fn relative_difference<'py>(
         &self,
         eos: &PyEquationOfState,
@@ -191,7 +188,6 @@ impl PyDataSet {
     /// Returns
     /// -------
     /// Float
-    #[pyo3(text_signature = "($self, eos)")]
     fn mean_absolute_relative_difference(&self, eos: &PyEquationOfState) -> PyResult<f64> {
         Ok(self
             .0
@@ -235,9 +231,6 @@ impl PyDataSet {
     /// is used. If that fails, the default temperatures of the critical point routine
     /// are used.
     #[staticmethod]
-    #[pyo3(
-        text_signature = "(target, temperature, extrapolate, critical_temperature=None, max_iter=None, tol=None, verbosity=None)"
-    )]
     #[pyo3(signature = (target, temperature, extrapolate, critical_temperature=None, max_iter=None, tol=None, verbosity=None))]
     fn vapor_pressure(
         target: Pressure<Array1<f64>>,
@@ -272,7 +265,6 @@ impl PyDataSet {
     /// -------
     /// DataSet
     #[staticmethod]
-    #[pyo3(text_signature = "(target, temperature, pressure)")]
     fn liquid_density(
         target: MassDensity<Array1<f64>>,
         temperature: Temperature<Array1<f64>>,
@@ -304,7 +296,6 @@ impl PyDataSet {
     /// -------
     /// DataSet
     #[staticmethod]
-    #[pyo3(text_signature = "(target, temperature, max_iter=None, tol=None, verbosity=None)")]
     #[pyo3(signature = (target, temperature, max_iter=None, tol=None, verbosity=None))]
     fn equilibrium_liquid_density(
         target: MassDensity<Array1<f64>>,
@@ -338,7 +329,6 @@ impl PyDataSet {
     /// -------
     /// DataSet
     #[staticmethod]
-    #[pyo3(text_signature = "(temperature, pressure, liquid_molefracs, vapor_molefracs)")]
     fn binary_vle_chemical_potential(
         temperature: Temperature<Array1<f64>>,
         pressure: Pressure<Array1<f64>>,
@@ -371,7 +361,6 @@ impl PyDataSet {
     /// -------
     /// DataSet
     #[staticmethod]
-    #[pyo3(text_signature = "(temperature, pressure, molefracs, phase)")]
     fn binary_vle_pressure(
         temperature: Temperature<Array1<f64>>,
         pressure: Pressure<Array1<f64>>,
@@ -408,9 +397,6 @@ impl PyDataSet {
     /// -------
     /// DataSet
     #[staticmethod]
-    #[pyo3(
-        text_signature = "(specification, temperature_or_pressure, liquid_molefracs=None, vapor_molefracs=None, npoints=None)"
-    )]
     #[pyo3(signature = (specification, temperature_or_pressure, liquid_molefracs=None, vapor_molefracs=None, npoints=None))]
     fn binary_phase_diagram(
         specification: Bound<'_, PyAny>,
@@ -482,7 +468,6 @@ pub struct PyEstimator(Estimator<EquationOfState<IdealGasModel, ResidualModel>>)
 #[pymethods]
 impl PyEstimator {
     #[new]
-    #[pyo3(text_signature = "(data, weights, losses)")]
     fn new(data: Vec<PyDataSet>, weights: Vec<f64>, losses: Vec<PyLoss>) -> Self {
         Self(Estimator::new(
             data.iter().map(|d| d.0.clone()).collect(),
@@ -512,7 +497,6 @@ impl PyEstimator {
     /// - to which a loss function is applied,
     /// - and which is weighted according to the number of datapoints,
     /// - and the relative weights as defined in the Estimator object.
-    #[pyo3(text_signature = "($self, eos)")]
     fn cost<'py>(
         &self,
         eos: &PyEquationOfState,
@@ -537,7 +521,6 @@ impl PyEstimator {
     /// Returns
     /// -------
     /// List[SIArray1]
-    #[pyo3(text_signature = "($self, eos)")]
     fn predict<'py>(
         &self,
         eos: &PyEquationOfState,
@@ -567,7 +550,6 @@ impl PyEstimator {
     /// Returns
     /// -------
     /// List[numpy.ndarray[Float]]
-    #[pyo3(text_signature = "($self, eos)")]
     fn relative_difference<'py>(
         &self,
         eos: &PyEquationOfState,
@@ -596,7 +578,6 @@ impl PyEstimator {
     /// Returns
     /// -------
     /// numpy.ndarray[Float]
-    #[pyo3(text_signature = "($self, eos)")]
     fn mean_absolute_relative_difference<'py>(
         &self,
         eos: &PyEquationOfState,
@@ -650,7 +631,6 @@ impl PyDataSet {
     /// -------
     /// DataSet
     #[staticmethod]
-    #[pyo3(text_signature = "(target, temperature, pressure, phase=None)")]
     #[pyo3(signature = (target, temperature, pressure, phase=None))]
     fn viscosity(
         target: quantity::Viscosity<Array1<f64>>,
@@ -686,7 +666,6 @@ impl PyDataSet {
     /// -------
     /// DataSet
     #[staticmethod]
-    #[pyo3(text_signature = "(target, temperature, pressure, phase=None)")]
     #[pyo3(signature = (target, temperature, pressure, phase=None))]
     fn thermal_conductivity(
         target: quantity::ThermalConductivity<Array1<f64>>,
@@ -722,7 +701,6 @@ impl PyDataSet {
     /// -------
     /// DataSet
     #[staticmethod]
-    #[pyo3(text_signature = "(target, temperature, pressure, phase=None)")]
     #[pyo3(signature = (target, temperature, pressure, phase=None))]
     fn diffusion(
         target: quantity::Diffusivity<Array1<f64>>,

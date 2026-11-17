@@ -63,7 +63,6 @@ impl PyInterface {
     /// Interface
     ///
     #[staticmethod]
-    #[pyo3(text_signature = "(vle, n_grid, l_grid, critical_temperature)")]
     #[pyo3(signature = (vle, n_grid, l_grid, critical_temperature))]
     fn planar_from_tanh(
         vle: &PyPhaseEquilibrium,
@@ -99,7 +98,6 @@ impl PyInterface {
     /// Interface
     ///
     #[staticmethod]
-    #[pyo3(text_signature = "(planar_interface, n_grid, l_grid, radius, geometry)")]
     fn curved(
         planar_interface: &PyInterface,
         n_grid: usize,

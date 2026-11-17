@@ -34,7 +34,6 @@ impl PyEquationOfState {
     #[staticmethod]
     #[pyo3(
         signature = (parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, epcsaft_variant="advanced"),
-        text_signature = r#"(parameters, max_eta=0.5, max_iter_cross_assoc=50, tol_cross_assoc=1e-10, epcsaft_variant="advanced")"#,
     )]
     pub fn epcsaft(
         parameters: PyParameters,

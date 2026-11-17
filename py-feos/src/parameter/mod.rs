@@ -1,7 +1,11 @@
 use crate::error::PyFeosError;
 use feos_core::parameter::*;
 use indexmap::IndexSet;
+#[cfg(feature = "pcsaft")]
+use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
+#[cfg(all(feature = "experimental-inspect", feature = "pcsaft"))]
+use pyo3::type_hint_union;
 use pyo3::types::PyDict;
 use pythonize::depythonize;
 use serde::{Deserialize, Serialize};
@@ -91,8 +95,7 @@ impl PyParameters {
     ///     Identifier that is used to search binary records.
     #[staticmethod]
     #[pyo3(
-        signature = (pure_records, binary_records=vec![], identifier_option=PyIdentifierOption::Name),
-        text_signature = "(pure_records, binary_records=[], identifier_option=IdentifierOption.Name)"
+        signature = (pure_records, binary_records=vec![], identifier_option=PyIdentifierOption::Name)
     )]
     fn from_records(
         pure_records: Vec<PyPureRecord>,
@@ -171,8 +174,7 @@ impl PyParameters {
     ///     Identifier that is used to search substance.
     #[staticmethod]
     #[pyo3(
-        signature = (substances, pure_path, binary_path=None, identifier_option=PyIdentifierOption::Name),
-        text_signature = "(substances, pure_path, binary_path=None, identifier_option)"
+        signature = (substances, pure_path, binary_path=None, identifier_option=PyIdentifierOption::Name)
     )]
     fn from_json(
         substances: Vec<String>,
@@ -200,8 +202,7 @@ impl PyParameters {
     ///     Identifier that is used to search substance.
     #[staticmethod]
     #[pyo3(
-        signature = (input, binary_path=None, identifier_option=PyIdentifierOption::Name),
-        text_signature = "(input, binary_path=None, identifier_option)"
+        signature = (input, binary_path=None, identifier_option=PyIdentifierOption::Name)
     )]
     fn from_multiple_json(
         input: Vec<(Vec<String>, String)>,
@@ -238,8 +239,7 @@ impl PyParameters {
     #[cfg(feature = "sqlite")]
     #[staticmethod]
     #[pyo3(
-        signature = (substances, path, identifier_option=PyIdentifierOption::Name),
-        text_signature = "(substances, path, identifier_option=IdentifierOption.Name)"
+        signature = (substances, path, identifier_option=PyIdentifierOption::Name)
     )]
     fn from_database(
         substances: Vec<String>,
@@ -266,8 +266,7 @@ impl PyParameters {
     /// -------
     /// str : The JSON-formatted string.
     #[pyo3(
-        signature = (pretty=true),
-        text_signature = "(pretty=True)"
+        signature = (pretty=true)
     )]
     fn to_json_str(&self, pretty: bool) -> PyResult<(String, Option<String>)> {
         let pr_json = if pretty {
@@ -639,8 +638,7 @@ impl PyGcParameters {
     /// binary_segment_records : [BinarySegmentRecord], optional
     ///     A list of binary segment-segment parameters.
     #[staticmethod]
-    #[pyo3(text_signature = "(chemical_records, segment_records, binary_segment_records=None)",
-    signature = (chemical_records, segment_records, binary_segment_records=None))]
+    #[pyo3(signature = (chemical_records, segment_records, binary_segment_records=None))]
     fn from_segments(
         chemical_records: Vec<PyChemicalRecord>,
         segment_records: Vec<PySegmentRecord>,
@@ -673,8 +671,7 @@ impl PyGcParameters {
     ///     Identifier that is used to search substance.
     #[staticmethod]
     #[pyo3(
-        signature = (substances, pure_path, segments_path, binary_path=None, identifier_option=PyIdentifierOption::Name),
-        text_signature = "(substances, pure_path, segments_path, binary_path=None, identifier_option=IdentiferOption.Name)"
+        signature = (substances, pure_path, segments_path, binary_path=None, identifier_option=PyIdentifierOption::Name)
     )]
     fn from_json_segments(
         substances: Vec<String>,
@@ -718,10 +715,7 @@ impl PyGcParameters {
     /// binary_segment_records : [BinarySegmentRecord], optional
     ///     A list of binary segment-segment parameters.
     #[staticmethod]
-    #[pyo3(
-        text_signature = "(identifier, smarts_records, segment_records, binary_segment_records=None)"
-    )]
-    #[pyo3(signature = (identifier, smarts_records, segment_records, binary_segment_records=None))]
+    #[pyo3(signature = (identifier: "list[str | Identifier]", smarts_records, segment_records, binary_segment_records=None))]
     fn from_smiles(
         identifier: Vec<Bound<'_, PyAny>>,
         smarts_records: Vec<PySmartsRecord>,
@@ -730,7 +724,7 @@ impl PyGcParameters {
     ) -> PyResult<Self> {
         let chemical_records: Vec<_> = identifier
             .into_iter()
-            .map(|i| PyChemicalRecord::from_smiles(&i, smarts_records.clone()))
+            .map(|i| PyChemicalRecord::from_smiles(i, smarts_records.clone()))
             .collect::<PyResult<_>>()?;
         Ok(Self::from_segments(
             chemical_records,
@@ -755,8 +749,7 @@ impl PyGcParameters {
     ///     Path to file containing binary segment-segment parameters.
     #[staticmethod]
     #[pyo3(
-        signature = (identifier, smarts_path, segments_path, binary_path=None),
-        text_signature = "(identifier, smarts_path, segments_path, binary_path=None)"
+        signature = (identifier: "list[str | Identifier]", smarts_path, segments_path, binary_path=None)
     )]
     fn from_json_smiles(
         identifier: Vec<Bound<'_, PyAny>>,
@@ -845,5 +838,38 @@ mod test {
         );
         let parameter: PengRobinsonParameters = py_parameters.unwrap().try_convert().unwrap();
         assert!(parameter.binary[0].model_record.k_ij == 2.0);
+    }
+}
+
+/// Parameters as accepted from Python: either for components or for homosegmented groups.
+///
+/// Used by models that can be parametrized with homosegmented group contribution parameters;
+/// add their feature to the `cfg` when using it for another model.
+#[cfg(feature = "pcsaft")]
+pub enum PyParametersOrGcParameters {
+    Parameters(PyParameters),
+    GcParameters(PyGcParameters),
+}
+
+#[cfg(feature = "pcsaft")]
+impl<'a, 'py> FromPyObject<'a, 'py> for PyParametersOrGcParameters {
+    type Error = PyErr;
+
+    #[cfg(feature = "experimental-inspect")]
+    const INPUT_TYPE: pyo3::inspect::PyStaticExpr = type_hint_union!(
+        <PyParameters as FromPyObject<'static, 'static>>::INPUT_TYPE,
+        <PyGcParameters as FromPyObject<'static, 'static>>::INPUT_TYPE
+    );
+
+    fn extract(ob: Borrowed<'a, 'py, PyAny>) -> PyResult<Self> {
+        if let Ok(parameters) = ob.extract() {
+            Ok(Self::Parameters(parameters))
+        } else if let Ok(parameters) = ob.extract() {
+            Ok(Self::GcParameters(parameters))
+        } else {
+            Err(PyValueError::new_err(
+                "Argument `parameters` must be Parameters or GcParameters",
+            ))
+        }
     }
 }

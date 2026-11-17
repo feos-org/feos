@@ -12,7 +12,7 @@ use quantity::Time;
 /// ----------
 /// verbosity: Verbosity, optional
 ///     The verbosity level of the solver.
-///     Defaults to Verbosity.None.
+///     Defaults to Verbosity.Silent.
 ///
 /// Returns
 /// -------
@@ -24,7 +24,7 @@ pub struct PyDFTSolver(pub DFTSolver);
 #[pymethods]
 impl PyDFTSolver {
     #[new]
-    #[pyo3(text_signature = "(verbosity=None)", signature = (verbosity=None))]
+    #[pyo3(signature = (verbosity=None))]
     fn new(verbosity: Option<PyVerbosity>) -> Self {
         Self(DFTSolver::new(verbosity.map(|v| v.into())))
     }
@@ -60,7 +60,6 @@ impl PyDFTSolver {
     /// Returns
     /// -------
     /// DFTSolver
-    #[pyo3(text_signature = "($self, log=None, max_iter=None, tol=None, damping_coefficient=None)")]
     #[pyo3(signature = (log=None, max_iter=None, tol=None, damping_coefficient=None))]
     fn picard_iteration(
         &self,
@@ -100,7 +99,6 @@ impl PyDFTSolver {
     /// -------
     /// DFTSolver
     #[pyo3(
-        text_signature = "($self, log=None, max_iter=None, tol=None, damping_coefficient=None, mmax=None)",
         signature = (log=None, max_iter=None, tol=None, damping_coefficient=None, mmax=None)
     )]
     fn anderson_mixing(
@@ -139,7 +137,6 @@ impl PyDFTSolver {
     /// -------
     /// DFTSolver
     #[pyo3(
-        text_signature = "($self, max_iter=None, max_iter_gmres=None, tol=None)",
         signature = (max_iter=None, max_iter_gmres=None, tol=None)
     )]
     fn newton(

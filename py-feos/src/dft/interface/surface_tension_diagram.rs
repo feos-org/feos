@@ -43,9 +43,6 @@ pub struct PySurfaceTensionDiagram(
 #[pymethods]
 impl PySurfaceTensionDiagram {
     #[new]
-    #[pyo3(
-        text_signature = "(dia, init_densities=None, n_grid=None, l_grid=None, critical_temperature=None, solver=None)"
-    )]
     #[pyo3(signature = (dia, init_densities=None, n_grid=None, l_grid=None, critical_temperature=None, solver=None))]
     pub fn isotherm(
         dia: Vec<PyPhaseEquilibrium>,

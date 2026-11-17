@@ -30,8 +30,7 @@ impl PyEquationOfState {
     ///     states.
     #[staticmethod]
     #[pyo3(
-        signature = (parameters, max_eta=0.5, inc_nonadd_term=true),
-        text_signature = "(parameters, max_eta=0.5, inc_nonadd_term=True)"
+        signature = (parameters, max_eta=0.5, inc_nonadd_term=true)
     )]
     fn saftvrqmie(parameters: PyParameters, max_eta: f64, inc_nonadd_term: bool) -> PyResult<Self> {
         let options = SaftVRQMieOptions {
@@ -69,8 +68,7 @@ impl PyHelmholtzEnergyFunctional {
     /// HelmholtzEnergyFunctional
     #[staticmethod]
     #[pyo3(
-        signature = (parameters, fmt_version=PyFMTVersion::WhiteBear, max_eta=0.5, inc_nonadd_term=true),
-        text_signature = "(parameters, fmt_version, max_eta=0.5, inc_nonadd_term=True)"
+        signature = (parameters, fmt_version=PyFMTVersion::WhiteBear, max_eta=0.5, inc_nonadd_term=true)
     )]
     fn saftvrqmie(
         parameters: PyParameters,

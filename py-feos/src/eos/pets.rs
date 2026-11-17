@@ -24,7 +24,7 @@ impl PyEquationOfState {
     ///     The PeTS equation of state that can be used to compute thermodynamic
     ///     states.
     #[staticmethod]
-    #[pyo3(signature = (parameters, max_eta=0.5), text_signature = "(parameters, max_eta=0.5)")]
+    #[pyo3(signature = (parameters, max_eta=0.5))]
     fn pets(parameters: PyParameters, max_eta: f64) -> PyResult<Self> {
         let options = PetsOptions {
             max_eta,
@@ -56,8 +56,7 @@ impl PyHelmholtzEnergyFunctional {
     /// HelmholtzEnergyFunctional
     #[staticmethod]
     #[pyo3(
-        signature = (parameters, fmt_version=PyFMTVersion::WhiteBear, max_eta=0.5),
-        text_signature = "(parameters, fmt_version, max_eta=0.5)"
+        signature = (parameters, fmt_version=PyFMTVersion::WhiteBear, max_eta=0.5)
     )]
     fn pets(
         parameters: PyParameters,
