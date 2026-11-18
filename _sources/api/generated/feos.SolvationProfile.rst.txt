@@ -19,6 +19,10 @@ feos.SolvationProfile
       :toctree: ./
    
       ~SolvationProfile.__init__
+      ~SolvationProfile.dn_dp
+      ~SolvationProfile.dn_dt_p
+      ~SolvationProfile.drho_dp
+      ~SolvationProfile.drho_dt_p
       ~SolvationProfile.entropy
       ~SolvationProfile.entropy_density
       ~SolvationProfile.internal_energy
@@ -33,27 +37,25 @@ feos.SolvationProfile
 
    .. autosummary::
    
+      ~SolvationProfile.axes
       ~SolvationProfile.bulk
       ~SolvationProfile.density
       ~SolvationProfile.dn_dmu
-      ~SolvationProfile.dn_dp
-      ~SolvationProfile.dn_dt
-      ~SolvationProfile.drho_dp
-      ~SolvationProfile.drho_dt
+      ~SolvationProfile.drho_dmu
+      ~SolvationProfile.drho_dn
+      ~SolvationProfile.drho_dt_n
       ~SolvationProfile.edges
       ~SolvationProfile.external_potential
       ~SolvationProfile.functional_derivative
       ~SolvationProfile.grand_potential
       ~SolvationProfile.grand_potential_density
-      ~SolvationProfile.meshgrid
+      ~SolvationProfile.grid
       ~SolvationProfile.moles
+      ~SolvationProfile.non_bonded_fractions
       ~SolvationProfile.solvation_free_energy
       ~SolvationProfile.solver_log
       ~SolvationProfile.temperature
       ~SolvationProfile.total_moles
       ~SolvationProfile.weighted_densities
-      ~SolvationProfile.x
-      ~SolvationProfile.y
-      ~SolvationProfile.z
    
    

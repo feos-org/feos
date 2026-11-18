@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.PoreSpecification.Moles
+============================
+
+.. currentmodule:: feos
+
+.. automethod:: PoreSpecification.Moles

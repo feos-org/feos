@@ -1,7 +1,9 @@
 # Ideal gas properties
 Classical DFT can be used to rapidly determine the ideal gas limit of fluids in porous media. In an ideal gas, there are no interactions between the fluid molecules and therefore the residual Helmholtz energy $F^\mathrm{res}$ and its derivatives vanish. Note that this is only the case for spherical or heterosegmented molecules ($m_\alpha=1$), as the chain contribution in the homosegmented model contains intramolecular interactions. The ideal gas density profile can then be obtained directly from the [Euler-Lagrange equation](euler_lagrange_equation.md):
 
-$$\rho_\alpha^\mathrm{ig}(\mathbf{r})=\rho_\alpha^\mathrm{b}e^{-\beta V_\alpha^\mathrm{ext}(\mathbf{r})}\prod_{\alpha'}I^\mathrm{ig}_{\alpha\alpha'}(\mathbf{r})$$ (eqn:rho_ideal_gas)
+$$
+\rho_\alpha^\mathrm{ig}(\mathbf{r})=\rho_\alpha^\mathrm{b}e^{-\beta V_\alpha^\mathrm{ext}(\mathbf{r})}\prod_{\alpha'}I^\mathrm{ig}_{\alpha\alpha'}(\mathbf{r})
+$$ (eqn:rho_ideal_gas)
 
 $$I^\mathrm{ig}_{\alpha\alpha'}(\mathbf{r})=\int e^{-\beta V_{\alpha'}^\mathrm{ext}(\mathbf{r'})}\left(\prod_{\alpha''\neq\alpha}I^\mathrm{ig}_{\alpha'\alpha''}(\mathbf{r'})\right)\omega_\mathrm{chain}^{\alpha\alpha'}(\mathbf{r}-\mathbf{r'})\mathrm{d}\mathbf{r'}$$
 

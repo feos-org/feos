@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.PoreProfile.drho\_dp
+=========================
+
+.. currentmodule:: feos
+
+.. automethod:: PoreProfile.drho_dp

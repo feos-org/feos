@@ -1,0 +1,66 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.Interface
+==============
+
+.. currentmodule:: feos
+
+.. autoclass:: Interface
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~Interface.__init__
+      ~Interface.curved
+      ~Interface.dn_dp
+      ~Interface.dn_dt_p
+      ~Interface.drho_dp
+      ~Interface.drho_dt_p
+      ~Interface.entropy
+      ~Interface.entropy_density
+      ~Interface.interfacial_enrichment
+      ~Interface.interfacial_thickness
+      ~Interface.internal_energy
+      ~Interface.planar_from_tanh
+      ~Interface.relative_adsorption
+      ~Interface.residual
+      ~Interface.solve
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Interface.axes
+      ~Interface.density
+      ~Interface.dn_dmu
+      ~Interface.drho_dmu
+      ~Interface.drho_dn
+      ~Interface.drho_dt_n
+      ~Interface.edges
+      ~Interface.external_potential
+      ~Interface.functional_derivative
+      ~Interface.grand_potential_density
+      ~Interface.grid
+      ~Interface.moles
+      ~Interface.non_bonded_fractions
+      ~Interface.solver_log
+      ~Interface.surface_of_tension
+      ~Interface.surface_tension
+      ~Interface.temperature
+      ~Interface.total_moles
+      ~Interface.vle
+      ~Interface.weighted_densities
+   
+   

@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.Grid.periodical\_2d
+========================
+
+.. currentmodule:: feos
+
+.. automethod:: Grid.periodical_2d

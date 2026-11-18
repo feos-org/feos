@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.Adsorption.phase\_equilibrium
+==================================
+
+.. currentmodule:: feos
+
+.. automethod:: Adsorption.phase_equilibrium

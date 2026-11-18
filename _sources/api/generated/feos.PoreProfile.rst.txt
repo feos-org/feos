@@ -1,0 +1,65 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.PoreProfile
+================
+
+.. currentmodule:: feos
+
+.. autoclass:: PoreProfile
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~PoreProfile.__init__
+      ~PoreProfile.dn_dp
+      ~PoreProfile.dn_dt_p
+      ~PoreProfile.drho_dp
+      ~PoreProfile.drho_dt_p
+      ~PoreProfile.entropy
+      ~PoreProfile.entropy_density
+      ~PoreProfile.internal_energy
+      ~PoreProfile.residual
+      ~PoreProfile.solve
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~PoreProfile.axes
+      ~PoreProfile.bulk
+      ~PoreProfile.density
+      ~PoreProfile.dn_dmu
+      ~PoreProfile.drho_dmu
+      ~PoreProfile.drho_dn
+      ~PoreProfile.drho_dt_n
+      ~PoreProfile.edges
+      ~PoreProfile.enthalpy_of_adsorption
+      ~PoreProfile.external_potential
+      ~PoreProfile.functional_derivative
+      ~PoreProfile.grand_potential
+      ~PoreProfile.grand_potential_density
+      ~PoreProfile.grid
+      ~PoreProfile.henry_coefficients
+      ~PoreProfile.ideal_gas_enthalpy_of_adsorption
+      ~PoreProfile.interfacial_tension
+      ~PoreProfile.moles
+      ~PoreProfile.non_bonded_fractions
+      ~PoreProfile.partial_molar_enthalpy_of_adsorption
+      ~PoreProfile.solver_log
+      ~PoreProfile.temperature
+      ~PoreProfile.total_moles
+      ~PoreProfile.weighted_densities
+   
+   

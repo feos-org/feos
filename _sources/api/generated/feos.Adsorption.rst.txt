@@ -1,0 +1,43 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.Adsorption
+===============
+
+.. currentmodule:: feos
+
+.. autoclass:: Adsorption
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~Adsorption.__init__
+      ~Adsorption.adsorption_isotherm
+      ~Adsorption.desorption_isotherm
+      ~Adsorption.equilibrium_isotherm
+      ~Adsorption.phase_equilibrium
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Adsorption.adsorption
+      ~Adsorption.enthalpy_of_adsorption
+      ~Adsorption.grand_potential
+      ~Adsorption.partial_molar_enthalpy_of_adsorption
+      ~Adsorption.pressure
+      ~Adsorption.profiles
+      ~Adsorption.total_adsorption
+   
+   

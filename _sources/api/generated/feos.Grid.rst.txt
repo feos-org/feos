@@ -1,0 +1,43 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.Grid
+=========
+
+.. currentmodule:: feos
+
+.. autoclass:: Grid
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~Grid.__init__
+      ~Grid.cartesian_1d
+      ~Grid.cartesian_2d
+      ~Grid.cartesian_3d
+      ~Grid.cylindrical
+      ~Grid.periodical_1d
+      ~Grid.periodical_2d
+      ~Grid.periodical_3d
+      ~Grid.polar
+      ~Grid.spherical
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Grid.axes
+      ~Grid.grid
+   
+   

@@ -18,11 +18,15 @@ $$A=A^\mathrm{ig}+A^\mathrm{res}$$
 
 The ideal gas contribution contains only kinetic and intramolecular energies and can be derived from statistical mechanics as
 
-$$A^\mathrm{ig}(T,V,n_i)=RT\sum_in_i\left(\ln\left(\frac{n_i\Lambda_i^3}{V}\right)-1\right)$$(eqn:a_ig)
+$$
+A^\mathrm{ig}(T,V,n_i)=RT\sum_in_i\left(\ln\left(\frac{n_i\Lambda_i^3}{V}\right)-1\right)
+$$ (eqn:a_ig)
 
 with the thermal de Broglie wavelength $\Lambda_i$ that only depends on the temperature. Residual properties depend on the reference state. The two commonly used reference states are at constant volume or at constant pressure, i.e.,
 
-$$A=A^\mathrm{ig,V}(T,V,n_i)+A^\mathrm{res,V}(T,V,n_i)=A^\mathrm{ig,p}(T,p,n_i)+A^\mathrm{res,p}(T,p,n_i)$$(eqn:a_res)
+$$
+A=A^\mathrm{ig,V}(T,V,n_i)+A^\mathrm{res,V}(T,V,n_i)=A^\mathrm{ig,p}(T,p,n_i)+A^\mathrm{res,p}(T,p,n_i)
+$$ (eqn:a_res)
 
 Because the Helmholtz energy is expressed in $T$, $V$ and $n_i$, residual properties at constant volume can be evaluated straightforwardly. If a property $X$ is calculated from the Helmholtz energy via the differential operator $\mathcal{D}$, i.e., $X=\mathcal{D}\left(A\right)$, then the residual contributions is calculated from
 

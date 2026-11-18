@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.Interface.interfacial\_thickness
+=====================================
+
+.. currentmodule:: feos
+
+.. automethod:: Interface.interfacial_thickness

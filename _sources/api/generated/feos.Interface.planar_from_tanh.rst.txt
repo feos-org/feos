@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.Interface.planar\_from\_tanh
+=================================
+
+.. currentmodule:: feos
+
+.. automethod:: Interface.planar_from_tanh

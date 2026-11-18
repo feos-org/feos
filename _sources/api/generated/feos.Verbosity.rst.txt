@@ -29,7 +29,7 @@ feos.Verbosity
    .. autosummary::
    
       ~Verbosity.Iter
-      ~Verbosity.None
       ~Verbosity.Result
+      ~Verbosity.Silent
    
    

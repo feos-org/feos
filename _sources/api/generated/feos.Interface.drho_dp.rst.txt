@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.Interface.drho\_dp
+=======================
+
+.. currentmodule:: feos
+
+.. automethod:: Interface.drho_dp

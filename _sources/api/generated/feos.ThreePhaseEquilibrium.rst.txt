@@ -1,0 +1,35 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.ThreePhaseEquilibrium
+==========================
+
+.. currentmodule:: feos
+
+.. autoclass:: ThreePhaseEquilibrium
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~ThreePhaseEquilibrium.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ThreePhaseEquilibrium.liquid1
+      ~ThreePhaseEquilibrium.liquid2
+      ~ThreePhaseEquilibrium.vapor
+   
+   

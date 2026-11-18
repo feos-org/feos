@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.Interface.internal\_energy
+===============================
+
+.. currentmodule:: feos
+
+.. automethod:: Interface.internal_energy

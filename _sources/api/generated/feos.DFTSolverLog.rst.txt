@@ -1,0 +1,36 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.DFTSolverLog
+=================
+
+.. currentmodule:: feos
+
+.. autoclass:: DFTSolverLog
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~DFTSolverLog.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~DFTSolverLog.profile
+      ~DFTSolverLog.residual
+      ~DFTSolverLog.solver
+      ~DFTSolverLog.time
+   
+   

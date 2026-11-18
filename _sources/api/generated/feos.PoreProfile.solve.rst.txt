@@ -1,0 +1,11 @@
+.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.PoreProfile.solve
+======================
+
+.. currentmodule:: feos
+
+.. automethod:: PoreProfile.solve

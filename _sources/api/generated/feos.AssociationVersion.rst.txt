@@ -1,0 +1,35 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.AssociationVersion
+=======================
+
+.. currentmodule:: feos
+
+.. autoclass:: AssociationVersion
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~AssociationVersion.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~AssociationVersion.ISaft
+      ~AssociationVersion.Wda
+      ~AssociationVersion.YuWu
+   
+   

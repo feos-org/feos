@@ -1,0 +1,35 @@
+﻿.. raw:: html
+
+    </div>
+    <div class=col-md-9 content>
+
+feos.PoreSpecification
+======================
+
+.. currentmodule:: feos
+
+.. autoclass:: PoreSpecification
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~PoreSpecification.Moles
+      ~PoreSpecification.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~PoreSpecification.ChemicalPotential
+      ~PoreSpecification.FixedMoles
+   
+   
